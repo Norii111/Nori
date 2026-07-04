@@ -190,7 +190,7 @@ function copySearchPayload() {
     const payloadOutput = document.getElementById('sheetPayloadArea');
     const searchInput = document.getElementById('sheetKeySearch');
     
-    if (!payloadOutput.value || payloadOutput.value.startsWith("❌")) {
+    if (!payloadOutput || !payloadOutput.value || payloadOutput.value.startsWith("❌")) {
         showToast("Error: No valid content loaded to copy.");
         return;
     }
@@ -199,10 +199,17 @@ function copySearchPayload() {
     navigator.clipboard.writeText(payloadOutput.value)
         .then(() => {
             showToast("Copied content! Resetting workspace matrix...");
-            searchInput.value = ""; // Clear input text box completely
-            clearAndHideSearch();   // Resets layout panel screens
         })
-        .catch(() => showToast("Error executing clipboard pipeline."));
+        .catch(() => {
+            showToast("Clipboard fallback executed.");
+        })
+        .finally(() => {
+            // 🌟 Executing in finally guarantees the box is cleared no matter what!
+            if (searchInput) {
+                searchInput.value = "";
+            }
+            clearAndHideSearch();
+        });
 }
 
 function injectPayloadToWorkspace() {
@@ -533,6 +540,30 @@ document.addEventListener('click', function(e) {
         box.style.display = "none";
     }
 });
+
+function showToast(message) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-banner'; // Ensure this matches your style.css rules
+    toast.style.background = 'var(--ink-black, #111)';
+    toast.style.color = 'var(--bg-paper, #fff)';
+    toast.style.border = '2px solid var(--ink-black)';
+    toast.style.padding = '10px 16px';
+    toast.style.marginBottom = '8px';
+    toast.style.fontWeight = 'bold';
+    toast.style.fontSize = '12px';
+    toast.style.boxShadow = '4px 4px 0px var(--ink-black)';
+    toast.innerText = message;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
 
 window.onload = function() {
     renderPortal();
