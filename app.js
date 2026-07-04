@@ -329,23 +329,28 @@ function renderArchiveContainer() {
         };
 
 // 5. Clean Action Interface (Fills the box and runs the search automatically!)
+// 5. Clean Action Interface (Instantly maps the match view and hides dropdowns)
         rowDiv.onclick = (e) => {
-            e.stopPropagation(); // Stops any background timers or old scripts
+            e.stopPropagation();
             
+            // 1. Force feed the input element so the UI matches the selection
             const searchInput = document.getElementById('sheetKeySearch');
             if (searchInput) {
-                searchInput.value = row.key; // 1. Put Cell A text into the search bar
-                
-                // 2. Dispatch a fake input event so the engine knows text just changed!
-                const inputEvent = new Event('input', { bubbles: true });
-                searchInput.dispatchEvent(inputEvent);
-                
-                // 3. Directly call your search function as a backup to make 100% sure it fires
-                if (typeof querySheetMatrix === "function") {
-                    querySheetMatrix();
-                }
+                searchInput.value = row.key;
             }
             
+            // 2. Directly trigger the match resolution to display cell B data immediately
+            if (typeof selectFinalMatch === "function") {
+                selectFinalMatch(row);
+            }
+            
+            // 3. Make completely sure hidden dropdown panels stay dead
+            const suggestionsBox = document.getElementById('searchSuggestions');
+            if (suggestionsBox) {
+                suggestionsBox.style.display = "none";
+                suggestionsBox.innerHTML = "";
+            }
+
             // 4. Wipe archive UI out of frame smoothly
             archiveBox.style.display = "none";
             isArchiveOpen = false;
