@@ -10,7 +10,8 @@ const gifs = [
 
 const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHGQy-jlVIqKK8eNY5KAyKmalHnluD0Dbznly-mCn_e3loE9poQD46AkqKOAZYH5BcZ4Rs50Q9pZzJ/pub?output=csv";
 let googleSheetData = []; 
-let focusedSuggestionIndex = -1; // Keyboard index tracker
+let focusedSuggestionIndex = -1; 
+let isArchiveOpen = false;
 
 let offlineDatabase = {
     mainGasLink: "https://tinyurl.com/Noro11",
@@ -48,13 +49,15 @@ async function syncGoogleSheetData() {
         
         parseCsvStrictAB(rawCsvText);
         addSystemLog(`Sync completed. Loaded ${googleSheetData.length} records into lookup index.`);
+        showToast(`Sync finished! Loaded ${googleSheetData.length} records.`);
+        
+        if (isArchiveOpen) renderArchiveContainer();
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
         showToast("Error pulling cloud sheets registry.");
     }
 }
 
-// Fixed Row-Parser: Strictly isolates Column A and Column B only
 function parseCsvStrictAB(text) {
     googleSheetData = [];
     let lines = [];
@@ -84,7 +87,7 @@ function parseCsvStrictAB(text) {
         let cols = lines[i];
         if (cols.length >= 2) {
             let colA = cols[0].trim();
-            let colB = cols[1].trim(); // Strictly take only Column B. Drop C through Z!
+            let colB = cols[1].trim(); 
             if (colA) {
                 googleSheetData.push({ key: colA, payload: colB });
             }
@@ -92,15 +95,19 @@ function parseCsvStrictAB(text) {
     }
 }
 
-// --- MATRIX SEARCH & SELECTION DISMISSAL ---
 function querySheetMatrix() {
     const searchInput = document.getElementById('sheetKeySearch');
     const searchKey = searchInput.value.trim().toUpperCase();
     const payloadOutput = document.getElementById('sheetPayloadArea');
     const suggestionsBox = document.getElementById('searchSuggestions');
-    const buttonGroup = document.getElementById('searchButtonGroup');
+    const actionsHeader = document.getElementById('searchActionsHeader');
     
-    focusedSuggestionIndex = -1; // Reset keyboard choice pointer
+    if (isArchiveOpen) {
+        document.getElementById('sheetArchiveArea').style.display = "none";
+        isArchiveOpen = false;
+    }
+
+    focusedSuggestionIndex = -1; 
 
     if (!searchKey) {
         clearAndHideSearch();
@@ -125,19 +132,15 @@ function querySheetMatrix() {
             rowOption.style.background = "var(--bg-paper)";
             rowOption.innerText = match.key;
             
-            rowOption.onmouseover = () => { 
-                highlightSuggestion(idx);
-            };
-            
-            rowOption.onclick = () => {
-                selectFinalMatch(match);
-            };
+            rowOption.onmouseover = () => { highlightSuggestion(idx); };
+            rowOption.onclick = () => { selectFinalMatch(match); };
             suggestionsBox.appendChild(rowOption);
         });
     } else {
         suggestionsBox.style.display = "none";
         payloadOutput.style.display = "block";
-        buttonGroup.style.display = "none";
+        actionsHeader.style.display = "flex";
+        document.getElementById('searchButtonGroup').style.display = "none";
         payloadOutput.value = "❌ No matching data profiles located inside live sheet arrays.";
     }
 }
@@ -163,20 +166,22 @@ function selectFinalMatch(match) {
     const searchInput = document.getElementById('sheetKeySearch');
     const payloadOutput = document.getElementById('sheetPayloadArea');
     const suggestionsBox = document.getElementById('searchSuggestions');
+    const actionsHeader = document.getElementById('searchActionsHeader');
     const buttonGroup = document.getElementById('searchButtonGroup');
 
     searchInput.value = match.key;
     payloadOutput.value = match.payload;
     
     suggestionsBox.style.display = "none";
-    payloadOutput.style.display = "block"; // Materialize panel
-    buttonGroup.style.display = "flex";    // Materialize buttons
+    payloadOutput.style.display = "block"; 
+    actionsHeader.style.display = "flex";    
+    buttonGroup.style.display = "flex";    
 }
 
 function clearAndHideSearch() {
     document.getElementById('sheetPayloadArea').value = "";
     document.getElementById('sheetPayloadArea').style.display = "none";
-    document.getElementById('searchButtonGroup').style.display = "none";
+    document.getElementById('searchActionsHeader').style.display = "none";
     document.getElementById('searchSuggestions').style.display = "none";
     document.getElementById('searchSuggestions').innerHTML = "";
 }
@@ -194,8 +199,8 @@ function copySearchPayload() {
     navigator.clipboard.writeText(payloadOutput.value)
         .then(() => {
             showToast("Copied content! Resetting workspace matrix...");
-            searchInput.value = ""; // Clear search bar
-            clearAndHideSearch();   // Remove main panel view completely
+            searchInput.value = ""; 
+            clearAndHideSearch();   
         })
         .catch(() => showToast("Error executing clipboard pipeline."));
 }
@@ -212,8 +217,80 @@ function injectPayloadToWorkspace() {
     switchTab('dashboard');
 }
 
-// --- ARROW KEY & ENTER LISTENERS FOR DROPDOWN ---
+// --- NEW ARCHIVE MATRIX CODES ---
+function toggleArchiveView() {
+    const archiveBox = document.getElementById('sheetArchiveArea');
+    const searchInput = document.getElementById('sheetKeySearch');
+    
+    if (isArchiveOpen) {
+        archiveBox.style.display = "none";
+        isArchiveOpen = false;
+    } else {
+        searchInput.value = ""; 
+        clearAndHideSearch();
+        renderArchiveContainer();
+        archiveBox.style.display = "block";
+        isArchiveOpen = true;
+    }
+}
+
+function renderArchiveContainer() {
+    const archiveBox = document.getElementById('sheetArchiveArea');
+    if (googleSheetData.length === 0) {
+        archiveBox.innerHTML = "<p style='font-size:12px; font-weight:bold; text-align:center;'>Archive empty. Pull fresh matrix.</p>";
+        return;
+    }
+
+    archiveBox.innerHTML = "";
+    const totalItems = googleSheetData.length;
+
+    googleSheetData.forEach((row, idx) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.style.padding = "10px";
+        rowDiv.style.cursor = "pointer";
+        rowDiv.style.marginBottom = "6px";
+        rowDiv.style.border = "2px solid var(--ink-black)";
+        rowDiv.style.background = softMangaColors[idx % softMangaColors.length];
+
+        let timelineTag = "";
+        if (idx === 0) {
+            timelineTag = "<span style='background:#111; color:#fff; font-size:9px; padding:2px 4px; margin-right:6px;'>[🧓 OLDEST DATA]</span>";
+        } else if (idx === totalItems - 1) {
+            timelineTag = "<span style='background:#f39c12; color:#000; font-weight:900; font-size:9px; padding:2px 4px; margin-right:6px;'>[✨ LATEST ENTRY]</span>";
+        } else if (idx >= totalItems - 3) {
+            timelineTag = "<span style='background:#e5e1d5; color:#111; font-size:9px; padding:2px 4px; margin-right:6px;'>[🔥 RECENT]</span>";
+        }
+
+        rowDiv.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>${timelineTag} ${row.key}</strong>
+                <span style="font-size:10px; color:#666;">Row ${idx + 2}</span>
+            </div>
+            <p style="font-size:11px; margin:4px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#444;">${row.payload}</p>
+        `;
+
+        rowDiv.onclick = () => {
+            selectFinalMatch(row);
+            archiveBox.style.display = "none";
+            isArchiveOpen = false;
+        };
+
+        archiveBox.appendChild(rowDiv);
+    });
+}
+
+// --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
 document.addEventListener('keydown', function(e) {
+    // Check for Alt + C Hotkey
+    if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        const searchTabVisible = document.getElementById('searchMenuTab').style.display !== 'none';
+        if (searchTabVisible) {
+            copySearchPayload();
+        }
+        return;
+    }
+
     const suggestionsBox = document.getElementById('searchSuggestions');
     if (!suggestionsBox || suggestionsBox.style.display === "none") return;
 
@@ -392,6 +469,8 @@ function switchTab(tabName) {
     logsTab.style.display = 'none';
 
     document.getElementById('searchSuggestions').style.display = "none";
+    document.getElementById('sheetArchiveArea').style.display = "none";
+    isArchiveOpen = false;
 
     if (tabName === 'dashboard') {
         dashTab.style.display = 'grid';
@@ -401,7 +480,7 @@ function switchTab(tabName) {
         searchTab.style.display = 'grid';
         navLinks[1].classList.add('active');
         showToast("Switched to Sheet Search Engine");
-        document.getElementById('sheetKeySearch').value = ""; // Clear fresh start
+        document.getElementById('sheetKeySearch').value = ""; 
         clearAndHideSearch();
     } else if (tabName === 'logs') {
         logsTab.style.display = 'grid';
