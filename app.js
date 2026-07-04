@@ -230,69 +230,119 @@ function toggleArchiveView() {
     const searchInput = document.getElementById('sheetKeySearch');
     
     if (isArchiveOpen) {
-        archiveBox.style.display = "none";
+        if (archiveBox) archiveBox.style.display = "none";
         isArchiveOpen = false;
     } else {
-        searchInput.value = ""; 
-        clearAndHideSearch();
+        if (searchInput) searchInput.value = ""; 
+        
+        // Run your layout hide logic safely
+        if (typeof clearAndHideSearch === "function") {
+            clearAndHideSearch();
+        }
+        
         renderArchiveContainer();
-        archiveBox.style.setProperty('display', 'flex', 'important'); // Keeps flex dynamic setup active
+        if (archiveBox) {
+            archiveBox.style.setProperty('display', 'flex', 'important');
+        }
         isArchiveOpen = true;
     }
 }
 
 function renderArchiveContainer() {
     const archiveBox = document.getElementById('sheetArchiveArea');
+    if (!archiveBox) return;
+
     if (googleSheetData.length === 0) {
-        archiveBox.innerHTML = "<p style='font-size:12px; font-weight:bold; text-align:center;'>Archive empty. Pull fresh matrix.</p>";
+        archiveBox.innerHTML = "<p style='font-size:14px; font-weight:bold; text-align:center; font-family:inherit;'>Archive empty. Pull fresh matrix.</p>";
         return;
     }
 
-    // Forces a clean horizontal row layout layout configuration
+    // Force a wrapping horizontal flex grid that looks like comic panels
     archiveBox.style.setProperty('display', 'flex', 'important');
     archiveBox.style.setProperty('flex-direction', 'row', 'important');
-    archiveBox.style.setProperty('flex-wrap', 'wrap', 'important'); // Allows row wrapping if there are many items
-    archiveBox.style.setProperty('gap', '10px', 'important');
+    archiveBox.style.setProperty('flex-wrap', 'wrap', 'important');
+    archiveBox.style.setProperty('gap', '16px', 'important');
+    archiveBox.style.setProperty('padding', '20px 10px', 'important');
+    archiveBox.style.setProperty('justify-content', 'flex-start', 'important');
     
     archiveBox.innerHTML = "";
     const totalItems = googleSheetData.length;
 
     googleSheetData.forEach((row, idx) => {
         const rowDiv = document.createElement('div');
-        rowDiv.style.display = "inline-block";
+        
+        // 1. Structural Sizing (Uniform but spacious cards)
         rowDiv.style.boxSizing = "border-box";
-        rowDiv.style.padding = "12px 18px";
-        rowDiv.style.border = "3px solid var(--ink-black)";
-        rowDiv.style.background = softMangaColors[idx % softMangaColors.length];
+        rowDiv.style.width = "calc(20% - 13px)"; // Exactly 5 cards per row (accounting for gaps)
+        rowDiv.style.minWidth = "180px";        // Prevents them from getting too skinny on small screens
+        rowDiv.style.height = "220px";          // Fixed matching height for all cards
+        
+        // 2. Manga Styling
+        rowDiv.style.border = "4px solid var(--ink-black, #111)";
+        rowDiv.style.background = softMangaColors[idx % softMangaColors.length] || "#fff";
+        rowDiv.style.padding = "14px";
         rowDiv.style.cursor = "pointer";
-        rowDiv.style.minWidth = "150px"; // Keeps cards looking uniform horizontally
+        rowDiv.style.display = "flex";
+        rowDiv.style.flexDirection = "column";
+        rowDiv.style.position = "relative";
+        rowDiv.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
+        
+        // Heavy, offset manga shadow
+        rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
 
+        // 3. The "Beautifully Messy" Secret Sauce: Random micro-rotation!
+        // This tilts each card randomly between -2.5 and +2.5 degrees so they look hand-placed
+        const randomTilt = (Math.random() * 5 - 2.5).toFixed(2);
+        rowDiv.style.transform = `rotate(${randomTilt}deg)`;
+
+        // Highlight tags
         let timelineTag = "";
-        if (idx === 0) {
-            timelineTag = "<span style='background:#111; color:#fff; font-size:9px; padding:2px 4px; margin-right:6px;'>[🧓 OLDEST]</span>";
-        } else if (idx === totalItems - 1) {
-            timelineTag = "<span style='background:#f39c12; color:#000; font-weight:900; font-size:9px; padding:2px 4px; margin-right:6px;'>[✨ LATEST]</span>";
+        if (idx === totalItems - 1) {
+            timelineTag = "<span style='background:#f39c12; color:#000; font-size:9px; padding:2px 4px; border:2px solid #111; margin-bottom:4px; display:inline-block; font-weight:900;'>NEW</span>";
         }
 
+        // 4. Content Mapping (Title -> Line -> Preserved Content)
         rowDiv.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                    <strong style="font-size:13px;">${timelineTag}${row.key}</strong>
-                    <span style="font-size:9px; color:#666;">Row ${idx + 2}</span>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+                <div style="max-width: 75%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${timelineTag}
+                    <strong style="font-size:15px; font-family:inherit; text-transform:uppercase; letter-spacing:-0.5px; display:block;">${row.key}</strong>
                 </div>
-                <p style="font-size:10px; margin:0; color:#555; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${row.payload}</p>
+                <span style="font-size:10px; font-weight:bold; opacity:0.6; font-family:inherit;">#${idx + 2}</span>
             </div>
+            
+            <!-- Manga separator line -->
+            <hr style="border: none; border-top: 3px solid var(--ink-black, #111); margin: 4px 0 8px 0; padding:0;">
+            
+            <!-- Cell B Content: Preserves line breaks/formatting safely but hides massive overflows -->
+            <div style="font-size:12px; font-family:inherit; color:#111; line-height:1.4; flex-grow:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; white-space:pre-wrap; word-break:break-word;">${row.payload}</div>
         `;
 
-        // 🌟 Click Action: Fills the top input value with Cell A text and runs the engine lookups
-        rowDiv.onclick = () => {
+        // Interactive pop effect on hover
+        rowDiv.onmouseenter = () => {
+            rowDiv.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
+            rowDiv.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
+        };
+        rowDiv.onmouseleave = () => {
+            rowDiv.style.transform = `rotate(${randomTilt}deg)`;
+            rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
+        };
+
+        // 5. Clean Action Interface (Absolutely no auto-copying running here!)
+        rowDiv.onclick = (e) => {
+            e.stopPropagation(); // Stops any parent document containers from firing old scripts
+            
             const searchInput = document.getElementById('sheetKeySearch');
             if (searchInput) {
-                searchInput.value = row.key; // Inserts Cell A
-                querySheetMatrix();        // Runs search engine logic automatically to pull up full view
+                searchInput.value = row.key; // Safely inputs Cell A string
+                
+                // Fire your search logic to open the pristine display view layout
+                if (typeof querySheetMatrix === "function") {
+                    querySheetMatrix();
+                }
             }
             
-            // Close down the archive overview panel view
+            // Wipe archive UI out of frame smoothly
             archiveBox.style.display = "none";
             isArchiveOpen = false;
         };
@@ -300,7 +350,6 @@ function renderArchiveContainer() {
         archiveBox.appendChild(rowDiv);
     });
 }
-
 // --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
 document.addEventListener('keydown', function(e) {
     if (e.altKey && (e.key === 'c' || e.key === 'C')) {
