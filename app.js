@@ -47,7 +47,7 @@ async function syncGoogleSheetData() {
         if (!response.ok) throw new Error("Cloud stream fetch rejected.");
         const rawCsvText = await response.text();
         
-        parseCsvToArray(rawCsvText);
+        parseCsvAdvanced(rawCsvText);
         addSystemLog(`Sync completed. Loaded ${googleSheetData.length} records into lookup index.`);
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
@@ -55,41 +55,103 @@ async function syncGoogleSheetData() {
     }
 }
 
-function parseCsvToArray(text) {
+// Advanced CSV parser that respects quotes and newlines/paragraphs within cells
+function parseCsvAdvanced(text) {
     googleSheetData = [];
-    let lines = text.split(/\r\n|\n/);
-    
-    // Starts at 1 to skip headers row cleanly
+    let lines = [];
+    let row = [""];
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        let c = text[i];
+        let next = text[i+1];
+
+        if (c === '"') {
+            if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; } // Escaped quotes
+            else { inQuotes = !inQuotes; }
+        } else if (c === ',' && !inQuotes) {
+            row.push("");
+        } else if ((c === '\r' || c === '\n') && !inQuotes) {
+            if (c === '\r' && next === '\n') { i++; }
+            lines.push(row);
+            row = [""];
+        } else {
+            row[row.length - 1] += c;
+        }
+    }
+    if (row.length > 1 || row[0] !== "") lines.push(row);
+
+    // Skip the first row (headers) and populate data structure
     for (let i = 1; i < lines.length; i++) {
-        let line = lines[i].trim();
-        if (!line) continue;
-        
-        let matches = line.split(',');
-        if (matches.length >= 2) {
-            let colA = matches[0].replace(/^"|"$/g, '').trim();
-            let colB = matches.slice(1).join(',').replace(/^"|"$/g, '').trim();
-            googleSheetData.push({ key: colA, payload: colB });
+        let cols = lines[i];
+        if (cols.length >= 2) {
+            let colA = cols[0].trim();
+            let colB = cols.slice(1).join(',').trim();
+            if (colA) {
+                googleSheetData.push({ key: colA, payload: colB });
+            }
         }
     }
 }
 
-// --- DIRECT ENTRY SEARCH ROUTINE ---
+// --- DIRECT ENTRY SEARCH ROUTINE WITH SUGGESTIONS ---
 function querySheetMatrix() {
-    const searchKey = document.getElementById('sheetKeySearch').value.trim().toUpperCase();
+    const searchInput = document.getElementById('sheetKeySearch');
+    const searchKey = searchInput.value.trim().toUpperCase();
     const payloadOutput = document.getElementById('sheetPayloadArea');
+    const suggestionsBox = document.getElementById('searchSuggestions');
     
     if (!searchKey) {
         payloadOutput.value = "";
+        suggestionsBox.style.display = "none";
+        suggestionsBox.innerHTML = "";
         return;
     }
     
-    const matchedRow = googleSheetData.find(row => row.key.toUpperCase() === searchKey);
+    // Find all matching options containing the searched text snippet
+    const filteredMatches = googleSheetData.filter(row => row.key.toUpperCase().includes(searchKey));
     
-    if (matchedRow) {
-        payloadOutput.value = matchedRow.payload;
+    if (filteredMatches.length > 0) {
+        suggestionsBox.innerHTML = "";
+        suggestionsBox.style.display = "block";
+        
+        filteredMatches.slice(0, 10).forEach(match => {
+            const rowOption = document.createElement('div');
+            rowOption.style.padding = "8px 12px";
+            rowOption.style.cursor = "pointer";
+            rowOption.style.borderBottom = "1px solid var(--ink-black)";
+            rowOption.style.fontSize = "13px";
+            rowOption.style.fontWeight = "bold";
+            rowOption.style.background = "var(--bg-paper)";
+            rowOption.innerText = match.key;
+            
+            // Hover styling matching your layout patterns
+            rowOption.onmouseover = () => { rowOption.style.background = "var(--ink-black)"; rowOption.style.color = "var(--bg-paper)"; };
+            rowOption.onmouseout = () => { rowOption.style.background = "var(--bg-paper)"; rowOption.style.color = "var(--ink-black)"; };
+            
+            rowOption.onclick = () => {
+                searchInput.value = match.key;
+                payloadOutput.value = match.payload;
+                suggestionsBox.style.display = "none";
+            };
+            suggestionsBox.appendChild(rowOption);
+        });
     } else {
+        suggestionsBox.style.display = "none";
         payloadOutput.value = "❌ No matching data profiles located inside live sheet arrays.";
     }
+}
+
+function copySearchPayload() {
+    const payloadOutput = document.getElementById('sheetPayloadArea');
+    if (!payloadOutput.value || payloadOutput.value.startsWith("❌") || payloadOutput.value.startsWith("Matching")) {
+        showToast("Error: No valid content loaded to copy.");
+        return;
+    }
+    payloadOutput.select();
+    navigator.clipboard.writeText(payloadOutput.value)
+        .then(() => showToast("Copied full search description payload!"))
+        .catch(() => showToast("Error executing clipboard pipeline."));
 }
 
 function injectPayloadToWorkspace() {
@@ -105,11 +167,8 @@ function injectPayloadToWorkspace() {
 }
 
 function deleteSnippet(id) {
-    activeDeleteTargetId = id;
-    currentLondonStep = 0;
-    selectedPieceCoord = null;
-    resetChessBoardState();
-    renderChessBoard();
+    activeDeleteTargetId = id; currentLondonStep = 0; selectedPieceCoord = null;
+    resetChessBoardState(); renderChessBoard();
     document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: INITIATE MOVE 1";
     document.getElementById('chessAuthModal').classList.add('open');
 }
@@ -128,11 +187,8 @@ function renderChessBoard() {
     gridLayout.forEach(tile => {
         const square = document.createElement('div');
         const piece = chessBoardState[tile.coord] || '';
-        
         let squareClass = `chess-square ${tile.isDark ? 'dark-tile' : ''}`;
-        if (selectedPieceCoord === tile.coord) {
-            squareClass += ' selected-piece-highlight'; 
-        }
+        if (selectedPieceCoord === tile.coord) squareClass += ' selected-piece-highlight'; 
         
         square.className = squareClass;
         square.innerHTML = `${piece} <span class="square-coord">${tile.coord}</span>`;
@@ -257,10 +313,12 @@ function switchTab(tabName) {
     const navLinks = document.querySelectorAll('.nav-links a');
 
     navLinks.forEach(link => link.classList.remove('active'));
-
     dashTab.style.display = 'none';
     searchTab.style.display = 'none';
     logsTab.style.display = 'none';
+
+    // Hide suggestion drawer upon swapping views
+    document.getElementById('searchSuggestions').style.display = "none";
 
     if (tabName === 'dashboard') {
         dashTab.style.display = 'grid';
@@ -303,6 +361,15 @@ function addSystemLog(text) {
     const area = document.getElementById('systemLogsArea');
     if (area) area.value += `\n[${new Date().toLocaleTimeString()}] ${text}`;
 }
+
+// Close search recommendation box if clicked completely outside
+document.addEventListener('click', function(e) {
+    const box = document.getElementById('searchSuggestions');
+    const input = document.getElementById('sheetKeySearch');
+    if (box && e.target !== box && e.target !== input) {
+        box.style.display = "none";
+    }
+});
 
 window.onload = function() {
     renderPortal();
