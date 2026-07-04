@@ -8,6 +8,9 @@ const gifs = [
     "https://miro.medium.com/v2/resize:fit:640/format:webp/1*qbftZl4cP_al1oB2dn01ZA.gif"
 ];
 
+const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHGQy-jlVIqKK8eNY5KAyKmalHnluD0Dbznly-mCn_e3loE9poQD46AkqKOAZYH5BcZ4Rs50Q9pZzJ/pub?output=csv";
+let googleSheetData = []; 
+
 let offlineDatabase = {
     mainGasLink: "https://tinyurl.com/Noro11",
     primaryGAS: "// Your centerpiece code environment connected to your tinyurl script structure\nfunction coreAutomation() {\n  console.log('Running seamlessly from your custom dashboard centerpiece.');\n}",
@@ -21,33 +24,92 @@ const softMangaColors = [
     '#f4f3ef', '#e3ebd9', '#e5e1d5', '#ebdccb', '#d6e2e6', '#ebd8da'
 ];
 
-// --- CHESS DEFENSE SYSTEM STATE ENGINE (TACTICAL MOTION UPDATE) ---
 let activeDeleteTargetId = null;
-let currentLondonStep = 0; // 0 = d4, 1 = Bf4, 2 = Nf3
-let selectedPieceCoord = null; // Tracks currently lifted piece
+let currentLondonStep = 0; 
+let selectedPieceCoord = null; 
 
-// Dynamic state map tracking exactly where pieces are on your 3x3 board matrix
 let chessBoardState = {};
 
-// Reset board state to initial setup layout before the London System begins
 function resetChessBoardState() {
     chessBoardState = {
         'c4': '',    'd4': '',    'e4': '',
-        'c3': '',    'd3': '♙',  'e3': '',   // Pawn starts on d3
-        'c1': '♗',  'd1': '',    'f1': '♘'   // Bishop on c1, Knight on f1
+        'c3': '',    'd3': '♙',  'e3': '',    
+        'c1': '♗',  'd1': '',    'f1': '♘'    
     };
 }
 
+// --- CLOUD SPREADSHEET DATA STREAM SYNC ---
+async function syncGoogleSheetData() {
+    addSystemLog("Connecting to Google Sheets cloud matrix...");
+    try {
+        const cacheBuster = `&_cb=${Date.now()}`;
+        const response = await fetch(sheetCsvUrl + cacheBuster);
+        if (!response.ok) throw new Error("Cloud stream fetch rejected.");
+        const rawCsvText = await response.text();
+        
+        parseCsvToArray(rawCsvText);
+        addSystemLog(`Sync completed. Loaded ${googleSheetData.length} records into lookup index.`);
+    } catch (error) {
+        addSystemLog(`Cloud link error: ${error.message}`);
+        showToast("Error pulling cloud sheets registry.");
+    }
+}
+
+function parseCsvToArray(text) {
+    googleSheetData = [];
+    let lines = text.split(/\r\n|\n/);
+    
+    // Starts at 1 to skip headers row cleanly
+    for (let i = 1; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (!line) continue;
+        
+        let matches = line.split(',');
+        if (matches.length >= 2) {
+            let colA = matches[0].replace(/^"|"$/g, '').trim();
+            let colB = matches.slice(1).join(',').replace(/^"|"$/g, '').trim();
+            googleSheetData.push({ key: colA, payload: colB });
+        }
+    }
+}
+
+// --- DIRECT ENTRY SEARCH ROUTINE ---
+function querySheetMatrix() {
+    const searchKey = document.getElementById('sheetKeySearch').value.trim().toUpperCase();
+    const payloadOutput = document.getElementById('sheetPayloadArea');
+    
+    if (!searchKey) {
+        payloadOutput.value = "";
+        return;
+    }
+    
+    const matchedRow = googleSheetData.find(row => row.key.toUpperCase() === searchKey);
+    
+    if (matchedRow) {
+        payloadOutput.value = matchedRow.payload;
+    } else {
+        payloadOutput.value = "❌ No matching data profiles located inside live sheet arrays.";
+    }
+}
+
+function injectPayloadToWorkspace() {
+    const activePayload = document.getElementById('sheetPayloadArea').value;
+    if (!activePayload || activePayload.startsWith("❌") || activePayload.startsWith("Matching")) {
+        showToast("Error: No data loaded to pull.");
+        return;
+    }
+    offlineDatabase.primaryGAS = activePayload;
+    document.getElementById('primaryGasArea').value = activePayload;
+    showToast("Loaded description payload data to dashboard workspace console!");
+    switchTab('dashboard');
+}
 
 function deleteSnippet(id) {
     activeDeleteTargetId = id;
     currentLondonStep = 0;
     selectedPieceCoord = null;
-    
     resetChessBoardState();
     renderChessBoard();
-    
-    // Cryptic manga warning text instead of giving away the password!
     document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: INITIATE MOVE 1";
     document.getElementById('chessAuthModal').classList.add('open');
 }
@@ -81,47 +143,30 @@ function renderChessBoard() {
 
 function handleSquareClick(clickedCoord) {
     const clickedPiece = chessBoardState[clickedCoord];
-    
-    if (selectedPieceCoord === clickedCoord) {
-        selectedPieceCoord = null;
-        renderChessBoard();
-        return;
-    }
-    
-    if (clickedPiece !== '') {
-        selectedPieceCoord = clickedCoord;
-        renderChessBoard();
-        return;
-    }
+    if (selectedPieceCoord === clickedCoord) { selectedPieceCoord = null; renderChessBoard(); return; }
+    if (clickedPiece !== '') { selectedPieceCoord = clickedCoord; renderChessBoard(); return; }
     
     if (selectedPieceCoord) {
         const movingPiece = chessBoardState[selectedPieceCoord];
-        
-        // Step 1: 1.d4 (Pawn to d4)
         if (currentLondonStep === 0 && movingPiece === '♙' && selectedPieceCoord === 'd3' && clickedCoord === 'd4') {
             executeMove(selectedPieceCoord, clickedCoord);
             currentLondonStep = 1;
             document.getElementById('chessStepIndicator').innerText = "LOCK STAGE 1 BREACHED: INITIATE MOVE 2";
             showToast("Move 1 accepted...");
         } 
-        // Step 2: 2.Bf4 (Bishop to e4 proxy)
         else if (currentLondonStep === 1 && movingPiece === '♗' && selectedPieceCoord === 'c1' && clickedCoord === 'e4') {
             executeMove(selectedPieceCoord, clickedCoord);
             currentLondonStep = 2;
             document.getElementById('chessStepIndicator').innerText = "LOCK STAGE 2 BREACHED: INITIATE MOVE 3";
             showToast("Move 2 accepted...");
         } 
-        // Step 3: 3.Nf3 (Knight to e3 proxy)
         else if (currentLondonStep === 2 && movingPiece === '♘' && selectedPieceCoord === 'f1' && clickedCoord === 'e3') {
             executeMove(selectedPieceCoord, clickedCoord);
             executeFinalDestruction();
         } 
         else {
-            // BLUNDER: Absolute reset
-            currentLondonStep = 0;
-            selectedPieceCoord = null;
-            resetChessBoardState();
-            renderChessBoard();
+            currentLondonStep = 0; selectedPieceCoord = null;
+            resetChessBoardState(); renderChessBoard();
             document.getElementById('chessStepIndicator').innerText = "SECURITY ALERT: MATRIX RESET";
             showToast("BLUNDER! Access Denied.");
             changeToRandomGif();
@@ -139,28 +184,17 @@ function executeMove(fromCoord, toCoord) {
 function executeFinalDestruction() {
     const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === activeDeleteTargetId);
     offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== activeDeleteTargetId);
-    
-    renderPortal();
-    closeChessModal();
-    changeToRandomGif();
+    renderPortal(); closeChessModal(); changeToRandomGif();
     showToast(`DESTRUCTION SUCCESS: Removed "${targetItem ? targetItem.title : 'Item'}"`);
 }
 
 function closeChessModal() {
     document.getElementById('chessAuthModal').classList.remove('open');
-    activeDeleteTargetId = null;
-    currentLondonStep = 0;
-    selectedPieceCoord = null;
+    activeDeleteTargetId = null; currentLondonStep = 0; selectedPieceCoord = null;
 }
 
-function getRandomMangaColor() {
-    return softMangaColors[Math.floor(Math.random() * softMangaColors.length)];
-}
-
-function triggerGifFlip() {
-    const frame = document.querySelector('.blank-character-frame');
-    if (frame) frame.classList.toggle('flipped');
-}
+function getRandomMangaColor() { return softMangaColors[Math.floor(Math.random() * softMangaColors.length)]; }
+function triggerGifFlip() { const frame = document.querySelector('.blank-character-frame'); if (frame) frame.classList.toggle('flipped'); }
 
 function changeToRandomGif() {
     const frame = document.querySelector('.blank-character-frame');
@@ -197,7 +231,6 @@ function renderPortal() {
 function viewSnippet(id) {
     const textarea = document.getElementById('primaryGasArea');
     const item = offlineDatabase.bottomSnippets.find(x => x.id === id);
-    
     if (item) {
         textarea.classList.add('page-turn');
         setTimeout(() => {
@@ -219,20 +252,27 @@ function copyTextAreaContent() {
 
 function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
+    const searchTab = document.getElementById('searchMenuTab');
     const logsTab = document.getElementById('logsTab');
     const navLinks = document.querySelectorAll('.nav-links a');
 
     navLinks.forEach(link => link.classList.remove('active'));
 
+    dashTab.style.display = 'none';
+    searchTab.style.display = 'none';
+    logsTab.style.display = 'none';
+
     if (tabName === 'dashboard') {
         dashTab.style.display = 'grid';
-        logsTab.style.display = 'none';
         navLinks[0].classList.add('active');
         showToast("Switched to Main Command Dashboard");
-    } else if (tabName === 'logs') {
-        dashTab.style.display = 'none';
-        logsTab.style.display = 'grid';
+    } else if (tabName === 'searchTab') {
+        searchTab.style.display = 'grid';
         navLinks[1].classList.add('active');
+        showToast("Switched to Sheet Search Engine");
+    } else if (tabName === 'logs') {
+        logsTab.style.display = 'grid';
+        navLinks[2].classList.add('active');
         showToast("Viewing Core System Performance Records");
     }
     changeToRandomGif();
@@ -243,60 +283,35 @@ function openModal() {
     document.getElementById('modalInput').value = '';
     document.getElementById('modalInput').focus();
 }
-
-function closeModal() {
-    document.getElementById('mangaModal').classList.remove('open');
-}
+var closeModal = () => document.getElementById('mangaModal').classList.remove('open');
 
 function submitNewNote() {
     const name = document.getElementById('modalInput').value.trim();
     if (name) {
-        offlineDatabase.bottomSnippets.push({
-            id: Date.now(),
-            title: name,
-            content: "// Empty markdown or script entry"
-        });
-        renderPortal();
-        closeModal();
-        changeToRandomGif();
+        offlineDatabase.bottomSnippets.push({ id: Date.now(), title: name, content: "// Empty markdown or script entry" });
+        renderPortal(); closeModal(); changeToRandomGif();
         showToast(`Created block: "${name}"`);
     } else {
         showToast("Error: Name cannot be blank!");
     }
 }
 
-function launchMainGAS() {
-    window.open(offlineDatabase.mainGasLink, '_blank');
-    showToast("Launching main script portal via tinyurl...");
-}
+function launchMainGAS() { window.open(offlineDatabase.mainGasLink, '_blank'); showToast("Launching main script portal via tinyurl..."); }
+function savePrimaryGAS() { offlineDatabase.primaryGAS = document.getElementById('primaryGasArea').value; showToast("Changes synced to local workspace memory!"); }
 
-function savePrimaryGAS() {
-    offlineDatabase.primaryGAS = document.getElementById('primaryGasArea').value;
-    showToast("Changes synced to local workspace memory!");
-}
-
-function showToast(message) {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = 'manga-toast';
-    toast.innerText = `[SYSTEM]: ${message}`;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.transition = "opacity 0.4s ease-out";
-        toast.style.opacity = "0";
-        setTimeout(() => toast.remove(), 400);
-    }, 3000);
+function addSystemLog(text) {
+    const area = document.getElementById('systemLogsArea');
+    if (area) area.value += `\n[${new Date().toLocaleTimeString()}] ${text}`;
 }
 
 window.onload = function() {
     renderPortal();
     changeToRandomGif();
+    syncGoogleSheetData();
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
         gifFrame.addEventListener('click', () => {
-            changeToRandomGif();
-            triggerGifFlip();
-            showToast("Shifting avatar transmission matrix...");
+            changeToRandomGif(); triggerGifFlip(); showToast("Shifting avatar transmission matrix...");
         });
     }
     setInterval(triggerGifFlip, 12000); 
