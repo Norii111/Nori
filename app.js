@@ -199,8 +199,8 @@ function copySearchPayload() {
     navigator.clipboard.writeText(payloadOutput.value)
         .then(() => {
             showToast("Copied content! Resetting workspace matrix...");
-            searchInput.value = ""; 
-            clearAndHideSearch();   
+            searchInput.value = ""; // 🌟 Clears search bar completely
+            clearAndHideSearch();   // 🌟 Hides display panels cleanly
         })
         .catch(() => showToast("Error executing clipboard pipeline."));
 }
@@ -217,7 +217,7 @@ function injectPayloadToWorkspace() {
     switchTab('dashboard');
 }
 
-// --- NEW ARCHIVE MATRIX CODES ---
+// --- ARCHIVE VERTICAL COLUMN LIST BUILDER ---
 function toggleArchiveView() {
     const archiveBox = document.getElementById('sheetArchiveArea');
     const searchInput = document.getElementById('sheetKeySearch');
@@ -229,7 +229,7 @@ function toggleArchiveView() {
         searchInput.value = ""; 
         clearAndHideSearch();
         renderArchiveContainer();
-        archiveBox.style.display = "block";
+        archiveBox.style.display = "flex"; // Changed to Flex column framework
         isArchiveOpen = true;
     }
 }
@@ -246,11 +246,14 @@ function renderArchiveContainer() {
 
     googleSheetData.forEach((row, idx) => {
         const rowDiv = document.createElement('div');
+        rowDiv.style.display = "block";
+        rowDiv.style.width = "100%;";
+        rowDiv.style.boxSizing = "border-box";
         rowDiv.style.padding = "10px";
-        rowDiv.style.cursor = "pointer";
-        rowDiv.style.marginBottom = "6px";
+        rowDiv.style.marginBottom = "2px"; // Tight sheet stacking look
         rowDiv.style.border = "2px solid var(--ink-black)";
         rowDiv.style.background = softMangaColors[idx % softMangaColors.length];
+        rowDiv.style.cursor = "pointer";
 
         let timelineTag = "";
         if (idx === 0) {
@@ -281,7 +284,6 @@ function renderArchiveContainer() {
 
 // --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
 document.addEventListener('keydown', function(e) {
-    // Check for Alt + C Hotkey
     if (e.altKey && (e.key === 'c' || e.key === 'C')) {
         e.preventDefault();
         const searchTabVisible = document.getElementById('searchMenuTab').style.display !== 'none';
