@@ -1,0 +1,730 @@
+:root {
+
+    --bg-paper: #f4f3ef;       /* Authentic off-white page paper tint */
+
+    --ink-black: #111111;      /* Deep manga comic book printing ink */
+
+    --screentone: rgba(0, 0, 0, 0.15);
+
+}
+
+
+
+body {
+
+    margin: 0;
+
+    font-family: 'Courier New', Courier, monospace;
+
+    background-color: #1a1a1e; /* Dark table background behind the book */
+
+    background-image: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8) 100%);
+
+    color: var(--ink-black);
+
+}
+
+
+
+/* THE OPEN CANVAS BOOK SPREAD */
+
+.portal-container {
+
+    display: grid;
+
+    grid-template-columns: 260px 1fr;
+
+    height: 100vh;
+
+    gap: 20px;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+    background-color: var(--bg-paper);
+
+    border: 8px solid var(--ink-black);
+
+    box-shadow: 15px 15px 0px rgba(0, 0, 0, 0.3);
+
+    margin: 0 auto;
+
+}
+
+
+
+/* THE SIDEBAR AND PANELS AS LAYERED COMIC CELLS */
+
+.sidebar-panel, .manga-panel {
+
+    background: var(--bg-paper); 
+
+    border: 5px solid var(--ink-black);  
+
+    padding: 18px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    position: relative;
+
+    box-shadow: 5px 5px 0px var(--ink-black);
+
+    overflow: hidden;   
+
+    z-index: 1;
+
+}
+
+
+
+/* LAYER 1: BACKDROP IMAGE ENGINE */
+
+.sidebar-panel::before, .manga-panel::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0; left: 0; width: 100%; height: 100%;
+
+    background-image: url('https://images.alphacoders.com/136/thumb-1920-1369364.jpeg'); 
+
+    background-size: cover;
+
+    background-position: center;
+
+    opacity: 0.12; 
+
+    z-index: -2;   
+
+    pointer-events: none; 
+
+}
+
+
+
+/* LAYER 2: THE SCREENTONE OVERLAY MATRIX */
+
+.sidebar-panel::after, .manga-panel::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0; left: 0; width: 100%; height: 100%;
+
+    background-image: radial-gradient(var(--screentone) 15%, transparent 16%);
+
+    background-size: 5px 5px;
+
+    z-index: -1;  
+
+    pointer-events: none; 
+
+}
+
+
+
+.manga-logo {
+
+    font-size: 26px;
+
+    font-weight: 900;
+
+    text-align: center;
+
+    color: var(--ink-black);
+
+    background: var(--bg-paper); 
+
+    border: 3px solid var(--ink-black);
+
+    padding: 10px;
+
+    margin-top: 0;
+
+    letter-spacing: -1px;
+
+    transform: rotate(-2deg); 
+
+    box-shadow: 4px 4px 0px var(--ink-black);
+
+    z-index: 2;
+
+}
+
+
+
+.nav-links {
+
+    margin-top: 20px;
+
+    z-index: 2;
+
+}
+
+
+
+.nav-links a {
+
+    display: block;
+
+    color: var(--ink-black);
+
+    text-decoration: none;
+
+    font-weight: 900;
+
+    font-size: 15px;
+
+    padding: 12px;
+
+    border: 3px solid var(--ink-black);
+
+    margin-bottom: 10px;
+
+    background: var(--bg-paper); 
+
+    transition: all 0.1s ease;
+
+}
+
+
+
+.nav-links a.active {
+
+    background: var(--ink-black);
+
+    color: var(--bg-paper);
+
+    transform: translateX(5px);
+
+}
+
+
+
+/* CORE FRAMES DESIGNED LIKE COMIC BOOK PANELS */
+
+.main-content {
+
+    display: grid;
+
+    grid-template-rows: 3.2fr 2fr;
+
+    gap: 18px;
+
+    height: 100%;
+
+}
+
+
+
+.panel-header {
+
+    z-index: 2;
+
+}
+
+
+
+.panel-header h3 {
+
+    margin: 0;
+
+    font-size: 16px;
+
+    font-weight: 900;
+
+    background: var(--ink-black);
+
+    color: var(--bg-paper);
+
+    padding: 4px 10px;
+
+    letter-spacing: 1px;
+
+    display: inline-block;
+
+}
+
+
+
+/* THE CODE WORKSPACE PRINT ENGINE */
+
+textarea {
+
+    width: 100%;
+
+    flex-grow: 1;
+
+    border: 3px solid var(--ink-black);
+
+    border-radius: 0;
+
+    padding: 12px;
+
+    font-family: monospace;
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    resize: none;
+
+    background: var(--bg-paper);
+
+    color: var(--ink-black);
+
+    box-sizing: border-box;
+
+    margin-top: 10px;
+
+    z-index: 2;
+
+    
+
+    /* SNAPPY TRANSITION TACTIC */
+
+    transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.25s ease;
+
+    transform-origin: bottom right;
+
+}
+
+
+
+/* PAPER SWIPE & SHIFT ROTATION TRANSFORMS */
+
+textarea.page-turn {
+
+    transform: translateY(-15px) rotate(2deg);
+
+    opacity: 0.1;
+
+}
+
+
+
+/* OVERFLOW SNIPPETS PAGES GRID */
+
+.bottom-item-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+
+    gap: 15px;
+
+    overflow-y: auto;
+
+    padding-top: 10px;
+
+    z-index: 2;
+
+}
+
+
+
+.snippet-card {
+
+    border: 3px solid var(--ink-black);
+
+    padding: 12px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: space-between;
+
+    height: 110px;
+
+    background-image: linear-gradient(45deg, var(--screentone) 25%, transparent 25%, transparent 50%, var(--screentone) 50%, var(--screentone) 75%, transparent 75%, transparent);
+
+    background-size: 10px 10px;
+
+}
+
+
+
+.snippet-card strong {
+
+    background: rgba(255, 255, 255, 0.4);
+
+    padding: 2px 4px;
+
+    border-bottom: 2px solid var(--ink-black);
+
+}
+
+
+
+/* PERFECTLY CENTERED GRAPHIC INK AVATAR FRAME */
+
+.blank-character-frame {
+
+    border: 4px solid var(--ink-black);
+
+    background: var(--bg-paper);
+
+    width: 120px;
+
+    height: 120px;
+
+    margin: auto auto 0 auto;
+
+    background-size: cover;
+
+    background-position: center;
+
+    background-repeat: no-repeat;
+
+    cursor: pointer;
+
+    box-shadow: 4px 4px 0px var(--ink-black);
+
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    z-index: 2;
+
+}
+
+
+
+.blank-character-frame.flipped {
+
+    transform: scaleX(-1) rotate(3deg); 
+
+}
+
+
+
+/* MANGA "IMPACT" ACTION BUTTONS */
+
+.manga-btn {
+
+    background: var(--bg-paper);
+
+    color: var(--ink-black);
+
+    border: 3px solid var(--ink-black);
+
+    padding: 6px 16px;
+
+    font-weight: 900;
+
+    font-size: 12px;
+
+    cursor: pointer;
+
+    box-shadow: 3px 3px 0px var(--ink-black);
+
+    font-family: inherit;
+
+    text-transform: uppercase;
+
+}
+
+
+
+.manga-btn:hover {
+
+    background: var(--ink-black);
+
+    color: var(--bg-paper);
+
+    transform: translate(-2px, -2px);
+
+    box-shadow: 5px 5px 0px var(--ink-black);
+
+}
+
+
+
+.manga-btn.danger {
+
+    background: #fee2e2;
+
+}
+
+.manga-btn.danger:hover {
+
+    background: #ef4444;
+
+    color: white;
+
+}
+
+
+
+/* FLOATING OVERLAY DIALOGUE BOX */
+
+.modal-overlay {
+
+    position: fixed;
+
+    top: 0; left: 0;
+
+    width: 100%; height: 100%;
+
+    background: rgba(17, 17, 17, 0.8);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    z-index: 10000;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition: opacity 0.2s ease-in-out;
+
+}
+
+
+
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+
+
+.modal-panel {
+
+    background: var(--bg-paper);
+
+    border: 6px solid var(--ink-black);
+
+    box-shadow: 12px 12px 0px var(--ink-black);
+
+    padding: 25px;
+
+    width: 340px;
+
+    text-align: center;
+
+}
+
+
+
+.modal-panel input {
+
+    width: 100%;
+
+    background: var(--bg-paper); 
+
+    border: 3px solid var(--ink-black);
+
+    padding: 10px;
+
+    color: var(--ink-black);
+
+    font-weight: bold;
+
+    font-family: inherit;
+
+    box-sizing: border-box;
+
+    margin-bottom: 20px;
+
+}
+
+
+
+/* SYSTEM TOAST ALERT LABELS */
+
+.toast-container {
+
+    position: fixed;
+
+    bottom: 30px;
+
+    right: 30px;
+
+    z-index: 9999;
+
+}
+
+
+
+.manga-toast {
+
+    background: var(--ink-black);
+
+    color: var(--bg-paper);
+
+    border: 3px solid var(--bg-paper);
+
+    outline: 3px solid var(--ink-black);
+
+    padding: 12px 24px;
+
+    font-weight: 900;
+
+    font-size: 13px;
+
+    box-shadow: 6px 6px 0px rgba(0,0,0,0.4);
+
+}
+
+
+
+/* CHUNKY INK-PRINT SCROLLBARS */
+
+::-webkit-scrollbar {
+
+    width: 14px;          
+
+    height: 14px;         
+
+}
+
+::-webkit-scrollbar-track {
+
+    background: var(--bg-paper);
+
+    border-left: 3px solid var(--ink-black); 
+
+}
+
+::-webkit-scrollbar-thumb {
+
+    background: var(--ink-black);
+
+    border: 2px solid var(--bg-paper); 
+
+    box-shadow: inset 0 0 0 1px var(--ink-black);
+
+}
+
+::-webkit-scrollbar-thumb:hover {
+
+    background: #3a3a40; 
+
+}
+
+* {
+
+    scrollbar-width: auto;
+
+    scrollbar-color: var(--ink-black) var(--bg-paper);
+
+}
+
+
+
+/* --- COMPACT MANGA BATTLE CHESS MATRIX --- */
+
+.chess-matrix-board {
+
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    grid-template-rows: repeat(3, 1fr);
+
+    gap: 3px;
+
+    border: 5px solid var(--ink-black); /* Matches your manga panels */
+
+    background: var(--ink-black);
+
+    width: 180px;  /* Scaled down cleanly so it doesn't overwhelm the panel */
+
+    height: 180px; /* Kept perfectly square */
+
+    margin: 12px auto;
+
+    box-shadow: 5px 5px 0px var(--ink-black);
+
+}
+
+
+
+.chess-square {
+
+    background-color: var(--bg-paper);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-size: 28px; /* High-impact font size for the ink piece icons */
+
+    font-weight: 900;
+
+    cursor: pointer;
+
+    position: relative;
+
+    user-select: none;
+
+    color: var(--ink-black);
+
+    transition: background 0.12s ease;
+
+}
+
+
+
+/* Screentone layout for dark tiles */
+
+.chess-square.dark-tile {
+
+    background-color: #d1d5db;
+
+    background-image: radial-gradient(var(--screentone) 18%, transparent 19%);
+
+    background-size: 4px 4px;
+
+}
+
+
+
+/* Invert colors instantly on hover for that snappy impact feel */
+
+.chess-square:hover {
+
+    background-color: var(--ink-black) !important;
+
+    color: var(--bg-paper) !important;
+
+}
+
+
+
+.chess-square:hover .square-coord {
+
+    color: var(--bg-paper);
+
+}
+
+
+
+/* Coordinates positioned subtly in the corner */
+
+.square-coord {
+
+    position: absolute;
+
+    bottom: 2px;
+
+    right: 4px;
+
+    font-size: 8px;
+
+    font-family: monospace;
+
+    color: #55555d;
+
+    font-weight: 900;
+
+}
+

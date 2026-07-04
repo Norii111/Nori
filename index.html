@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Command Center</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="portal-container">
+        <aside class="sidebar-panel">
+            <h1 class="manga-logo">CREATION<br>PORTAL</h1>
+            <nav class="nav-links">
+                <a href="#" class="active" onclick="switchTab('dashboard')">COMMAND CENTER</a>
+                <a href="#" onclick="switchTab('logs')">SYSTEM LOGS</a>
+            </nav>
+            <div class="blank-character-frame sidebar-art"></div>
+        </aside>
+
+        <main class="main-content" id="dashboardTab">
+            <section class="manga-panel primary-gas-panel">
+                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3>Workspace Centralizer</h3>
+                    <div class="button-group" style="display: flex; gap: 6px;">
+                        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="launchMainGAS()">Launch Script</button>
+                        <button class="manga-btn primary-save" style="font-size: 11px; padding: 4px 10px;" onclick="savePrimaryGAS()">Save Changes</button>
+                        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="copyTextAreaContent()">Copy Paper</button>
+                    </div>
+                </div>
+                <textarea id="primaryGasArea" placeholder="Loading script content..."></textarea>
+            </section>
+
+            <section class="manga-panel bottom-overflow-panel">
+                <div class="panel-header">
+                    <h3>USERSCRIPTS & RANDOM TEXT</h3>
+                    <button class="manga-btn" onclick="openModal()">+ Add New Note</button>
+                </div>
+                <div class="bottom-item-grid" id="bottomGrid"></div>
+            </section>
+        </main>
+
+        <main class="main-content" id="logsTab" style="display: none;">
+            <section class="manga-panel" style="height: 100%;">
+                <h3>SYSTEM LOGS</h3>
+                <textarea readonly id="systemLogsArea">// System running cleanly offline...&#10;[INFO] Portal initialized successfully.</textarea>
+            </section>
+        </main>
+    </div>
+
+    <div id="mangaModal" class="modal-overlay">
+        <div class="modal-panel">
+            <h3>[ NEW CREATION ENTRY ]</h3>
+            <label for="modalInput" style="display:block; margin-bottom:10px; font-size:12px;">ENTER UNIQUE TITLE:</label>
+            <input type="text" id="modalInput" placeholder="e.g., Target Site Macro">
+            <div class="modal-buttons">
+                <button class="manga-btn" onclick="closeModal()">Cancel</button>
+                <button class="manga-btn" onclick="submitNewNote()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div id="chessAuthModal" class="modal-overlay">
+        <div class="modal-panel" style="width: 240px; padding: 18px; border: 6px solid var(--ink-black); box-shadow: 10px 10px 0px var(--ink-black);">
+            <h3 style="margin: -5px 0 10px 0; padding: 4px 8px; background: var(--ink-black); color: var(--bg-paper); transform: rotate(-2deg); font-size: 13px; display: inline-block; letter-spacing: 0.5px;">
+                [ DEFENSE MATRIX ]
+            </h3>
+            
+            <p style="font-size: 10px; margin: 0 auto; max-width: 200px; color: #111; font-weight: bold; text-transform: uppercase; line-height: 1.3;">
+                Execute London Line to Authorize Deletion
+            </p>
+            
+            <div id="mangaChessBoard" class="chess-matrix-board"></div>
+            
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+                <span id="chessStepIndicator" style="font-size: 11px; font-weight: 900; background: #e5e1d5; border: 2px solid var(--ink-black); padding: 2px 6px;">
+                    STEP 1: Play 1.d4
+                </span>
+                <button class="manga-btn danger" style="padding: 2px 8px; font-size: 10px; width: 100%; text-align: center;" onclick="closeChessModal()">
+                    Abort Defend
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
