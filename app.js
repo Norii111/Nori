@@ -328,21 +328,25 @@ function renderArchiveContainer() {
             rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
         };
 
-        // 5. Clean Action Interface (Absolutely no auto-copying running here!)
+// 5. Clean Action Interface (Fills the box and runs the search automatically!)
         rowDiv.onclick = (e) => {
-            e.stopPropagation(); // Stops any parent document containers from firing old scripts
+            e.stopPropagation(); // Stops any background timers or old scripts
             
             const searchInput = document.getElementById('sheetKeySearch');
             if (searchInput) {
-                searchInput.value = row.key; // Safely inputs Cell A string
+                searchInput.value = row.key; // 1. Put Cell A text into the search bar
                 
-                // Fire your search logic to open the pristine display view layout
+                // 2. Dispatch a fake input event so the engine knows text just changed!
+                const inputEvent = new Event('input', { bubbles: true });
+                searchInput.dispatchEvent(inputEvent);
+                
+                // 3. Directly call your search function as a backup to make 100% sure it fires
                 if (typeof querySheetMatrix === "function") {
                     querySheetMatrix();
                 }
             }
             
-            // Wipe archive UI out of frame smoothly
+            // 4. Wipe archive UI out of frame smoothly
             archiveBox.style.display = "none";
             isArchiveOpen = false;
         };
