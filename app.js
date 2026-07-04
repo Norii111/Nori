@@ -328,41 +328,38 @@ function renderArchiveContainer() {
             rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
         };
 
-// 5. Clean Action Interface (Forces full view instantly and disables dropdown)
+// 5. Clean Action Interface (Brute-forces the data display and kills dropdowns permanently)
         rowDiv.onclick = (e) => {
             e.stopPropagation();
             
-            // 1. Temporarily disconnect the oninput listener so it doesn't open the suggestion box
+            // 1. Force the input value matching Cell A
             const searchInput = document.getElementById('sheetKeySearch');
-            let originalOnInput = null;
             if (searchInput) {
-                originalOnInput = searchInput.oninput;
-                searchInput.oninput = null; // Kill it temporarily
-                searchInput.value = row.key; // Set Cell A
+                searchInput.value = row.key;
             }
             
-            // 2. Hide and kill the dropdown completely right now
+            // 2. Direct DOM override: Force fill the text field and open the container panels instantly
+            const payloadOutput = document.getElementById('sheetPayloadArea');
+            const actionsHeader = document.getElementById('searchActionsHeader');
+            const buttonGroup = document.getElementById('searchButtonGroup');
+
+            if (payloadOutput && actionsHeader && buttonGroup) {
+                payloadOutput.value = row.payload;       // Dumps cell B description text directly here
+                payloadOutput.style.display = "block";    // Reveals the content panel
+                actionsHeader.style.display = "flex";     // Reveals copy buttons container header
+                buttonGroup.style.display = "flex";       // Reveals action action items
+            }
+            
+            // 3. Absolute execution kill on the dropdown suggestion box element
             const suggestionsBox = document.getElementById('searchSuggestions');
             if (suggestionsBox) {
-                suggestionsBox.style.display = "none";
+                suggestionsBox.style.setProperty('display', 'none', 'important');
                 suggestionsBox.innerHTML = "";
             }
 
-            // 3. Directly load your beautiful, full-view data panel
-            if (typeof selectFinalMatch === "function") {
-                selectFinalMatch(row);
-            }
-            
-            // 4. Close the archive overlay down
+            // 4. Wipe archive UI out of frame cleanly
             archiveBox.style.display = "none";
             isArchiveOpen = false;
-
-            // 5. Restore the oninput listener after a micro-delay so normal typing still works later
-            setTimeout(() => {
-                if (searchInput && originalOnInput) {
-                    searchInput.oninput = originalOnInput;
-                }
-            }, 50);
         };
 
         archiveBox.appendChild(rowDiv);
