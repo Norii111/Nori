@@ -52,14 +52,14 @@
                 </div>
                 
                 <div style="margin-bottom: 15px; position: relative; z-index: 999; display: flex; flex-direction: column; gap: 10px;">
-                    <input type="text" id="sheetKeySearch" placeholder="Type keyword... (e.g., Gemi)" oninput="querySheetMatrix()" autocomplete="off" style="width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); padding: 12px; font-family: inherit; font-weight: bold; font-size: 14px; box-sizing: border-box;">
+                    <input type="text" id="sheetKeySearch" placeholder="Type keyword... or press Alt+C to auto-copy (e.g., Gemi)" oninput="querySheetMatrix()" autocomplete="off" style="width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); padding: 12px; font-family: inherit; font-weight: bold; font-size: 14px; box-sizing: border-box;">
                     <div id="searchSuggestions" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); border-top: none; max-height: 200px; overflow-y: auto; box-sizing: border-box; box-shadow: 5px 5px 0px var(--ink-black);"></div>
                 </div>
 
                 <div id="searchActionsHeader" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 id="payloadPanelTitle" style="margin: 0; font-size: 12px; letter-spacing: 0.5px;">PROCESSED DESCRIPTIONS</h4>
                     <div id="searchButtonGroup" style="display: flex; gap: 6px;">
-                        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="copySearchPayload()">📋 Copy Text</button>
+                        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="copySearchPayload()">📋 Copy Text (Alt+C)</button>
                         <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="injectPayloadToWorkspace()">📥 Load to Workspace</button>
                     </div>
                 </div>
@@ -96,13 +96,10 @@
             <h3 style="margin: -5px 0 10px 0; padding: 4px 8px; background: var(--ink-black); color: var(--bg-paper); transform: rotate(-2deg); font-size: 13px; display: inline-block; letter-spacing: 0.5px;">
                 [ DEFENSE MATRIX ]
             </h3>
-            
             <p style="font-size: 10px; margin: 0 auto; max-width: 200px; color: #111; font-weight: bold; text-transform: uppercase; line-height: 1.3;">
                 Execute London Line to Authorize Deletion
             </p>
-            
             <div id="mangaChessBoard" class="chess-matrix-board"></div>
-            
             <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px; align-items: center;">
                 <span id="chessStepIndicator" style="font-size: 11px; font-weight: 900; background: #e5e1d5; border: 2px solid var(--ink-black); padding: 2px 6px;">
                     STEP 1: Play 1.d4
