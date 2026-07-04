@@ -353,7 +353,7 @@ function renderArchiveContainer() {
             // 3. Absolute execution kill on the dropdown box AND all its suggestion-items
             const suggestionsBox = document.getElementById('searchSuggestions');
             if (suggestionsBox) {
-                suggestionsBox.innerHTML = "";            // 🌟 Deletes all .suggestion-item nodes instantly
+                suggestionsBox.innerHTML = "";            // Deletes all .suggestion-item nodes instantly
                 suggestionsBox.style.setProperty('display', 'none', 'important'); // Blasts container out of sight
             }
 
