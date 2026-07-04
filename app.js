@@ -199,8 +199,8 @@ function copySearchPayload() {
     navigator.clipboard.writeText(payloadOutput.value)
         .then(() => {
             showToast("Copied content! Resetting workspace matrix...");
-            searchInput.value = ""; // 🌟 Clears search bar completely
-            clearAndHideSearch();   // 🌟 Hides display panels cleanly
+            searchInput.value = ""; // Clear input text box completely
+            clearAndHideSearch();   // Resets layout panel screens
         })
         .catch(() => showToast("Error executing clipboard pipeline."));
 }
@@ -241,17 +241,23 @@ function renderArchiveContainer() {
         return;
     }
 
+    // Forces a true, vertical stacked sheet layout configuration
+    archiveBox.style.setProperty('display', 'flex', 'important');
+    archiveBox.style.setProperty('flex-direction', 'column', 'important');
+    archiveBox.style.setProperty('gap', '8px', 'important');
+    
     archiveBox.innerHTML = "";
     const totalItems = googleSheetData.length;
 
     googleSheetData.forEach((row, idx) => {
         const rowDiv = document.createElement('div');
+        // Clear out any float layouts and force item block rules
         rowDiv.style.display = "block";
-        rowDiv.style.width = "100%;";
+        rowDiv.style.clear = "both";
+        rowDiv.style.width = "100%";
         rowDiv.style.boxSizing = "border-box";
         rowDiv.style.padding = "10px";
-        rowDiv.style.marginBottom = "2px"; // Tight sheet stacking look
-        rowDiv.style.border = "2px solid var(--ink-black)";
+        rowDiv.style.border = "3px solid var(--ink-black)";
         rowDiv.style.background = softMangaColors[idx % softMangaColors.length];
         rowDiv.style.cursor = "pointer";
 
@@ -272,8 +278,10 @@ function renderArchiveContainer() {
             <p style="font-size:11px; margin:4px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#444;">${row.payload}</p>
         `;
 
+        // Clicking an archive card directly copies the text and flushes the search system input
         rowDiv.onclick = () => {
             selectFinalMatch(row);
+            copySearchPayload(); 
             archiveBox.style.display = "none";
             isArchiveOpen = false;
         };
