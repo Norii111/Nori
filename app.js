@@ -328,37 +328,47 @@ function renderArchiveContainer() {
             rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
         };
 
-// 5. Clean Action Interface (Fills the box and runs the search automatically!)
-// 5. Clean Action Interface (Instantly maps the match view and hides dropdowns)
+// 5. Clean Action Interface (Forces full view instantly and disables dropdown)
         rowDiv.onclick = (e) => {
             e.stopPropagation();
             
-            // 1. Force feed the input element so the UI matches the selection
+            // 1. Temporarily disconnect the oninput listener so it doesn't open the suggestion box
             const searchInput = document.getElementById('sheetKeySearch');
+            let originalOnInput = null;
             if (searchInput) {
-                searchInput.value = row.key;
+                originalOnInput = searchInput.oninput;
+                searchInput.oninput = null; // Kill it temporarily
+                searchInput.value = row.key; // Set Cell A
             }
             
-            // 2. Directly trigger the match resolution to display cell B data immediately
-            if (typeof selectFinalMatch === "function") {
-                selectFinalMatch(row);
-            }
-            
-            // 3. Make completely sure hidden dropdown panels stay dead
+            // 2. Hide and kill the dropdown completely right now
             const suggestionsBox = document.getElementById('searchSuggestions');
             if (suggestionsBox) {
                 suggestionsBox.style.display = "none";
                 suggestionsBox.innerHTML = "";
             }
 
-            // 4. Wipe archive UI out of frame smoothly
+            // 3. Directly load your beautiful, full-view data panel
+            if (typeof selectFinalMatch === "function") {
+                selectFinalMatch(row);
+            }
+            
+            // 4. Close the archive overlay down
             archiveBox.style.display = "none";
             isArchiveOpen = false;
+
+            // 5. Restore the oninput listener after a micro-delay so normal typing still works later
+            setTimeout(() => {
+                if (searchInput && originalOnInput) {
+                    searchInput.oninput = originalOnInput;
+                }
+            }, 50);
         };
 
         archiveBox.appendChild(rowDiv);
     });
 }
+
 // --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
 document.addEventListener('keydown', function(e) {
     if (e.altKey && (e.key === 'c' || e.key === 'C')) {
