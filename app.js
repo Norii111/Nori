@@ -236,7 +236,7 @@ function toggleArchiveView() {
         searchInput.value = ""; 
         clearAndHideSearch();
         renderArchiveContainer();
-        archiveBox.style.display = "flex"; // Changed to Flex column framework
+        archiveBox.style.setProperty('display', 'flex', 'important'); // Keeps flex dynamic setup active
         isArchiveOpen = true;
     }
 }
@@ -248,47 +248,51 @@ function renderArchiveContainer() {
         return;
     }
 
-    // Forces a true, vertical stacked sheet layout configuration
+    // Forces a clean horizontal row layout layout configuration
     archiveBox.style.setProperty('display', 'flex', 'important');
-    archiveBox.style.setProperty('flex-direction', 'column', 'important');
-    archiveBox.style.setProperty('gap', '8px', 'important');
+    archiveBox.style.setProperty('flex-direction', 'row', 'important');
+    archiveBox.style.setProperty('flex-wrap', 'wrap', 'important'); // Allows row wrapping if there are many items
+    archiveBox.style.setProperty('gap', '10px', 'important');
     
     archiveBox.innerHTML = "";
     const totalItems = googleSheetData.length;
 
     googleSheetData.forEach((row, idx) => {
         const rowDiv = document.createElement('div');
-        // Clear out any float layouts and force item block rules
-        rowDiv.style.display = "block";
-        rowDiv.style.clear = "both";
-        rowDiv.style.width = "100%";
+        rowDiv.style.display = "inline-block";
         rowDiv.style.boxSizing = "border-box";
-        rowDiv.style.padding = "10px";
+        rowDiv.style.padding = "12px 18px";
         rowDiv.style.border = "3px solid var(--ink-black)";
         rowDiv.style.background = softMangaColors[idx % softMangaColors.length];
         rowDiv.style.cursor = "pointer";
+        rowDiv.style.minWidth = "150px"; // Keeps cards looking uniform horizontally
 
         let timelineTag = "";
         if (idx === 0) {
-            timelineTag = "<span style='background:#111; color:#fff; font-size:9px; padding:2px 4px; margin-right:6px;'>[🧓 OLDEST DATA]</span>";
+            timelineTag = "<span style='background:#111; color:#fff; font-size:9px; padding:2px 4px; margin-right:6px;'>[🧓 OLDEST]</span>";
         } else if (idx === totalItems - 1) {
-            timelineTag = "<span style='background:#f39c12; color:#000; font-weight:900; font-size:9px; padding:2px 4px; margin-right:6px;'>[✨ LATEST ENTRY]</span>";
-        } else if (idx >= totalItems - 3) {
-            timelineTag = "<span style='background:#e5e1d5; color:#111; font-size:9px; padding:2px 4px; margin-right:6px;'>[🔥 RECENT]</span>";
+            timelineTag = "<span style='background:#f39c12; color:#000; font-weight:900; font-size:9px; padding:2px 4px; margin-right:6px;'>[✨ LATEST]</span>";
         }
 
         rowDiv.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong>${timelineTag} ${row.key}</strong>
-                <span style="font-size:10px; color:#666;">Row ${idx + 2}</span>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <strong style="font-size:13px;">${timelineTag}${row.key}</strong>
+                    <span style="font-size:9px; color:#666;">Row ${idx + 2}</span>
+                </div>
+                <p style="font-size:10px; margin:0; color:#555; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${row.payload}</p>
             </div>
-            <p style="font-size:11px; margin:4px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#444;">${row.payload}</p>
         `;
 
-        // Clicking an archive card directly copies the text and flushes the search system input
+        // 🌟 Click Action: Fills the top input value with Cell A text and runs the engine lookups
         rowDiv.onclick = () => {
-            selectFinalMatch(row);
-            copySearchPayload(); 
+            const searchInput = document.getElementById('sheetKeySearch');
+            if (searchInput) {
+                searchInput.value = row.key; // Inserts Cell A
+                querySheetMatrix();        // Runs search engine logic automatically to pull up full view
+            }
+            
+            // Close down the archive overview panel view
             archiveBox.style.display = "none";
             isArchiveOpen = false;
         };
