@@ -328,7 +328,7 @@ function renderArchiveContainer() {
             rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
         };
 
-// 5. Clean Action Interface (Brute-forces the data display and kills dropdowns permanently)
+// 5. Clean Action Interface (Brute-forces data display and completely kills suggestion items)
         rowDiv.onclick = (e) => {
             e.stopPropagation();
             
@@ -347,14 +347,14 @@ function renderArchiveContainer() {
                 payloadOutput.value = row.payload;       // Dumps cell B description text directly here
                 payloadOutput.style.display = "block";    // Reveals the content panel
                 actionsHeader.style.display = "flex";     // Reveals copy buttons container header
-                buttonGroup.style.display = "flex";       // Reveals action action items
+                buttonGroup.style.display = "flex";       // Reveals action items
             }
             
-            // 3. Absolute execution kill on the dropdown suggestion box element
+            // 3. Absolute execution kill on the dropdown box AND all its suggestion-items
             const suggestionsBox = document.getElementById('searchSuggestions');
             if (suggestionsBox) {
-                suggestionsBox.style.setProperty('display', 'none', 'important');
-                suggestionsBox.innerHTML = "";
+                suggestionsBox.innerHTML = "";            // 🌟 Deletes all .suggestion-item nodes instantly
+                suggestionsBox.style.setProperty('display', 'none', 'important'); // Blasts container out of sight
             }
 
             // 4. Wipe archive UI out of frame cleanly
