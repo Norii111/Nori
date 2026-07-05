@@ -638,45 +638,41 @@ function showToast(message) {
 }
 
 
-const MAX_HISTORY = 6; // Feel free to adjust this number!
+const MAX_HISTORY = 20; 
 
-// 1. Updated Core Logic: Saves unique entries without moving existing items to position #1 on click
+// 1. Core Logic: Saves unique entries (only if brand new)
 function saveToSearchHistory(key) {
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-    
-    // Check if the item already exists in history
     const exists = history.some(item => item.toUpperCase() === key.toUpperCase());
     
     if (!exists) {
-        // Only insert at position 1 if it's a completely brand new unique search
         history.unshift(key);
-        
-        if (history.length > MAX_HISTORY) {
-            history.pop();
-        }
-        
+        if (history.length > MAX_HISTORY) history.pop();
         localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
         renderSearchHistory();
     }
 }
 
-// Helper to delete one specific card from history
+// 2. Individual pill deletion tracker
 function deleteSingleHistoryItem(key, event) {
-    event.stopPropagation(); // Prevents clicking the delete button from opening the search!
+    event.stopPropagation(); 
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
     history = history.filter(item => item.toUpperCase() !== key.toUpperCase());
     localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
     renderSearchHistory();
 }
 
-// Helper to wipe out all history items at once
+// 3. Clear all items handler
 function clearAllSearchHistory() {
     localStorage.removeItem('mangaSearchHistory');
     renderSearchHistory();
     showToast("Cleared search history memory index.");
 }
 
-// 2. Updated UI Logic: Hand-placed style, random archive colors, drag/drop support, individual deleting
+// 4. Global variables to track the drag states smoothly
+let draggedItemIndex = null;
+
+// 5. Upgraded UI Logic: Complete with Drag and Drop listeners
 function renderSearchHistory() {
     const container = document.getElementById('searchHistoryContainer');
     if (!container) return;
@@ -688,24 +684,23 @@ function renderSearchHistory() {
         return;
     }
     
-    // Header Wrapper with Clear All Action button built-in
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
-            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS:</span>
+            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS (DRAG TO REARRANGE):</span>
             <button onclick="clearAllSearchHistory()" style="background: none; border: none; font-size: 10px; font-weight: 900; color: #cc0000; cursor: pointer; text-transform: uppercase; text-decoration: underline; padding: 0;">[ Clear All ]</button>
         </div>
     `;
     
     history.forEach((key, idx) => {
         const pillWrapper = document.createElement('div');
-        
-        // Pick a random soft manga paper color from your existing array
         const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
-        
-        // Random micro-rotation tilt for that classic "arrangedly messy" look
         const randomTilt = (Math.random() * 4 - 2).toFixed(2);
         
-        // Setup structural layout styles
+        // Drag and Drop configuration properties
+        pillWrapper.setAttribute("draggable", "true");
+        pillWrapper.setAttribute("data-index", idx);
+        
+        // Stylizing
         pillWrapper.style.display = "inline-flex";
         pillWrapper.style.alignItems = "center";
         pillWrapper.style.gap = "6px";
@@ -713,24 +708,61 @@ function renderSearchHistory() {
         pillWrapper.style.border = "2px solid var(--ink-black, #111)";
         pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)";
         pillWrapper.style.padding = "4px 8px";
-        pillWrapper.style.fontSize = "11px";
+        pillWrapper.style.fontSize = "15px";
         pillWrapper.style.fontWeight = "bold";
-        pillWrapper.style.cursor = "pointer";
+        pillWrapper.style.cursor = "grab"; // Changes cursor to a hand grab symbol
         pillWrapper.style.textTransform = "uppercase";
         pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
-        pillWrapper.style.transition = "all 0.05s ease";
+        pillWrapper.style.transition = "transform 0.05s ease, opacity 0.1s ease";
         
-        // Hover dynamics
-        pillWrapper.onmouseenter = () => { 
-            pillWrapper.style.transform = `rotate(${randomTilt}deg) translate(-1px, -1px)`; 
-            pillWrapper.style.boxShadow = "4px 4px 0px var(--ink-black, #111)"; 
-        };
-        pillWrapper.onmouseleave = () => { 
-            pillWrapper.style.transform = `rotate(${randomTilt}deg)`; 
-            pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)"; 
+        // --- DRAG EVENT LISTENERS ---
+        pillWrapper.ondragstart = (e) => {
+            draggedItemIndex = idx;
+            pillWrapper.style.opacity = "0.4"; // Fades the card out slightly while holding it
+            e.dataTransfer.effectAllowed = "move";
         };
         
-        // Execution Click: Simulates archive view loading cleanly without changing array position
+        pillWrapper.ondragend = () => {
+            pillWrapper.style.opacity = "1";
+            draggedItemIndex = null;
+            // Clear any lingering target borders
+            document.querySelectorAll('#searchHistoryContainer > div').forEach(el => {
+                if(el.style.borderStyle === "dashed") el.style.borderStyle = "solid";
+            });
+        };
+        
+        pillWrapper.ondragover = (e) => {
+            e.preventDefault(); // Required to allow drop execution!
+            return false;
+        };
+
+        pillWrapper.ondragenter = () => {
+            if (idx !== draggedItemIndex) {
+                pillWrapper.style.borderStyle = "dashed"; // Give visual feedback over drag target
+            }
+        };
+
+        pillWrapper.ondragleave = () => {
+            pillWrapper.style.borderStyle = "solid";
+        };
+        
+        pillWrapper.ondrop = (e) => {
+            e.preventDefault();
+            if (draggedItemIndex !== null && draggedItemIndex !== idx) {
+                let updatedHistory = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
+                
+                // Cut the dragged item out of its original row slot
+                const [reorderedItem] = updatedHistory.splice(draggedItemIndex, 1);
+                // Inject it directly into the new destination slot drop coordinates
+                updatedHistory.splice(idx, 0, reorderedItem);
+                
+                // Save your custom arrangement order back to browser memory
+                localStorage.setItem('mangaSearchHistory', JSON.stringify(updatedHistory));
+                renderSearchHistory();
+            }
+        };
+        
+        // --- SEARCH ENGINE TRIGGER CLICK ---
         pillWrapper.onclick = () => {
             const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
             if (match) {
@@ -756,10 +788,9 @@ function renderSearchHistory() {
             }
         };
         
-        // Inject pill content with the tiny deletion trigger tag
         pillWrapper.innerHTML = `
             <span>${key}</span>
-            <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
+            <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; cursor: pointer; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
         `;
         
         container.appendChild(pillWrapper);
