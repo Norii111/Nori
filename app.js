@@ -344,69 +344,7 @@ function renderArchiveContainer() {
 }
 
 // FIXED: Comprehensive prediction element renderer with min-height overrides to keep raw Column F entries text full 
-function renderPredictionCards() {
-    const container = document.getElementById('predictionCardGrid');
-    if (!container) return;
-    container.innerHTML = "";
-
-    const validPreds = googleSheetData.filter(row => row.predTitle || row.predContent);
-
-    if (validPreds.length === 0) {
-        container.innerHTML = "<p style='font-weight:bold; font-size:13px; text-align:center; width:100%; margin-top:20px;'>Matrix registries empty inside Columns E/F ranges.</p>";
-        return;
-    }
-
-    validPreds.forEach((row, idx) => {
-        const card = document.createElement('div');
-        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
-        const tilt = (Math.random() * 4 - 2).toFixed(2);
-
-        card.className = "prediction-item-card";
-        card.style.boxSizing = "border-box";
-        card.style.width = "calc(25% - 12px)"; 
-        card.style.minWidth = "220px";
-        card.style.minHeight = "260px"; // Auto expands cleanly for complete text blocks
-        card.style.border = "3px solid var(--ink-black, #111)";
-        card.style.background = randomBg;
-        card.style.padding = "14px";
-        card.style.display = "flex";
-        card.style.flexDirection = "column";
-        card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
-        card.style.transform = `rotate(${tilt}deg)`;
-        card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
-
-        card.innerHTML = `
-            <strong style="font-size:14px; display:block; text-transform:uppercase; margin-bottom:2px; word-break:break-word;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
-            <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:6px 0;">
-            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; flex-grow:1; overflow:visible;">${row.predContent || 'No descriptor registers linked.'}</div>
-        `;
-
-        card.onmouseenter = () => {
-            card.style.transform = `rotate(${tilt}deg) translate(-2px, -2px)`;
-            card.style.boxShadow = "7px 7px 0px var(--ink-black, #111)";
-        };
-        card.onmouseleave = () => {
-            card.style.transform = `rotate(${tilt}deg)`;
-            card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
-        };
-
-        container.appendChild(card);
-    });
-}
-
-function filterPredictionCards() {
-    const searchVal = document.getElementById('predictionSearch').value.trim().toUpperCase();
-    const cards = document.querySelectorAll('#predictionCardGrid > div');
-    
-    cards.forEach(card => {
-        const textStr = card.innerText.toUpperCase();
-        if (textStr.includes(searchVal)) {
-            card.style.display = "flex";
-        } else {
-            card.style.display = "none";
-        }
-    });
-}
+renderPredictionCards
 
 function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
