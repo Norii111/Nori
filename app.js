@@ -967,11 +967,16 @@ function renderSearchHistory() {
     });
 }
 
-window.onload = function() {
+// 1. UPDATED: Automatically scan and pull down your files from GitHub on boot
+window.onload = async function() {
     renderPortal();
     changeToRandomGif();
     renderSearchHistory();
     syncGoogleSheetData();
+    
+    // Cloud Core: Download your userscripts folder straight from GitHub to build cards
+    await syncSnippetsFromGitHub();
+
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
         gifFrame.addEventListener('click', () => {
@@ -980,3 +985,58 @@ window.onload = function() {
     }
     setInterval(triggerGifFlip, 12000); 
 };
+
+// 2. NEW: The automated file scanner engine
+async function syncSnippetsFromGitHub() {
+    const token = offlineDatabase.githubToken;
+    const owner = offlineDatabase.githubOwner;
+    const repo = offlineDatabase.githubRepo;
+
+    if (!token || !owner || !repo) return; // Silent skip if keys aren't set yet
+
+    try {
+        // Fetch the list of everything inside your scripts directory on GitHub
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/scripts`, {
+            headers: { "Authorization": `token ${token}` }
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) console.log("Scripts directory does not exist on GitHub yet.");
+            return;
+        }
+
+        const files = await response.json();
+        
+        // Clear old temporary local entries and rebuild from the cloud truth
+        offlineDatabase.bottomSnippets = [];
+
+        // Loop through every file found on GitHub and create a card for it
+        for (let file of files) {
+            if (file.type === "file" && file.name.endsWith(".user.js")) {
+                // Format file name back into a readable title (e.g., "manga-refresher" -> "Manga Refresher")
+                const cleanTitle = file.name
+                    .replace(".user.js", "")
+                    .replace(/-/g, " ")
+                    .replace(/\b\w/g, c => c.toUpperCase());
+
+                // Fetch the actual raw text content of this script from GitHub
+                const contentResponse = await fetch(`${file.download_url}?cb=${Date.now()}`);
+                const rawCode = contentResponse.ok ? await contentResponse.text() : "// Error loading stream";
+
+                offlineDatabase.bottomSnippets.push({
+                    id: Date.now() + Math.random(), // Unique temporary ID
+                    title: cleanTitle,
+                    filePath: file.path,
+                    content: rawCode
+                });
+            }
+        }
+
+        // Lock it to current session and refresh the UI layout matrix
+        localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
+        renderPortal();
+        console.log(`Synced ${offlineDatabase.bottomSnippets.length} scripts seamlessly from GitHub.`);
+    } catch (error) {
+        console.error("GitHub directory sync failed:", error);
+    }
+}
