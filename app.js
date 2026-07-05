@@ -344,7 +344,85 @@ function renderArchiveContainer() {
 }
 
 // FIXED: Comprehensive prediction element renderer with min-height overrides to keep raw Column F entries text full 
-renderPredictionCards
+function renderPredictionCards() {
+    const container = document.getElementById('predictionCardGrid');
+    if (!container) return;
+    container.innerHTML = "";
+
+    const validPreds = googleSheetData.filter(row => row.predTitle || row.predContent);
+
+    if (validPreds.length === 0) {
+        container.innerHTML = "<p style='font-weight:bold; font-size:13px; text-align:center; width:100%; margin-top:20px;'>Matrix registries empty inside Columns E/F ranges.</p>";
+        return;
+    }
+
+    // Ensure the container grid isolates columns properly and drops row-stretching
+    container.style.display = "flex";
+    container.style.flexWrap = "wrap";
+    container.style.gap = "20px";
+    container.style.alignItems = "flex-start";
+
+    validPreds.forEach((row, idx) => {
+        const card = document.createElement('div');
+        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
+
+        card.className = "prediction-item-card";
+        card.style.boxSizing = "border-box";
+        card.style.width = "calc(25% - 15px)"; 
+        card.style.minWidth = "240px";
+        card.style.alignSelf = "flex-start"; // Fixed: Prevents card stretching to match neighbor lines
+        card.style.border = "3px solid var(--ink-black, #111)";
+        card.style.background = randomBg;
+        card.style.padding = "14px";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
+        card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
+        card.style.margin = "0 0 10px 0"; // Clean floor offset separation tracking
+
+        // Escaped string safely injected into clipboard macro inline block
+        const safeCopyContent = (row.predContent || '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+
+        card.innerHTML = `
+            <strong style="font-size:14px; display:block; text-transform:uppercase; margin-bottom:2px; word-break:break-word;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
+            <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:6px 0;">
+            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; flex-grow:1; margin-bottom: 12px;">${row.predContent || 'No descriptor registers linked.'}</div>
+            <div style="display:flex; justify-content:flex-end; border-top:1px dashed #111; padding-top:8px; margin-top:auto;">
+                <button class="manga-btn" style="font-size:10px; padding:4px 10px; font-weight:bold; cursor:pointer;" onclick="navigator.clipboard.writeText(\`${safeCopyContent}\`).then(() => showToast('Card content copied!'))">
+                    [ COPY CONTENT ]
+                </button>
+            </div>
+        `;
+
+        card.onmouseenter = () => {
+            card.style.transform = "translate(-2px, -2px)";
+            card.style.boxShadow = "7px 7px 0px var(--ink-black, #111)";
+        };
+        card.onmouseleave = () => {
+            card.style.transform = "none";
+            card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
+        };
+
+        container.appendChild(card);
+    });
+}
+
+function filterPredictionCards() {
+    const searchVal = document.getElementById('predictionSearch').value.trim().toUpperCase();
+    const cards = document.querySelectorAll('#predictionCardGrid > div');
+    
+    cards.forEach(card => {
+        // Targets text contents excluding the button text profile explicitly
+        const titleText = card.querySelector('strong') ? card.querySelector('strong').innerText.toUpperCase() : '';
+        const bodyText = card.querySelector('div') ? card.querySelector('div').innerText.toUpperCase() : '';
+        
+        if (titleText.includes(searchVal) || bodyText.includes(searchVal)) {
+            card.style.display = "flex";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
 
 function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
