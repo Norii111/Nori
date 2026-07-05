@@ -53,8 +53,9 @@
                 
                 <div style="margin-bottom: 15px; position: relative; z-index: 999; display: flex; flex-direction: column; gap: 10px;">
                     <input type="text" id="sheetKeySearch" placeholder="Type keyword... or press Alt+C to auto-copy (e.g., Gemi)" oninput="querySheetMatrix()" autocomplete="off" style="width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); padding: 12px; font-family: inherit; font-weight: bold; font-size: 14px; box-sizing: border-box;">
-                    <div id="searchHistoryContainer" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; font-family: inherit;"></div>
                     <div id="searchSuggestions" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); border-top: none; max-height: 200px; overflow-y: auto; box-sizing: border-box; box-shadow: 5px 5px 0px var(--ink-black);"></div>
+
+                    <div id="searchHistoryContainer" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; font-family: inherit;"></div>
                 </div>
 
                 <div id="searchActionsHeader" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 10px;">
