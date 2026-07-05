@@ -14,9 +14,12 @@ let focusedSuggestionIndex = -1;
 let isArchiveOpen = false;
 
 let offlineDatabase = {
-    githubOwner: "Norii111", // Your GitHub username
-    githubRepo: "Nori",       // Your repository name
-    bottomSnippets: [] 
+    mainGasLink: "https://tinyurl.com/Noro11",
+    primaryGAS: "// Your centerpiece code environment connected to your tinyurl script structure\nfunction coreAutomation() {\n  console.log('Running seamlessly from your custom dashboard centerpiece.');\n}",
+    bottomSnippets: [
+        { id: 1, title: "Tampermonkey Macro", content: "// userscript configurations..." },
+        { id: 2, title: "Discord Webhook Text", content: "Random notation blocks saved locally." }
+    ]
 };
 
 const softMangaColors = [
@@ -49,14 +52,12 @@ async function syncGoogleSheetData() {
         showToast(`Sync finished! Loaded ${googleSheetData.length} records.`);
         
         if (isArchiveOpen) renderArchiveContainer();
-        renderPredictionCards(); 
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
         showToast("Error pulling cloud sheets registry.");
     }
 }
 
-// FIXED: Robust CSV parser ensuring multi-line fields inside Column F don't get truncated
 function parseCsvStrictAB(text) {
     googleSheetData = [];
     let lines = [];
@@ -68,12 +69,8 @@ function parseCsvStrictAB(text) {
         let next = text[i+1];
 
         if (c === '"') {
-            if (inQuotes && next === '"') { 
-                row[row.length - 1] += '"'; 
-                i++; 
-            } else { 
-                inQuotes = !inQuotes; 
-            }
+            if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
+            else { inQuotes = !inQuotes; }
         } else if (c === ',' && !inQuotes) {
             row.push("");
         } else if ((c === '\r' || c === '\n') && !inQuotes) {
@@ -88,20 +85,11 @@ function parseCsvStrictAB(text) {
 
     for (let i = 1; i < lines.length; i++) {
         let cols = lines[i];
-        // Must ensure there are enough entries processed to parse out Column E and F safely
         if (cols.length >= 2) {
-            let colA = cols[0] ? cols[0].trim() : "";
-            let colB = cols[1] ? cols[1].trim() : ""; 
-            let colE = cols[4] ? cols[4].trim() : "";
-            let colF = cols[5] ? cols[5].trim() : "";
-            
-            if (colA || colE || colF) {
-                googleSheetData.push({ 
-                    key: colA, 
-                    payload: colB, 
-                    predTitle: colE, 
-                    predContent: colF 
-                });
+            let colA = cols[0].trim();
+            let colB = cols[1].trim(); 
+            if (colA) {
+                googleSheetData.push({ key: colA, payload: colB });
             }
         }
     }
@@ -126,7 +114,7 @@ function querySheetMatrix() {
         return;
     }
     
-    const filteredMatches = googleSheetData.filter(row => row.key && row.key.toUpperCase().includes(searchKey));
+    const filteredMatches = googleSheetData.filter(row => row.key.toUpperCase().includes(searchKey));
     
     if (filteredMatches.length > 0) {
         suggestionsBox.innerHTML = "";
@@ -189,7 +177,7 @@ function selectFinalMatch(match) {
     actionsHeader.style.display = "flex";    
     buttonGroup.style.display = "flex";    
 
-    saveToSearchHistory(match.key);
+    saveToSearchHistory(match.key); // 🌟 ADD THIS LINE HERE to save manual selections
 }
 
 function clearAndHideSearch() {
@@ -218,6 +206,7 @@ function copySearchPayload() {
             showToast("Clipboard fallback executed.");
         })
         .finally(() => {
+            // 🌟 Executing in finally guarantees the box is cleared no matter what!
             if (searchInput) {
                 searchInput.value = "";
             }
@@ -225,6 +214,19 @@ function copySearchPayload() {
         });
 }
 
+function injectPayloadToWorkspace() {
+    const activePayload = document.getElementById('sheetPayloadArea').value;
+    if (!activePayload || activePayload.startsWith("❌")) {
+        showToast("Error: No data loaded to pull.");
+        return;
+    }
+    offlineDatabase.primaryGAS = activePayload;
+    document.getElementById('primaryGasArea').value = activePayload;
+    showToast("Loaded description payload data to dashboard workspace console!");
+    switchTab('dashboard');
+}
+
+// --- ARCHIVE VERTICAL COLUMN LIST BUILDER ---
 function toggleArchiveView() {
     const archiveBox = document.getElementById('sheetArchiveArea');
     const searchInput = document.getElementById('sheetKeySearch');
@@ -234,7 +236,12 @@ function toggleArchiveView() {
         isArchiveOpen = false;
     } else {
         if (searchInput) searchInput.value = ""; 
-        clearAndHideSearch();
+        
+        // Run your layout hide logic safely
+        if (typeof clearAndHideSearch === "function") {
+            clearAndHideSearch();
+        }
+        
         renderArchiveContainer();
         if (archiveBox) {
             archiveBox.style.setProperty('display', 'flex', 'important');
@@ -252,6 +259,7 @@ function renderArchiveContainer() {
         return;
     }
 
+    // Force a wrapping horizontal flex grid that looks like comic panels
     archiveBox.style.setProperty('display', 'flex', 'important');
     archiveBox.style.setProperty('flex-direction', 'row', 'important');
     archiveBox.style.setProperty('flex-wrap', 'wrap', 'important');
@@ -263,13 +271,15 @@ function renderArchiveContainer() {
     const totalItems = googleSheetData.length;
 
     googleSheetData.forEach((row, idx) => {
-        if (!row.key) return; // Skip rows lacking search titles
         const rowDiv = document.createElement('div');
-        rowDiv.style.boxSizing = "border-box";
-        rowDiv.style.width = "calc(20% - 13px)"; 
-        rowDiv.style.minWidth = "180px";        
-        rowDiv.style.height = "220px";          
         
+        // 1. Structural Sizing (Uniform but spacious cards)
+        rowDiv.style.boxSizing = "border-box";
+        rowDiv.style.width = "calc(20% - 13px)"; // Exactly 5 cards per row (accounting for gaps)
+        rowDiv.style.minWidth = "180px";        // Prevents them from getting too skinny on small screens
+        rowDiv.style.height = "220px";          // Fixed matching height for all cards
+        
+        // 2. Manga Styling
         rowDiv.style.border = "4px solid var(--ink-black, #111)";
         rowDiv.style.background = softMangaColors[idx % softMangaColors.length] || "#fff";
         rowDiv.style.padding = "14px";
@@ -278,16 +288,22 @@ function renderArchiveContainer() {
         rowDiv.style.flexDirection = "column";
         rowDiv.style.position = "relative";
         rowDiv.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
+        
+        // Heavy, offset manga shadow
         rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
 
+        // 3. The "Beautifully Messy" Secret Sauce: Random micro-rotation!
+        // This tilts each card randomly between -2.5 and +2.5 degrees so they look hand-placed
         const randomTilt = (Math.random() * 5 - 2.5).toFixed(2);
         rowDiv.style.transform = `rotate(${randomTilt}deg)`;
 
+        // Highlight tags
         let timelineTag = "";
         if (idx === totalItems - 1) {
             timelineTag = "<span style='background:#f39c12; color:#000; font-size:9px; padding:2px 4px; border:2px solid #111; margin-bottom:4px; display:inline-block; font-weight:900;'>NEW</span>";
         }
 
+        // 4. Content Mapping (Title -> Line -> Preserved Content)
         rowDiv.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
                 <div style="max-width: 75%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -296,10 +312,15 @@ function renderArchiveContainer() {
                 </div>
                 <span style="font-size:10px; font-weight:bold; opacity:0.6; font-family:inherit;">#${idx + 2}</span>
             </div>
+            
+            <!-- Manga separator line -->
             <hr style="border: none; border-top: 3px solid var(--ink-black, #111); margin: 4px 0 8px 0; padding:0;">
+            
+            <!-- Cell B Content: Preserves line breaks/formatting safely but hides massive overflows -->
             <div style="font-size:12px; font-family:inherit; color:#111; line-height:1.4; flex-grow:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; white-space:pre-wrap; word-break:break-word;">${row.payload}</div>
         `;
 
+        // Interactive pop effect on hover
         rowDiv.onmouseenter = () => {
             rowDiv.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
             rowDiv.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
@@ -309,28 +330,36 @@ function renderArchiveContainer() {
             rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
         };
 
+// 5. Clean Action Interface (Brute-forces data display and completely kills suggestion items)
         rowDiv.onclick = (e) => {
             e.stopPropagation();
-            const searchInput = document.getElementById('sheetKeySearch');
-            if (searchInput) searchInput.value = row.key;
             
+            // 1. Force the input value matching Cell A
+            const searchInput = document.getElementById('sheetKeySearch');
+            if (searchInput) {
+                searchInput.value = row.key;
+            }
+            
+            // 2. Direct DOM override: Force fill the text field and open the container panels instantly
             const payloadOutput = document.getElementById('sheetPayloadArea');
             const actionsHeader = document.getElementById('searchActionsHeader');
             const buttonGroup = document.getElementById('searchButtonGroup');
 
             if (payloadOutput && actionsHeader && buttonGroup) {
-                payloadOutput.value = row.payload;
-                payloadOutput.style.display = "block";
-                actionsHeader.style.display = "flex";
-                buttonGroup.style.display = "flex";
+                payloadOutput.value = row.payload;       // Dumps cell B description text directly here
+                payloadOutput.style.display = "block";    // Reveals the content panel
+                actionsHeader.style.display = "flex";     // Reveals copy buttons container header
+                buttonGroup.style.display = "flex";       // Reveals action items
             }
             
+            // 3. Absolute execution kill on the dropdown box AND all its suggestion-items
             const suggestionsBox = document.getElementById('searchSuggestions');
             if (suggestionsBox) {
-                suggestionsBox.innerHTML = "";
-                suggestionsBox.style.setProperty('display', 'none', 'important');
+                suggestionsBox.innerHTML = "";            // Deletes all .suggestion-item nodes instantly
+                suggestionsBox.style.setProperty('display', 'none', 'important'); // Blasts container out of sight
             }
 
+            // 4. Wipe archive UI out of frame cleanly
             archiveBox.style.display = "none";
             isArchiveOpen = false;
             saveToSearchHistory(row.key);
@@ -340,153 +369,7 @@ function renderArchiveContainer() {
     });
 }
 
-// FIXED: Comprehensive prediction element renderer with min-height overrides to keep raw Column F entries text full 
-function renderPredictionCards() {
-    const container = document.getElementById('predictionCardGrid');
-    if (!container) return;
-    container.innerHTML = "";
-
-    const validPreds = googleSheetData.filter(row => row.predTitle || row.predContent);
-
-    if (validPreds.length === 0) {
-        container.innerHTML = "<p style='font-weight:bold; font-size:13px; text-align:center; width:100%; margin-top:20px;'>Matrix registries empty inside Columns E/F ranges.</p>";
-        return;
-    }
-
-    // Force the wrapper layout to abandon uniform row heights completely
-    container.style.setProperty('display', 'flex', 'important');
-    container.style.setProperty('flex-wrap', 'wrap', 'important');
-    container.style.setProperty('gap', '20px', 'important');
-    container.style.setProperty('align-items', 'flex-start', 'important'); // Crucial for variable card heights
-
-    validPreds.forEach((row, idx) => {
-        const card = document.createElement('div');
-        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
-
-        card.className = "prediction-item-card";
-        card.style.boxSizing = "border-box";
-        card.style.width = "calc(25% - 15px)"; 
-        card.style.minWidth = "240px";
-        card.style.height = "auto"; // Prevents stretching completely
-        card.style.alignSelf = "flex-start"; 
-        card.style.border = "3px solid var(--ink-black, #111)";
-        card.style.background = randomBg;
-        card.style.padding = "14px";
-        card.style.display = "flex";
-        card.style.flexDirection = "column";
-        card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
-        card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
-        card.style.margin = "0 0 10px 0";
-
-        // Card Content Structure
-        card.innerHTML = `
-            <strong style="font-size:14px; display:block; text-transform:uppercase; margin-bottom:2px; word-break:break-word;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
-            <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:6px 0;">
-            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; margin-bottom: 14px;">${row.predContent || 'No descriptor registers linked.'}</div>
-        `;
-
-        // Action Row Footer
-        const actionRow = document.createElement('div');
-        actionRow.style.display = "flex";
-        actionRow.style.justifyContent = "flex-end";
-        actionRow.style.borderTop = "2px dashed #111";
-        actionRow.style.paddingTop = "8px";
-        actionRow.style.marginTop = "auto";
-
-        // Explicitly styled copy button so it displays cleanly regardless of your outer CSS structure
-        const copyBtn = document.createElement('button');
-        copyBtn.innerText = "📋 COPY CARD";
-        copyBtn.style.background = "var(--ink-black, #111)";
-        copyBtn.style.color = "var(--bg-paper, #fff)";
-        copyBtn.style.border = "2px solid #111";
-        copyBtn.style.fontSize = "10px";
-        copyBtn.style.fontWeight = "bold";
-        copyBtn.style.padding = "4px 8px";
-        copyBtn.style.cursor = "pointer";
-        copyBtn.style.boxShadow = "2px 2px 0px #111";
-
-        copyBtn.onclick = (e) => {
-            e.stopPropagation();
-            const textToCopy = row.predContent || '';
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                showToast("Card text sent to your clipboard!");
-            });
-        };
-
-        actionRow.appendChild(copyBtn);
-        card.appendChild(actionRow);
-
-        card.onmouseenter = () => {
-            card.style.transform = "translate(-2px, -2px)";
-            card.style.boxShadow = "7px 7px 0px var(--ink-black, #111)";
-        };
-        card.onmouseleave = () => {
-            card.style.transform = "none";
-            card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
-        };
-
-        container.appendChild(card);
-    });
-}
-
-function filterPredictionCards() {
-    const searchVal = document.getElementById('predictionSearch').value.trim().toUpperCase();
-    const cards = document.querySelectorAll('#predictionCardGrid > div');
-    
-    cards.forEach(card => {
-        // Targets text contents excluding the button text profile explicitly
-        const titleText = card.querySelector('strong') ? card.querySelector('strong').innerText.toUpperCase() : '';
-        const bodyText = card.querySelector('div') ? card.querySelector('div').innerText.toUpperCase() : '';
-        
-        if (titleText.includes(searchVal) || bodyText.includes(searchVal)) {
-            card.style.display = "flex";
-        } else {
-            card.style.display = "none";
-        }
-    });
-}
-
-function switchTab(tabName) {
-    const dashTab = document.getElementById('dashboardTab');
-    const searchTab = document.getElementById('searchMenuTab');
-    const predictionsTab = document.getElementById('predictionsTab');
-    const logsTab = document.getElementById('logsTab');
-    const navLinks = document.querySelectorAll('.nav-links a');
-
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    dashTab.style.display = 'none';
-    searchTab.style.display = 'none';
-    predictionsTab.style.display = 'none';
-    logsTab.style.display = 'none';
-
-    document.getElementById('searchSuggestions').style.display = "none";
-    document.getElementById('sheetArchiveArea').style.display = "none";
-    isArchiveOpen = false;
-
-    if (tabName === 'dashboard') {
-        dashTab.style.display = 'grid';
-        navLinks[0].classList.add('active');
-        showToast("Switched to Main Command Dashboard");
-    } else if (tabName === 'searchTab') {
-        searchTab.style.display = 'grid';
-        navLinks[1].classList.add('active');
-        showToast("Switched to Sheet Search Engine");
-        document.getElementById('sheetKeySearch').value = ""; 
-        clearAndHideSearch();
-    } else if (tabName === 'predictions') {
-        predictionsTab.style.display = 'grid';
-        navLinks[2].classList.add('active'); 
-        showToast("Switched to Prediction Registry Deck");
-        renderPredictionCards();
-    } else if (tabName === 'logs') {
-        logsTab.style.display = 'grid';
-        navLinks[3].classList.add('active'); 
-        showToast("Viewing Core System Performance Records");
-    }
-    changeToRandomGif();
-}
-
+// --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
 document.addEventListener('keydown', function(e) {
     if (e.altKey && (e.key === 'c' || e.key === 'C')) {
         e.preventDefault();
@@ -620,7 +503,6 @@ function changeToRandomGif() {
 function renderPortal() {
     document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
     const bottomGrid = document.getElementById('bottomGrid');
-    if (!bottomGrid) return;
     bottomGrid.innerHTML = '';
 
     offlineDatabase.bottomSnippets.forEach(item => {
@@ -629,17 +511,15 @@ function renderPortal() {
         card.className = 'snippet-card';
         card.style.backgroundColor = randomBg;
         card.innerHTML = `
-    <div style="overflow: hidden;">
-        <strong style="display:block; margin-bottom:4px; font-size:14px;">${item.title}</strong>
-        <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
-            🌐 Auto-sync enabled
-        </p>
-    </div>
-    <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
-        <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick="deleteSnippet(${item.id})">Delete</button>
-        <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="viewSnippet(${item.id})">Swap View</button>
-    </div>
-`;
+            <div style="overflow: hidden;">
+                <strong style="display:block; margin-bottom:4px; font-size:14px;">${item.title}</strong>
+                <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${item.content}</p>
+            </div>
+            <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
+                <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick="deleteSnippet(${item.id})">Delete</button>
+                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="viewSnippet(${item.id})">Swap View</button>
+            </div>
+        `;
         bottomGrid.appendChild(card);
     });
 }
@@ -666,6 +546,39 @@ function copyTextAreaContent() {
         .catch(() => showToast("Error executing clipboard pipeline."));
 }
 
+function switchTab(tabName) {
+    const dashTab = document.getElementById('dashboardTab');
+    const searchTab = document.getElementById('searchMenuTab');
+    const logsTab = document.getElementById('logsTab');
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    navLinks.forEach(link => link.classList.remove('active'));
+    dashTab.style.display = 'none';
+    searchTab.style.display = 'none';
+    logsTab.style.display = 'none';
+
+    document.getElementById('searchSuggestions').style.display = "none";
+    document.getElementById('sheetArchiveArea').style.display = "none";
+    isArchiveOpen = false;
+
+    if (tabName === 'dashboard') {
+        dashTab.style.display = 'grid';
+        navLinks[0].classList.add('active');
+        showToast("Switched to Main Command Dashboard");
+    } else if (tabName === 'searchTab') {
+        searchTab.style.display = 'grid';
+        navLinks[1].classList.add('active');
+        showToast("Switched to Sheet Search Engine");
+        document.getElementById('sheetKeySearch').value = ""; 
+        clearAndHideSearch();
+    } else if (tabName === 'logs') {
+        logsTab.style.display = 'grid';
+        navLinks[2].classList.add('active');
+        showToast("Viewing Core System Performance Records");
+    }
+    changeToRandomGif();
+}
+
 function openModal() {
     document.getElementById('mangaModal').classList.add('open');
     document.getElementById('modalInput').value = '';
@@ -673,150 +586,19 @@ function openModal() {
 }
 var closeModal = () => document.getElementById('mangaModal').classList.remove('open');
 
-async function submitNewNote() {
+function submitNewNote() {
     const name = document.getElementById('modalInput').value.trim();
-    const scriptContent = document.getElementById('modalContentInput').value;
-
-    if (!name) {
-        showToast("Error: Title cannot be blank!");
-        return;
-    }
-
-    const token = offlineDatabase.githubToken;
-    const owner = offlineDatabase.githubOwner;
-    const repo = offlineDatabase.githubRepo;
-
-    if (!token || !owner || !repo) {
-        showToast("⚠️ Missing GitHub configuration! Check your hardcoded token/repo settings.");
-        return;
-    }
-
-    showToast("Streaming notepad entry to GitHub...");
-
-    // Generate a clean filename (e.g., "Manga Reader 123" -> "manga-reader-123.user.js")
-    const safeFileName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const filePath = `scripts/${safeFileName}.user.js`;
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
-
-    // Convert the content input safely into Base64 for the GitHub API pipeline
-    const utf8Bytes = new TextEncoder().encode(scriptContent);
-    const base64Content = btoa(String.fromCharCode(...utf8Bytes));
-
-    const payload = {
-        message: `Notepad Creation: Added ${name}`,
-        content: base64Content
-    };
-
-    try {
-        const response = await fetch(apiUrl, {
-            method: "PUT",
-            headers: {
-                "Authorization": `token ${token}`,
-                "Accept": "application/vnd.github.v3+json",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) throw new Error("GitHub deployment pipeline rejected file creation.");
-
-        showToast(`🚀 "${name}" saved directly to GitHub!`);
-        
-        // Reset and clean up modal text fields
-        document.getElementById('modalInput').value = "";
-        document.getElementById('modalContentInput').value = "";
-        closeModal();
-
-        // Refresh the cards on your dashboard by re-scanning your repository contents
-        await syncSnippetsFromGitHub();
-
-    } catch (error) {
-        console.error(error);
-        showToast(`Sync Failed: ${error.message}`);
+    if (name) {
+        offlineDatabase.bottomSnippets.push({ id: Date.now(), title: name, content: "// Empty markdown or script entry" });
+        renderPortal(); closeModal(); changeToRandomGif();
+        showToast(`Created block: "${name}"`);
+    } else {
+        showToast("Error: Name cannot be blank!");
     }
 }
 
 function launchMainGAS() { window.open(offlineDatabase.mainGasLink, '_blank'); showToast("Launching main script portal via tinyurl..."); }
-async function savePrimaryGAS() { 
-    const mainTextarea = document.getElementById('primaryGasArea');
-    if (!mainTextarea) return;
-
-    const currentTextValue = mainTextarea.value;
-
-    if (offlineDatabase.activeSnippetId) {
-        // Find the note we are currently looking at
-        const activeItem = offlineDatabase.bottomSnippets.find(x => x.id === offlineDatabase.activeSnippetId);
-        if (activeItem) {
-            // Step A: Save it locally immediately so you never lose it
-            activeItem.content = currentTextValue;
-            localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
-            showToast("Saved locally! Syncing to GitHub cloud...");
-
-            // Step B: Fire it directly to GitHub without making you click anything else
-            await pushSnippetToGitHub(activeItem.id);
-        }
-    } else {
-        // Fallback for your centerpiece default workspace
-        offlineDatabase.primaryGAS = currentTextValue;
-        localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
-        showToast("Changes synced to baseline dashboard!");
-    }
-}
-
-async function pushSnippetToGitHub(id) {
-    const item = offlineDatabase.bottomSnippets.find(x => x.id === id);
-    if (!item) return;
-
-    const token = offlineDatabase.githubToken;
-    const owner = offlineDatabase.githubOwner;
-    const repo = offlineDatabase.githubRepo;
-
-    if (!token || !owner || !repo) {
-        showToast("⚠️ Local save OK, but missing GitHub credentials to push to cloud.");
-        return;
-    }
-
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${item.filePath}`;
-    let currentSha = null;
-
-    // Check for existing file SHA signature
-    try {
-        const checkResponse = await fetch(apiUrl, {
-            headers: { "Authorization": `token ${token}` }
-        });
-        if (checkResponse.ok) {
-            const fileData = await checkResponse.json();
-            currentSha = fileData.sha;
-        }
-    } catch (e) { /* New file path */ }
-
-    // Convert massive script safely to Base64
-    const utf8Bytes = new TextEncoder().encode(item.content);
-    const base64Content = btoa(String.fromCharCode(...utf8Bytes));
-
-    const payload = {
-        message: `Command Center Auto-Sync: ${item.title}`,
-        content: base64Content
-    };
-    if (currentSha) payload.sha = currentSha;
-
-    try {
-        const response = await fetch(apiUrl, {
-            method: "PUT",
-            headers: {
-                "Authorization": `token ${token}`,
-                "Accept": "application/vnd.github.v3+json",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) throw new Error("GitHub rejected upload pipeline.");
-        showToast(`🚀 Cloud sync complete! Verified on GitHub.`);
-    } catch (error) {
-        showToast(`GitHub error: ${error.message}`);
-    }
-}
+function savePrimaryGAS() { offlineDatabase.primaryGAS = document.getElementById('primaryGasArea').value; showToast("Changes synced to local workspace memory!"); }
 
 function addSystemLog(text) {
     const area = document.getElementById('systemLogsArea');
@@ -836,7 +618,7 @@ function showToast(message) {
     if (!container) return;
     
     const toast = document.createElement('div');
-    toast.className = 'toast-banner'; 
+    toast.className = 'toast-banner'; // Ensure this matches your style.css rules
     toast.style.background = 'var(--ink-black, #111)';
     toast.style.color = 'var(--bg-paper, #fff)';
     toast.style.border = '2px solid var(--ink-black)';
@@ -855,36 +637,46 @@ function showToast(message) {
     }, 2500);
 }
 
-const MAX_HISTORY = 20; 
 
+const MAX_HISTORY = 6; // Feel free to adjust this number!
+
+// 1. Updated Core Logic: Saves unique entries without moving existing items to position #1 on click
 function saveToSearchHistory(key) {
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
+    
+    // Check if the item already exists in history
     const exists = history.some(item => item.toUpperCase() === key.toUpperCase());
     
     if (!exists) {
+        // Only insert at position 1 if it's a completely brand new unique search
         history.unshift(key);
-        if (history.length > MAX_HISTORY) history.pop();
+        
+        if (history.length > MAX_HISTORY) {
+            history.pop();
+        }
+        
         localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
         renderSearchHistory();
     }
 }
 
+// Helper to delete one specific card from history
 function deleteSingleHistoryItem(key, event) {
-    event.stopPropagation(); 
+    event.stopPropagation(); // Prevents clicking the delete button from opening the search!
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
     history = history.filter(item => item.toUpperCase() !== key.toUpperCase());
     localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
     renderSearchHistory();
 }
 
+// Helper to wipe out all history items at once
 function clearAllSearchHistory() {
     localStorage.removeItem('mangaSearchHistory');
     renderSearchHistory();
     showToast("Cleared search history memory index.");
 }
 
-let draggedItemIndex = null;
-
+// 2. Updated UI Logic: Hand-placed style, random archive colors, drag/drop support, individual deleting
 function renderSearchHistory() {
     const container = document.getElementById('searchHistoryContainer');
     if (!container) return;
@@ -896,21 +688,24 @@ function renderSearchHistory() {
         return;
     }
     
+    // Header Wrapper with Clear All Action button built-in
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
-            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS (DRAG TO REARRANGE):</span>
+            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS:</span>
             <button onclick="clearAllSearchHistory()" style="background: none; border: none; font-size: 10px; font-weight: 900; color: #cc0000; cursor: pointer; text-transform: uppercase; text-decoration: underline; padding: 0;">[ Clear All ]</button>
         </div>
     `;
     
     history.forEach((key, idx) => {
         const pillWrapper = document.createElement('div');
+        
+        // Pick a random soft manga paper color from your existing array
         const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
+        
+        // Random micro-rotation tilt for that classic "arrangedly messy" look
         const randomTilt = (Math.random() * 4 - 2).toFixed(2);
         
-        pillWrapper.setAttribute("draggable", "true");
-        pillWrapper.setAttribute("data-index", idx);
-        
+        // Setup structural layout styles
         pillWrapper.style.display = "inline-flex";
         pillWrapper.style.alignItems = "center";
         pillWrapper.style.gap = "6px";
@@ -918,55 +713,26 @@ function renderSearchHistory() {
         pillWrapper.style.border = "2px solid var(--ink-black, #111)";
         pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)";
         pillWrapper.style.padding = "4px 8px";
-        pillWrapper.style.fontSize = "15px";
+        pillWrapper.style.fontSize = "11px";
         pillWrapper.style.fontWeight = "bold";
-        pillWrapper.style.cursor = "grab"; 
+        pillWrapper.style.cursor = "pointer";
         pillWrapper.style.textTransform = "uppercase";
         pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
-        pillWrapper.style.transition = "transform 0.05s ease, opacity 0.1s ease";
+        pillWrapper.style.transition = "all 0.05s ease";
         
-        pillWrapper.ondragstart = (e) => {
-            draggedItemIndex = idx;
-            pillWrapper.style.opacity = "0.4"; 
-            e.dataTransfer.effectAllowed = "move";
+        // Hover dynamics
+        pillWrapper.onmouseenter = () => { 
+            pillWrapper.style.transform = `rotate(${randomTilt}deg) translate(-1px, -1px)`; 
+            pillWrapper.style.boxShadow = "4px 4px 0px var(--ink-black, #111)"; 
         };
-        
-        pillWrapper.ondragend = () => {
-            pillWrapper.style.opacity = "1";
-            draggedItemIndex = null;
-            document.querySelectorAll('#searchHistoryContainer > div').forEach(el => {
-                if(el.style.borderStyle === "dashed") el.style.borderStyle = "solid";
-            });
+        pillWrapper.onmouseleave = () => { 
+            pillWrapper.style.transform = `rotate(${randomTilt}deg)`; 
+            pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)"; 
         };
         
-        pillWrapper.ondragover = (e) => {
-            e.preventDefault(); 
-            return false;
-        };
-
-        pillWrapper.ondragenter = () => {
-            if (idx !== draggedItemIndex) {
-                pillWrapper.style.borderStyle = "dashed"; 
-            }
-        };
-
-        pillWrapper.ondragleave = () => {
-            pillWrapper.style.borderStyle = "solid";
-        };
-        
-        pillWrapper.ondrop = (e) => {
-            e.preventDefault();
-            if (draggedItemIndex !== null && draggedItemIndex !== idx) {
-                let updatedHistory = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-                const [reorderedItem] = updatedHistory.splice(draggedItemIndex, 1);
-                updatedHistory.splice(idx, 0, reorderedItem);
-                localStorage.setItem('mangaSearchHistory', JSON.stringify(updatedHistory));
-                renderSearchHistory();
-            }
-        };
-        
+        // Execution Click: Simulates archive view loading cleanly without changing array position
         pillWrapper.onclick = () => {
-            const match = googleSheetData.find(row => row.key && row.key.toUpperCase() === key.toUpperCase());
+            const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
             if (match) {
                 const searchInput = document.getElementById('sheetKeySearch');
                 if (searchInput) searchInput.value = match.key;
@@ -990,98 +756,26 @@ function renderSearchHistory() {
             }
         };
         
+        // Inject pill content with the tiny deletion trigger tag
         pillWrapper.innerHTML = `
             <span>${key}</span>
-            <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; cursor: pointer; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
+            <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
         `;
         
         container.appendChild(pillWrapper);
     });
 }
 
-// 1. UPDATED: Automatically scan and pull down your files from GitHub on boot
-window.onload = async function() {
-    // 1. Clear out previous session items to guarantee a fresh fetch from GitHub truth
-    if (typeof offlineDatabase !== 'undefined') {
-        offlineDatabase.bottomSnippets = [];
-    }
-
-    // 2. Initialize secondary UI elements
-    if (typeof changeToRandomGif === "function") changeToRandomGif();
-    if (typeof renderSearchHistory === "function") renderSearchHistory();
-    if (typeof syncGoogleSheetData === "function") syncGoogleSheetData();
-    
-    // 3. FETCH FIRST: Pull scripts folder straight from GitHub to build snippets array
-    await syncSnippetsFromGitHub();
-
-    // 4. RENDER LATER: Draw the cards only AFTER the download loop is 100% finished
-    if (typeof renderPortal === "function") renderPortal();
-
-    // 5. Setup Avatar Frame Event Handlers
+window.onload = function() {
+    renderPortal();
+    changeToRandomGif();
+    renderSearchHistory();
+    syncGoogleSheetData();
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
         gifFrame.addEventListener('click', () => {
-            if (typeof changeToRandomGif === "function") changeToRandomGif();
-            if (typeof triggerGifFlip === "function") triggerGifFlip();
-            if (typeof showToast === "function") showToast("Shifting avatar transmission matrix...");
+            changeToRandomGif(); triggerGifFlip(); showToast("Shifting avatar transmission matrix...");
         });
     }
-    if (typeof triggerGifFlip === "function") {
-        setInterval(triggerGifFlip, 12000); 
-    }
+    setInterval(triggerGifFlip, 12000); 
 };
-
-// Clean, public-friendly automated file scanner engine
-async function syncSnippetsFromGitHub() {
-    const owner = offlineDatabase.githubOwner || "Norii111";
-    const repo = offlineDatabase.githubRepo || "Nori";
-
-    if (!owner || !repo) {
-        console.warn("GitHub Owner or Repo config is missing.");
-        return; 
-    }
-
-    try {
-        // Fetch public directory layout inside your scripts folder (No Token Needed!)
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/scripts`);
-
-        if (!response.ok) {
-            if (response.status === 404) console.log("Scripts directory does not exist on GitHub yet.");
-            return;
-        }
-
-        const files = await response.json();
-        
-        // Reset local block list to hold the incoming files cleanly
-        offlineDatabase.bottomSnippets = [];
-
-        // Loop through files found on GitHub
-        for (let file of files) {
-            if (file.type === "file" && file.name.endsWith(".user.js")) {
-                
-                // Format file name back into a readable title (e.g., "wololo.user.js" -> "Wololo")
-                const cleanTitle = file.name
-                    .replace(".user.js", "")
-                    .replace(/-/g, " ")
-                    .replace(/\b\w/g, c => c.toUpperCase());
-
-                // Fetch the actual raw text content of this script using a cache buster
-                const contentResponse = await fetch(`${file.download_url}?cb=${Date.now()}`);
-                const rawCode = contentResponse.ok ? await contentResponse.text() : "// Error loading stream";
-
-                offlineDatabase.bottomSnippets.push({
-                    id: Date.now() + Math.random(), 
-                    title: cleanTitle,
-                    filePath: file.path,
-                    content: rawCode
-                });
-            }
-        }
-
-        // Lock the mapping structure into current computer memory
-        localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
-        console.log(`Synced ${offlineDatabase.bottomSnippets.length} scripts seamlessly from GitHub.`);
-    } catch (error) {
-        console.error("GitHub directory sync failed:", error);
-    }
-}
