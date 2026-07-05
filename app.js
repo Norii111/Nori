@@ -10,6 +10,7 @@ const gifs = [
 
 const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHGQy-jlVIqKK8eNY5KAyKmalHnluD0Dbznly-mCn_e3loE9poQD46AkqKOAZYH5BcZ4Rs50Q9pZzJ/pub?output=csv";
 let googleSheetData = []; 
+let predictionSheetData = []; // 🌟 NEW: Grid Matrix Storage for E & F registry lines
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
 
@@ -48,9 +49,11 @@ async function syncGoogleSheetData() {
         const rawCsvText = await response.text();
         
         parseCsvStrictAB(rawCsvText);
-        addSystemLog(`Sync completed. Loaded ${googleSheetData.length} records into lookup index.`);
+        addSystemLog(`Sync completed. Loaded ${googleSheetData.length} engine items and ${predictionSheetData.length} prediction panels.`);
         showToast(`Sync finished! Loaded ${googleSheetData.length} records.`);
         
+        // Auto-refresh whichever custom tab is currently rendered 
+        renderPredictionWorkspace();
         if (isArchiveOpen) renderArchiveContainer();
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
@@ -60,6 +63,7 @@ async function syncGoogleSheetData() {
 
 function parseCsvStrictAB(text) {
     googleSheetData = [];
+    predictionSheetData = []; // Clear registry map safely on fresh sync loops
     let lines = [];
     let row = [""];
     let inQuotes = false;
@@ -85,11 +89,23 @@ function parseCsvStrictAB(text) {
 
     for (let i = 1; i < lines.length; i++) {
         let cols = lines[i];
+        if (!cols) continue;
+
+        // 1. Process Core A & B Content
         if (cols.length >= 2) {
             let colA = cols[0].trim();
-            let colB = cols[1].trim(); 
+            let colB = cols[1] ? cols[1].trim() : ""; 
             if (colA) {
                 googleSheetData.push({ key: colA, payload: colB });
+            }
+        }
+
+        // 2. Process Prediction Matrix Cards starting from Row Index 3 (i >= 2)
+        if (i >= 2 && cols.length >= 6) {
+            let colE = cols[4] ? cols[4].trim() : ""; // Column E
+            let colF = cols[5] ? cols[5].trim() : ""; // Column F
+            if (colE) {
+                predictionSheetData.push({ key: colE, payload: colF });
             }
         }
     }
@@ -177,7 +193,7 @@ function selectFinalMatch(match) {
     actionsHeader.style.display = "flex";    
     buttonGroup.style.display = "flex";    
 
-    saveToSearchHistory(match.key); // 🌟 ADD THIS LINE HERE to save manual selections
+    saveToSearchHistory(match.key); 
 }
 
 function clearAndHideSearch() {
@@ -206,7 +222,6 @@ function copySearchPayload() {
             showToast("Clipboard fallback executed.");
         })
         .finally(() => {
-            // 🌟 Executing in finally guarantees the box is cleared no matter what!
             if (searchInput) {
                 searchInput.value = "";
             }
@@ -226,7 +241,6 @@ function injectPayloadToWorkspace() {
     switchTab('dashboard');
 }
 
-// --- ARCHIVE VERTICAL COLUMN LIST BUILDER ---
 function toggleArchiveView() {
     const archiveBox = document.getElementById('sheetArchiveArea');
     const searchInput = document.getElementById('sheetKeySearch');
@@ -237,7 +251,6 @@ function toggleArchiveView() {
     } else {
         if (searchInput) searchInput.value = ""; 
         
-        // Run your layout hide logic safely
         if (typeof clearAndHideSearch === "function") {
             clearAndHideSearch();
         }
@@ -259,7 +272,6 @@ function renderArchiveContainer() {
         return;
     }
 
-    // Force a wrapping horizontal flex grid that looks like comic panels
     archiveBox.style.setProperty('display', 'flex', 'important');
     archiveBox.style.setProperty('flex-direction', 'row', 'important');
     archiveBox.style.setProperty('flex-wrap', 'wrap', 'important');
@@ -273,13 +285,11 @@ function renderArchiveContainer() {
     googleSheetData.forEach((row, idx) => {
         const rowDiv = document.createElement('div');
         
-        // 1. Structural Sizing (Uniform but spacious cards)
         rowDiv.style.boxSizing = "border-box";
-        rowDiv.style.width = "calc(20% - 13px)"; // Exactly 5 cards per row (accounting for gaps)
-        rowDiv.style.minWidth = "180px";        // Prevents them from getting too skinny on small screens
-        rowDiv.style.height = "220px";          // Fixed matching height for all cards
+        rowDiv.style.width = "calc(20% - 13px)"; 
+        rowDiv.style.minWidth = "180px";        
+        rowDiv.style.height = "220px";          
         
-        // 2. Manga Styling
         rowDiv.style.border = "4px solid var(--ink-black, #111)";
         rowDiv.style.background = softMangaColors[idx % softMangaColors.length] || "#fff";
         rowDiv.style.padding = "14px";
@@ -288,22 +298,16 @@ function renderArchiveContainer() {
         rowDiv.style.flexDirection = "column";
         rowDiv.style.position = "relative";
         rowDiv.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
-        
-        // Heavy, offset manga shadow
         rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
 
-        // 3. The "Beautifully Messy" Secret Sauce: Random micro-rotation!
-        // This tilts each card randomly between -2.5 and +2.5 degrees so they look hand-placed
         const randomTilt = (Math.random() * 5 - 2.5).toFixed(2);
         rowDiv.style.transform = `rotate(${randomTilt}deg)`;
 
-        // Highlight tags
         let timelineTag = "";
         if (idx === totalItems - 1) {
             timelineTag = "<span style='background:#f39c12; color:#000; font-size:9px; padding:2px 4px; border:2px solid #111; margin-bottom:4px; display:inline-block; font-weight:900;'>NEW</span>";
         }
 
-        // 4. Content Mapping (Title -> Line -> Preserved Content)
         rowDiv.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
                 <div style="max-width: 75%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -312,15 +316,10 @@ function renderArchiveContainer() {
                 </div>
                 <span style="font-size:10px; font-weight:bold; opacity:0.6; font-family:inherit;">#${idx + 2}</span>
             </div>
-            
-            <!-- Manga separator line -->
             <hr style="border: none; border-top: 3px solid var(--ink-black, #111); margin: 4px 0 8px 0; padding:0;">
-            
-            <!-- Cell B Content: Preserves line breaks/formatting safely but hides massive overflows -->
             <div style="font-size:12px; font-family:inherit; color:#111; line-height:1.4; flex-grow:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; white-space:pre-wrap; word-break:break-word;">${row.payload}</div>
         `;
 
-        // Interactive pop effect on hover
         rowDiv.onmouseenter = () => {
             rowDiv.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
             rowDiv.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
@@ -330,42 +329,103 @@ function renderArchiveContainer() {
             rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
         };
 
-// 5. Clean Action Interface (Brute-forces data display and completely kills suggestion items)
         rowDiv.onclick = (e) => {
             e.stopPropagation();
-            
-            // 1. Force the input value matching Cell A
             const searchInput = document.getElementById('sheetKeySearch');
-            if (searchInput) {
-                searchInput.value = row.key;
-            }
+            if (searchInput) searchInput.value = row.key;
             
-            // 2. Direct DOM override: Force fill the text field and open the container panels instantly
             const payloadOutput = document.getElementById('sheetPayloadArea');
             const actionsHeader = document.getElementById('searchActionsHeader');
             const buttonGroup = document.getElementById('searchButtonGroup');
 
             if (payloadOutput && actionsHeader && buttonGroup) {
-                payloadOutput.value = row.payload;       // Dumps cell B description text directly here
-                payloadOutput.style.display = "block";    // Reveals the content panel
-                actionsHeader.style.display = "flex";     // Reveals copy buttons container header
-                buttonGroup.style.display = "flex";       // Reveals action items
+                payloadOutput.value = row.payload;       
+                payloadOutput.style.display = "block";    
+                actionsHeader.style.display = "flex";     
+                buttonGroup.style.display = "flex";       
             }
             
-            // 3. Absolute execution kill on the dropdown box AND all its suggestion-items
             const suggestionsBox = document.getElementById('searchSuggestions');
             if (suggestionsBox) {
-                suggestionsBox.innerHTML = "";            // Deletes all .suggestion-item nodes instantly
-                suggestionsBox.style.setProperty('display', 'none', 'important'); // Blasts container out of sight
+                suggestionsBox.innerHTML = "";            
+                suggestionsBox.style.setProperty('display', 'none', 'important'); 
             }
 
-            // 4. Wipe archive UI out of frame cleanly
             archiveBox.style.display = "none";
             isArchiveOpen = false;
             saveToSearchHistory(row.key);
         };
 
         archiveBox.appendChild(rowDiv);
+    });
+}
+
+// --- 🌟 NEW: RENDERS THE DYNAMIC INTERACTIVE PREDICTIONS GRIDS MATRIX ---
+function renderPredictionWorkspace() {
+    const grid = document.getElementById('predictionCardGrid');
+    if (!grid) return;
+
+    grid.innerHTML = ""; 
+
+    if (predictionSheetData.length === 0) {
+        grid.innerHTML = "<p style='font-size:13px; font-weight:bold; padding:10px; font-family:inherit;'>Prediction data index array empty. Pull fresh sheets dashboard.</p>";
+        return;
+    }
+
+    predictionSheetData.forEach((row, idx) => {
+        const card = document.createElement('div');
+        card.className = "prediction-manga-card";
+        card.setAttribute("data-title", row.key.toUpperCase());
+
+        card.style.boxSizing = "border-box";
+        card.style.width = "calc(20% - 13px)"; 
+        card.style.minWidth = "185px";
+        card.style.height = "220px";
+        card.style.padding = "14px";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.position = "relative";
+        card.style.border = "4px solid var(--ink-black, #111)";
+        card.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
+        card.style.cursor = "pointer";
+        card.style.background = softMangaColors[idx % softMangaColors.length] || "#fff";
+
+        const randomTilt = (Math.random() * 4 - 2).toFixed(2);
+        card.style.transform = `rotate(${randomTilt}deg)`;
+        card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
+
+        card.onmouseenter = () => {
+            card.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
+            card.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
+        };
+        card.onmouseleave = () => {
+            card.style.transform = `rotate(${randomTilt}deg)`;
+            card.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
+        };
+
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 2px;">
+                <div style="max-width: 80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    <strong style="font-size:14px; text-transform:uppercase; letter-spacing:-0.5px; line-height:1.2; display:block;">${row.key}</strong>
+                </div>
+                <span style="font-size:10px; font-weight:900; opacity:0.4;">#${idx + 3}</span>
+            </div>
+            <hr style="border:none; border-top: 3px solid var(--ink-black, #111); margin: 6px 0 10px 0; padding:0;">
+            <div style="flex-grow:1; font-size:12px; font-weight:bold; overflow-y:auto; white-space:pre-wrap; word-break:break-word; line-height:1.4; color:#111;">
+                ${row.payload}
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function filterPredictionCards() {
+    const filterText = document.getElementById('predictionSearch').value.trim().toUpperCase();
+    const cards = document.querySelectorAll('.prediction-manga-card');
+
+    cards.forEach(card => {
+        const title = card.getAttribute('data-title') || "";
+        card.style.display = title.includes(filterText) ? "flex" : "none";
     });
 }
 
@@ -492,17 +552,20 @@ function closeChessModal() {
 function getRandomMangaColor() { return softMangaColors[Math.floor(Math.random() * softMangaColors.length)]; }
 function triggerGifFlip() { const frame = document.querySelector('.blank-character-frame'); if (frame) frame.classList.toggle('flipped'); }
 
+// 🌟 FIX: Appends active timestamp tokens to break browser caching behavior completely
 function changeToRandomGif() {
     const frame = document.querySelector('.blank-character-frame');
     if (frame) {
         const randomIndex = Math.floor(Math.random() * gifs.length);
-        frame.style.backgroundImage = `url('${gifs[randomIndex]}')`;
+        const uniqueGifUrl = `${gifs[randomIndex]}?t=${Date.now()}`;
+        frame.style.backgroundImage = `url('${uniqueGifUrl}')`;
     }
 }
 
 function renderPortal() {
     document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
     const bottomGrid = document.getElementById('bottomGrid');
+    if (!bottomGrid) return;
     bottomGrid.innerHTML = '';
 
     offlineDatabase.bottomSnippets.forEach(item => {
@@ -549,31 +612,39 @@ function copyTextAreaContent() {
 function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
     const searchTab = document.getElementById('searchMenuTab');
+    const predictionsTab = document.getElementById('predictionsTab');
     const logsTab = document.getElementById('logsTab');
     const navLinks = document.querySelectorAll('.nav-links a');
 
     navLinks.forEach(link => link.classList.remove('active'));
-    dashTab.style.display = 'none';
-    searchTab.style.display = 'none';
-    logsTab.style.display = 'none';
+    
+    if(dashTab) dashTab.style.display = 'none';
+    if(searchTab) searchTab.style.display = 'none';
+    if(predictionsTab) predictionsTab.style.display = 'none';
+    if(logsTab) logsTab.style.display = 'none';
 
     document.getElementById('searchSuggestions').style.display = "none";
     document.getElementById('sheetArchiveArea').style.display = "none";
     isArchiveOpen = false;
 
     if (tabName === 'dashboard') {
-        dashTab.style.display = 'grid';
+        if(dashTab) dashTab.style.display = 'grid';
         navLinks[0].classList.add('active');
         showToast("Switched to Main Command Dashboard");
     } else if (tabName === 'searchTab') {
-        searchTab.style.display = 'grid';
+        if(searchTab) searchTab.style.display = 'grid';
         navLinks[1].classList.add('active');
         showToast("Switched to Sheet Search Engine");
         document.getElementById('sheetKeySearch').value = ""; 
         clearAndHideSearch();
+    } else if (tabName === 'predictions') {
+        if(predictionsTab) predictionsTab.style.display = 'block';
+        if(navLinks[2]) navLinks[2].classList.add('active');
+        showToast("Switched to Predictions Deck Matrix");
+        renderPredictionWorkspace(); // Renders E & F panel loops immediately on open
     } else if (tabName === 'logs') {
-        logsTab.style.display = 'grid';
-        navLinks[2].classList.add('active');
+        if(logsTab) logsTab.style.display = 'grid';
+        if(navLinks[3]) navLinks[3].classList.add('active');
         showToast("Viewing Core System Performance Records");
     }
     changeToRandomGif();
@@ -618,7 +689,7 @@ function showToast(message) {
     if (!container) return;
     
     const toast = document.createElement('div');
-    toast.className = 'toast-banner'; // Ensure this matches your style.css rules
+    toast.className = 'toast-banner'; 
     toast.style.background = 'var(--ink-black, #111)';
     toast.style.color = 'var(--bg-paper, #fff)';
     toast.style.border = '2px solid var(--ink-black)';
@@ -637,10 +708,8 @@ function showToast(message) {
     }, 2500);
 }
 
-
 const MAX_HISTORY = 20; 
 
-// 1. Core Logic: Saves unique entries (only if brand new)
 function saveToSearchHistory(key) {
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
     const exists = history.some(item => item.toUpperCase() === key.toUpperCase());
@@ -653,7 +722,6 @@ function saveToSearchHistory(key) {
     }
 }
 
-// 2. Individual pill deletion tracker
 function deleteSingleHistoryItem(key, event) {
     event.stopPropagation(); 
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
@@ -662,17 +730,14 @@ function deleteSingleHistoryItem(key, event) {
     renderSearchHistory();
 }
 
-// 3. Clear all items handler
 function clearAllSearchHistory() {
     localStorage.removeItem('mangaSearchHistory');
     renderSearchHistory();
     showToast("Cleared search history memory index.");
 }
 
-// 4. Global variables to track the drag states smoothly
 let draggedItemIndex = null;
 
-// 5. Upgraded UI Logic: Complete with Drag and Drop listeners
 function renderSearchHistory() {
     const container = document.getElementById('searchHistoryContainer');
     if (!container) return;
@@ -696,11 +761,9 @@ function renderSearchHistory() {
         const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
         const randomTilt = (Math.random() * 4 - 2).toFixed(2);
         
-        // Drag and Drop configuration properties
         pillWrapper.setAttribute("draggable", "true");
         pillWrapper.setAttribute("data-index", idx);
         
-        // Stylizing
         pillWrapper.style.display = "inline-flex";
         pillWrapper.style.alignItems = "center";
         pillWrapper.style.gap = "6px";
@@ -710,35 +773,33 @@ function renderSearchHistory() {
         pillWrapper.style.padding = "4px 8px";
         pillWrapper.style.fontSize = "15px";
         pillWrapper.style.fontWeight = "bold";
-        pillWrapper.style.cursor = "grab"; // Changes cursor to a hand grab symbol
+        pillWrapper.style.cursor = "grab"; 
         pillWrapper.style.textTransform = "uppercase";
         pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
         pillWrapper.style.transition = "transform 0.05s ease, opacity 0.1s ease";
         
-        // --- DRAG EVENT LISTENERS ---
         pillWrapper.ondragstart = (e) => {
             draggedItemIndex = idx;
-            pillWrapper.style.opacity = "0.4"; // Fades the card out slightly while holding it
+            pillWrapper.style.opacity = "0.4"; 
             e.dataTransfer.effectAllowed = "move";
         };
         
         pillWrapper.ondragend = () => {
             pillWrapper.style.opacity = "1";
             draggedItemIndex = null;
-            // Clear any lingering target borders
             document.querySelectorAll('#searchHistoryContainer > div').forEach(el => {
                 if(el.style.borderStyle === "dashed") el.style.borderStyle = "solid";
             });
         };
         
         pillWrapper.ondragover = (e) => {
-            e.preventDefault(); // Required to allow drop execution!
+            e.preventDefault(); 
             return false;
         };
 
         pillWrapper.ondragenter = () => {
             if (idx !== draggedItemIndex) {
-                pillWrapper.style.borderStyle = "dashed"; // Give visual feedback over drag target
+                pillWrapper.style.borderStyle = "dashed"; 
             }
         };
 
@@ -750,19 +811,13 @@ function renderSearchHistory() {
             e.preventDefault();
             if (draggedItemIndex !== null && draggedItemIndex !== idx) {
                 let updatedHistory = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-                
-                // Cut the dragged item out of its original row slot
                 const [reorderedItem] = updatedHistory.splice(draggedItemIndex, 1);
-                // Inject it directly into the new destination slot drop coordinates
                 updatedHistory.splice(idx, 0, reorderedItem);
-                
-                // Save your custom arrangement order back to browser memory
                 localStorage.setItem('mangaSearchHistory', JSON.stringify(updatedHistory));
                 renderSearchHistory();
             }
         };
-        
-        // --- SEARCH ENGINE TRIGGER CLICK ---
+
         pillWrapper.onclick = () => {
             const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
             if (match) {
@@ -772,18 +827,12 @@ function renderSearchHistory() {
                 const payloadOutput = document.getElementById('sheetPayloadArea');
                 const actionsHeader = document.getElementById('searchActionsHeader');
                 const buttonGroup = document.getElementById('searchButtonGroup');
-                const suggestionsBox = document.getElementById('searchSuggestions');
                 
                 if (payloadOutput && actionsHeader && buttonGroup) {
                     payloadOutput.value = match.payload;
                     payloadOutput.style.display = "block";
                     actionsHeader.style.display = "flex";
                     buttonGroup.style.display = "flex";
-                }
-                
-                if (suggestionsBox) {
-                    suggestionsBox.innerHTML = "";
-                    suggestionsBox.style.setProperty('display', 'none', 'important');
                 }
             }
         };
@@ -792,21 +841,6 @@ function renderSearchHistory() {
             <span>${key}</span>
             <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; cursor: pointer; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
         `;
-        
         container.appendChild(pillWrapper);
     });
 }
-
-window.onload = function() {
-    renderPortal();
-    changeToRandomGif();
-    renderSearchHistory();
-    syncGoogleSheetData();
-    const gifFrame = document.querySelector('.blank-character-frame');
-    if (gifFrame) {
-        gifFrame.addEventListener('click', () => {
-            changeToRandomGif(); triggerGifFlip(); showToast("Shifting avatar transmission matrix...");
-        });
-    }
-    setInterval(triggerGifFlip, 12000); 
-};
