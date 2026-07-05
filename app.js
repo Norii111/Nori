@@ -52,6 +52,7 @@ async function syncGoogleSheetData() {
         showToast(`Sync finished! Loaded ${googleSheetData.length} records.`);
         
         if (isArchiveOpen) renderArchiveContainer();
+        renderPredictionCards(); // Keep predictions dynamic when data changes
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
         showToast("Error pulling cloud sheets registry.");
@@ -88,8 +89,11 @@ function parseCsvStrictAB(text) {
         if (cols.length >= 2) {
             let colA = cols[0].trim();
             let colB = cols[1].trim(); 
+            // Support fetching prediction fallback parameters if columns E/F (index 4/5) are present
+            let colE = cols[4] ? cols[4].trim() : "";
+            let colF = cols[5] ? cols[5].trim() : "";
             if (colA) {
-                googleSheetData.push({ key: colA, payload: colB });
+                googleSheetData.push({ key: colA, payload: colB, predTitle: colE, predContent: colF });
             }
         }
     }
@@ -177,7 +181,7 @@ function selectFinalMatch(match) {
     actionsHeader.style.display = "flex";    
     buttonGroup.style.display = "flex";    
 
-    saveToSearchHistory(match.key); // 🌟 ADD THIS LINE HERE to save manual selections
+    saveToSearchHistory(match.key);
 }
 
 function clearAndHideSearch() {
@@ -206,7 +210,6 @@ function copySearchPayload() {
             showToast("Clipboard fallback executed.");
         })
         .finally(() => {
-            // 🌟 Executing in finally guarantees the box is cleared no matter what!
             if (searchInput) {
                 searchInput.value = "";
             }
@@ -214,19 +217,6 @@ function copySearchPayload() {
         });
 }
 
-function injectPayloadToWorkspace() {
-    const activePayload = document.getElementById('sheetPayloadArea').value;
-    if (!activePayload || activePayload.startsWith("❌")) {
-        showToast("Error: No data loaded to pull.");
-        return;
-    }
-    offlineDatabase.primaryGAS = activePayload;
-    document.getElementById('primaryGasArea').value = activePayload;
-    showToast("Loaded description payload data to dashboard workspace console!");
-    switchTab('dashboard');
-}
-
-// --- ARCHIVE VERTICAL COLUMN LIST BUILDER ---
 function toggleArchiveView() {
     const archiveBox = document.getElementById('sheetArchiveArea');
     const searchInput = document.getElementById('sheetKeySearch');
@@ -236,12 +226,7 @@ function toggleArchiveView() {
         isArchiveOpen = false;
     } else {
         if (searchInput) searchInput.value = ""; 
-        
-        // Run your layout hide logic safely
-        if (typeof clearAndHideSearch === "function") {
-            clearAndHideSearch();
-        }
-        
+        clearAndHideSearch();
         renderArchiveContainer();
         if (archiveBox) {
             archiveBox.style.setProperty('display', 'flex', 'important');
@@ -259,7 +244,6 @@ function renderArchiveContainer() {
         return;
     }
 
-    // Force a wrapping horizontal flex grid that looks like comic panels
     archiveBox.style.setProperty('display', 'flex', 'important');
     archiveBox.style.setProperty('flex-direction', 'row', 'important');
     archiveBox.style.setProperty('flex-wrap', 'wrap', 'important');
@@ -272,14 +256,11 @@ function renderArchiveContainer() {
 
     googleSheetData.forEach((row, idx) => {
         const rowDiv = document.createElement('div');
-        
-        // 1. Structural Sizing (Uniform but spacious cards)
         rowDiv.style.boxSizing = "border-box";
-        rowDiv.style.width = "calc(20% - 13px)"; // Exactly 5 cards per row (accounting for gaps)
-        rowDiv.style.minWidth = "180px";        // Prevents them from getting too skinny on small screens
-        rowDiv.style.height = "220px";          // Fixed matching height for all cards
+        rowDiv.style.width = "calc(20% - 13px)"; 
+        rowDiv.style.minWidth = "180px";        
+        rowDiv.style.height = "220px";          
         
-        // 2. Manga Styling
         rowDiv.style.border = "4px solid var(--ink-black, #111)";
         rowDiv.style.background = softMangaColors[idx % softMangaColors.length] || "#fff";
         rowDiv.style.padding = "14px";
@@ -288,22 +269,16 @@ function renderArchiveContainer() {
         rowDiv.style.flexDirection = "column";
         rowDiv.style.position = "relative";
         rowDiv.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
-        
-        // Heavy, offset manga shadow
         rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
 
-        // 3. The "Beautifully Messy" Secret Sauce: Random micro-rotation!
-        // This tilts each card randomly between -2.5 and +2.5 degrees so they look hand-placed
         const randomTilt = (Math.random() * 5 - 2.5).toFixed(2);
         rowDiv.style.transform = `rotate(${randomTilt}deg)`;
 
-        // Highlight tags
         let timelineTag = "";
         if (idx === totalItems - 1) {
             timelineTag = "<span style='background:#f39c12; color:#000; font-size:9px; padding:2px 4px; border:2px solid #111; margin-bottom:4px; display:inline-block; font-weight:900;'>NEW</span>";
         }
 
-        // 4. Content Mapping (Title -> Line -> Preserved Content)
         rowDiv.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
                 <div style="max-width: 75%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -312,15 +287,10 @@ function renderArchiveContainer() {
                 </div>
                 <span style="font-size:10px; font-weight:bold; opacity:0.6; font-family:inherit;">#${idx + 2}</span>
             </div>
-            
-            <!-- Manga separator line -->
             <hr style="border: none; border-top: 3px solid var(--ink-black, #111); margin: 4px 0 8px 0; padding:0;">
-            
-            <!-- Cell B Content: Preserves line breaks/formatting safely but hides massive overflows -->
             <div style="font-size:12px; font-family:inherit; color:#111; line-height:1.4; flex-grow:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; white-space:pre-wrap; word-break:break-word;">${row.payload}</div>
         `;
 
-        // Interactive pop effect on hover
         rowDiv.onmouseenter = () => {
             rowDiv.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
             rowDiv.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
@@ -330,36 +300,28 @@ function renderArchiveContainer() {
             rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
         };
 
-// 5. Clean Action Interface (Brute-forces data display and completely kills suggestion items)
         rowDiv.onclick = (e) => {
             e.stopPropagation();
-            
-            // 1. Force the input value matching Cell A
             const searchInput = document.getElementById('sheetKeySearch');
-            if (searchInput) {
-                searchInput.value = row.key;
-            }
+            if (searchInput) searchInput.value = row.key;
             
-            // 2. Direct DOM override: Force fill the text field and open the container panels instantly
             const payloadOutput = document.getElementById('sheetPayloadArea');
             const actionsHeader = document.getElementById('searchActionsHeader');
             const buttonGroup = document.getElementById('searchButtonGroup');
 
             if (payloadOutput && actionsHeader && buttonGroup) {
-                payloadOutput.value = row.payload;       // Dumps cell B description text directly here
-                payloadOutput.style.display = "block";    // Reveals the content panel
-                actionsHeader.style.display = "flex";     // Reveals copy buttons container header
-                buttonGroup.style.display = "flex";       // Reveals action items
+                payloadOutput.value = row.payload;
+                payloadOutput.style.display = "block";
+                actionsHeader.style.display = "flex";
+                buttonGroup.style.display = "flex";
             }
             
-            // 3. Absolute execution kill on the dropdown box AND all its suggestion-items
             const suggestionsBox = document.getElementById('searchSuggestions');
             if (suggestionsBox) {
-                suggestionsBox.innerHTML = "";            // Deletes all .suggestion-item nodes instantly
-                suggestionsBox.style.setProperty('display', 'none', 'important'); // Blasts container out of sight
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.style.setProperty('display', 'none', 'important');
             }
 
-            // 4. Wipe archive UI out of frame cleanly
             archiveBox.style.display = "none";
             isArchiveOpen = false;
             saveToSearchHistory(row.key);
@@ -367,6 +329,116 @@ function renderArchiveContainer() {
 
         archiveBox.appendChild(rowDiv);
     });
+}
+
+/* --- DYNAMIC PREDICTION ENGINE FUNCTIONS --- */
+function renderPredictionCards() {
+    const container = document.getElementById('predictionCardGrid');
+    if (!container) return;
+    container.innerHTML = "";
+
+    // Pull rows that contain values populated within prediction targets
+    const validPreds = googleSheetData.filter(row => row.predTitle || row.predContent);
+
+    if (validPreds.length === 0) {
+        container.innerHTML = "<p style='font-weight:bold; font-size:13px; text-align:center; width:100%; margin-top:20px;'>Matrix registries empty inside Columns E/F ranges.</p>";
+        return;
+    }
+
+    validPreds.forEach((row, idx) => {
+        const card = document.createElement('div');
+        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
+        const tilt = (Math.random() * 4 - 2).toFixed(2);
+
+        card.className = "prediction-item-card";
+        card.style.boxSizing = "border-box";
+        card.style.width = "calc(20% - 13px)";
+        card.style.minWidth = "180px";
+        card.style.height = "200px";
+        card.style.border = "3px solid var(--ink-black, #111)";
+        card.style.background = randomBg;
+        card.style.padding = "12px";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
+        card.style.transform = `rotate(${tilt}deg)`;
+        card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
+
+        card.innerHTML = `
+            <strong style="font-size:13px; display:block; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-bottom:2px;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
+            <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:4px 0;">
+            <div style="font-size:11px; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:8; -webkit-box-orient:vertical; white-space:pre-wrap;">${row.predContent || 'No descriptor registers linked.'}</div>
+        `;
+
+        card.onmouseenter = () => {
+            card.style.transform = `rotate(${tilt}deg) translate(-2px, -2px)`;
+            card.style.boxShadow = "7px 7px 0px var(--ink-black, #111)";
+        };
+        card.onmouseleave = () => {
+            card.style.transform = `rotate(${tilt}deg)`;
+            card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
+        };
+
+        container.appendChild(card);
+    });
+}
+
+function filterPredictionCards() {
+    const searchVal = document.getElementById('predictionSearch').value.trim().toUpperCase();
+    const cards = document.querySelectorAll('#predictionCardGrid > div');
+    
+    cards.forEach(card => {
+        const textStr = card.innerText.toUpperCase();
+        if (textStr.includes(searchVal)) {
+            card.style.display = "flex";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+
+/* --- CORE TAB SWITCH WITH SHIFT CORRECTIONS --- */
+function switchTab(tabName) {
+    const dashTab = document.getElementById('dashboardTab');
+    const searchTab = document.getElementById('searchMenuTab');
+    const predictionsTab = document.getElementById('predictionsTab');
+    const logsTab = document.getElementById('logsTab');
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    // Remove active styles across all nodes cleanly
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    // Completely terminate layout displays on tabs to avoid pushed spaces
+    dashTab.style.display = 'none';
+    searchTab.style.display = 'none';
+    predictionsTab.style.display = 'none';
+    logsTab.style.display = 'none';
+
+    document.getElementById('searchSuggestions').style.display = "none";
+    document.getElementById('sheetArchiveArea').style.display = "none";
+    isArchiveOpen = false;
+
+    if (tabName === 'dashboard') {
+        dashTab.style.display = 'grid';
+        navLinks[0].classList.add('active');
+        showToast("Switched to Main Command Dashboard");
+    } else if (tabName === 'searchTab') {
+        searchTab.style.display = 'grid';
+        navLinks[1].classList.add('active');
+        showToast("Switched to Sheet Search Engine");
+        document.getElementById('sheetKeySearch').value = ""; 
+        clearAndHideSearch();
+    } else if (tabName === 'predictions') {
+        predictionsTab.style.display = 'grid';
+        navLinks[2].classList.add('active'); // Dynamic highlights mapped explicitly here
+        showToast("Switched to Prediction Registry Deck");
+        renderPredictionCards();
+    } else if (tabName === 'logs') {
+        logsTab.style.display = 'grid';
+        navLinks[3].classList.add('active'); // Shifted safely to terminal element layout profile
+        showToast("Viewing Core System Performance Records");
+    }
+    changeToRandomGif();
 }
 
 // --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
@@ -503,6 +575,7 @@ function changeToRandomGif() {
 function renderPortal() {
     document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
     const bottomGrid = document.getElementById('bottomGrid');
+    if (!bottomGrid) return;
     bottomGrid.innerHTML = '';
 
     offlineDatabase.bottomSnippets.forEach(item => {
@@ -546,39 +619,6 @@ function copyTextAreaContent() {
         .catch(() => showToast("Error executing clipboard pipeline."));
 }
 
-function switchTab(tabName) {
-    const dashTab = document.getElementById('dashboardTab');
-    const searchTab = document.getElementById('searchMenuTab');
-    const logsTab = document.getElementById('logsTab');
-    const navLinks = document.querySelectorAll('.nav-links a');
-
-    navLinks.forEach(link => link.classList.remove('active'));
-    dashTab.style.display = 'none';
-    searchTab.style.display = 'none';
-    logsTab.style.display = 'none';
-
-    document.getElementById('searchSuggestions').style.display = "none";
-    document.getElementById('sheetArchiveArea').style.display = "none";
-    isArchiveOpen = false;
-
-    if (tabName === 'dashboard') {
-        dashTab.style.display = 'grid';
-        navLinks[0].classList.add('active');
-        showToast("Switched to Main Command Dashboard");
-    } else if (tabName === 'searchTab') {
-        searchTab.style.display = 'grid';
-        navLinks[1].classList.add('active');
-        showToast("Switched to Sheet Search Engine");
-        document.getElementById('sheetKeySearch').value = ""; 
-        clearAndHideSearch();
-    } else if (tabName === 'logs') {
-        logsTab.style.display = 'grid';
-        navLinks[2].classList.add('active');
-        showToast("Viewing Core System Performance Records");
-    }
-    changeToRandomGif();
-}
-
 function openModal() {
     document.getElementById('mangaModal').classList.add('open');
     document.getElementById('modalInput').value = '';
@@ -618,7 +658,7 @@ function showToast(message) {
     if (!container) return;
     
     const toast = document.createElement('div');
-    toast.className = 'toast-banner'; // Ensure this matches your style.css rules
+    toast.className = 'toast-banner'; 
     toast.style.background = 'var(--ink-black, #111)';
     toast.style.color = 'var(--bg-paper, #fff)';
     toast.style.border = '2px solid var(--ink-black)';
@@ -637,10 +677,8 @@ function showToast(message) {
     }, 2500);
 }
 
-
 const MAX_HISTORY = 20; 
 
-// 1. Core Logic: Saves unique entries (only if brand new)
 function saveToSearchHistory(key) {
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
     const exists = history.some(item => item.toUpperCase() === key.toUpperCase());
@@ -653,7 +691,6 @@ function saveToSearchHistory(key) {
     }
 }
 
-// 2. Individual pill deletion tracker
 function deleteSingleHistoryItem(key, event) {
     event.stopPropagation(); 
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
@@ -662,17 +699,14 @@ function deleteSingleHistoryItem(key, event) {
     renderSearchHistory();
 }
 
-// 3. Clear all items handler
 function clearAllSearchHistory() {
     localStorage.removeItem('mangaSearchHistory');
     renderSearchHistory();
     showToast("Cleared search history memory index.");
 }
 
-// 4. Global variables to track the drag states smoothly
 let draggedItemIndex = null;
 
-// 5. Upgraded UI Logic: Complete with Drag and Drop listeners
 function renderSearchHistory() {
     const container = document.getElementById('searchHistoryContainer');
     if (!container) return;
@@ -696,11 +730,9 @@ function renderSearchHistory() {
         const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
         const randomTilt = (Math.random() * 4 - 2).toFixed(2);
         
-        // Drag and Drop configuration properties
         pillWrapper.setAttribute("draggable", "true");
         pillWrapper.setAttribute("data-index", idx);
         
-        // Stylizing
         pillWrapper.style.display = "inline-flex";
         pillWrapper.style.alignItems = "center";
         pillWrapper.style.gap = "6px";
@@ -710,35 +742,33 @@ function renderSearchHistory() {
         pillWrapper.style.padding = "4px 8px";
         pillWrapper.style.fontSize = "15px";
         pillWrapper.style.fontWeight = "bold";
-        pillWrapper.style.cursor = "grab"; // Changes cursor to a hand grab symbol
+        pillWrapper.style.cursor = "grab"; 
         pillWrapper.style.textTransform = "uppercase";
         pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
         pillWrapper.style.transition = "transform 0.05s ease, opacity 0.1s ease";
         
-        // --- DRAG EVENT LISTENERS ---
         pillWrapper.ondragstart = (e) => {
             draggedItemIndex = idx;
-            pillWrapper.style.opacity = "0.4"; // Fades the card out slightly while holding it
+            pillWrapper.style.opacity = "0.4"; 
             e.dataTransfer.effectAllowed = "move";
         };
         
         pillWrapper.ondragend = () => {
             pillWrapper.style.opacity = "1";
             draggedItemIndex = null;
-            // Clear any lingering target borders
             document.querySelectorAll('#searchHistoryContainer > div').forEach(el => {
                 if(el.style.borderStyle === "dashed") el.style.borderStyle = "solid";
             });
         };
         
         pillWrapper.ondragover = (e) => {
-            e.preventDefault(); // Required to allow drop execution!
+            e.preventDefault(); 
             return false;
         };
 
         pillWrapper.ondragenter = () => {
             if (idx !== draggedItemIndex) {
-                pillWrapper.style.borderStyle = "dashed"; // Give visual feedback over drag target
+                pillWrapper.style.borderStyle = "dashed"; 
             }
         };
 
@@ -750,19 +780,13 @@ function renderSearchHistory() {
             e.preventDefault();
             if (draggedItemIndex !== null && draggedItemIndex !== idx) {
                 let updatedHistory = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-                
-                // Cut the dragged item out of its original row slot
                 const [reorderedItem] = updatedHistory.splice(draggedItemIndex, 1);
-                // Inject it directly into the new destination slot drop coordinates
-                updatedHistory.splice(idx, 0, reorderedItem);
-                
-                // Save your custom arrangement order back to browser memory
+                updatedHistory.splice(idx, 0,reorderedItem);
                 localStorage.setItem('mangaSearchHistory', JSON.stringify(updatedHistory));
                 renderSearchHistory();
             }
         };
         
-        // --- SEARCH ENGINE TRIGGER CLICK ---
         pillWrapper.onclick = () => {
             const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
             if (match) {
