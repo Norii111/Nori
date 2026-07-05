@@ -70,8 +70,12 @@ function parseCsvStrictAB(text) {
         let next = text[i+1];
 
         if (c === '"') {
-            if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
-            else { inQuotes = !inQuotes; }
+            if (inQuotes && next === '"') { 
+                row[row.length - 1] += '"'; 
+                i++; 
+            } else { 
+                inQuotes = !inQuotes; 
+            }
         } else if (c === ',' && !inQuotes) {
             row.push("");
         } else if ((c === '\r' || c === '\n') && !inQuotes) {
@@ -87,13 +91,20 @@ function parseCsvStrictAB(text) {
     for (let i = 1; i < lines.length; i++) {
         let cols = lines[i];
         if (cols.length >= 2) {
-            let colA = cols[0].trim();
-            let colB = cols[1].trim(); 
-            // Support fetching prediction fallback parameters if columns E/F (index 4/5) are present
+            let colA = cols[0] ? cols[0].trim() : "";
+            let colB = cols[1] ? cols[1].trim() : ""; 
+            
+            // Fixed: Pulling exactly from Column E (index 4) and Column F (index 5) safely
             let colE = cols[4] ? cols[4].trim() : "";
             let colF = cols[5] ? cols[5].trim() : "";
-            if (colA) {
-                googleSheetData.push({ key: colA, payload: colB, predTitle: colE, predContent: colF });
+            
+            if (colA || colE) {
+                googleSheetData.push({ 
+                    key: colA, 
+                    payload: colB, 
+                    predTitle: colE, 
+                    predContent: colF 
+                });
             }
         }
     }
@@ -352,22 +363,23 @@ function renderPredictionCards() {
 
         card.className = "prediction-item-card";
         card.style.boxSizing = "border-box";
-        card.style.width = "calc(20% - 13px)";
-        card.style.minWidth = "180px";
-        card.style.height = "200px";
+        card.style.width = "calc(25% - 12px)"; // Expanded width to give text more breathing room
+        card.style.minWidth = "220px";
+        card.style.minHeight = "240px"; // Changed to min-height to allow full content extension
         card.style.border = "3px solid var(--ink-black, #111)";
         card.style.background = randomBg;
-        card.style.padding = "12px";
+        card.style.padding = "14px";
         card.style.display = "flex";
         card.style.flexDirection = "column";
         card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
         card.style.transform = `rotate(${tilt}deg)`;
         card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
 
+        // Removed -webkit-line-clamp constraint so the text is fully shown
         card.innerHTML = `
-            <strong style="font-size:13px; display:block; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-bottom:2px;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
-            <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:4px 0;">
-            <div style="font-size:11px; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:8; -webkit-box-orient:vertical; white-space:pre-wrap;">${row.predContent || 'No descriptor registers linked.'}</div>
+            <strong style="font-size:14px; display:block; text-transform:uppercase; margin-bottom:2px; word-break:break-word;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
+            <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:6px 0;">
+            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; flex-grow:1;">${row.predContent || 'No descriptor registers linked.'}</div>
         `;
 
         card.onmouseenter = () => {
