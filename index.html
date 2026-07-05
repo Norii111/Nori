@@ -82,8 +82,7 @@
                     </div>
                 </div>
                 
-                <div id="predictionCardGrid" style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 16px; padding: 10px 4px; justify-content: flex-start; overflow-y: auto; flex-grow: 1; box-sizing: border-box; width: 100%;">
-                    </div>
+                <div id="predictionCardGrid" style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 16px; padding: 10px 4px; justify-content: flex-start; overflow-y: auto; flex-grow: 1; box-sizing: border-box; width: 100%;"></div>
             </section>
         </main>
 
@@ -95,14 +94,24 @@
         </main>
     </div>
 
+    <!-- FIXED: Redesigned Dynamic Content Notepad Entry Terminal Overlay -->
     <div id="mangaModal" class="modal-overlay">
-        <div class="modal-panel">
-            <h3>[ NEW CREATION ENTRY ]</h3>
-            <label for="modalInput" style="display:block; margin-bottom:10px; font-size:12px;">ENTER UNIQUE TITLE:</label>
-            <input type="text" id="modalInput" placeholder="e.g., Target Site Macro">
-            <div class="modal-buttons">
-                <button class="manga-btn" onclick="closeModal()">Cancel</button>
-                <button class="manga-btn" onclick="submitNewNote()">Confirm</button>
+        <div class="modal-panel" style="width: 90%; max-width: 650px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;">
+            <h3 style="margin: 0 0 4px 0; font-size: 16px; border-bottom: 2px solid var(--ink-black, #111); padding-bottom: 6px;">[ NEW NOTEPAD ENTRY ]</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="modalInput" style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #333;">Enter Unique Title:</label>
+                <input type="text" id="modalInput" placeholder="e.g., Target Site Macro" style="width: 100%; box-sizing: border-box; padding: 8px; font-family: inherit; font-weight: bold; border: 2px solid var(--ink-black, #111);">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1;">
+                <label for="modalContentInput" style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #333;">Userscript Content Block:</label>
+                <textarea id="modalContentInput" placeholder="// Paste your massive 50k+ character userscript matrix lines here..." style="width: 100%; height: 280px; min-height: 150px; max-height: 400px; box-sizing: border-box; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.4; border: 2px solid var(--ink-black, #111); resize: vertical; background: var(--bg-paper, #fff); color: #000;"></textarea>
+            </div>
+
+            <div class="modal-buttons" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+                <button class="manga-btn" style="padding: 6px 14px; background: #e5e1d5;" onclick="closeModal()">Cancel</button>
+                <button class="manga-btn primary-save" style="padding: 6px 16px; background: var(--ink-black, #111); color: var(--bg-paper, #fff);" onclick="submitNewNote()">Confirm & Push Cloud</button>
             </div>
         </div>
     </div>
