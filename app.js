@@ -638,41 +638,28 @@ function showToast(message) {
 }
 
 
-const MAX_HISTORY = 20; 
+const MAX_HISTORY = 5; // Limits history to the last 5 unique searches
 
-// 1. Core Logic: Saves unique entries (only if brand new)
+// 1. Core Logic: Save a selected title to localStorage
 function saveToSearchHistory(key) {
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-    const exists = history.some(item => item.toUpperCase() === key.toUpperCase());
     
-    if (!exists) {
-        history.unshift(key);
-        if (history.length > MAX_HISTORY) history.pop();
-        localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
-        renderSearchHistory();
+    // Remove if it already exists (so it bumps to the front of the list)
+    history = history.filter(item => item !== key);
+    
+    // Add to the front of the array
+    history.unshift(key);
+    
+    // Cap at maximum history limit
+    if (history.length > MAX_HISTORY) {
+        history.pop();
     }
-}
-
-// 2. Individual pill deletion tracker
-function deleteSingleHistoryItem(key, event) {
-    event.stopPropagation(); 
-    let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-    history = history.filter(item => item.toUpperCase() !== key.toUpperCase());
+    
     localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
     renderSearchHistory();
 }
 
-// 3. Clear all items handler
-function clearAllSearchHistory() {
-    localStorage.removeItem('mangaSearchHistory');
-    renderSearchHistory();
-    showToast("Cleared search history memory index.");
-}
-
-// 4. Global variables to track the drag states smoothly
-let draggedItemIndex = null;
-
-// 5. Upgraded UI Logic: Complete with Drag and Drop listeners
+// 2. UI Logic: Render the mini Neo-Brutalist history pills
 function renderSearchHistory() {
     const container = document.getElementById('searchHistoryContainer');
     if (!container) return;
@@ -684,91 +671,37 @@ function renderSearchHistory() {
         return;
     }
     
-    container.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
-            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS (DRAG TO REARRANGE):</span>
-            <button onclick="clearAllSearchHistory()" style="background: none; border: none; font-size: 10px; font-weight: 900; color: #cc0000; cursor: pointer; text-transform: uppercase; text-decoration: underline; padding: 0;">[ Clear All ]</button>
-        </div>
-    `;
+    // Build the layout header + pills
+    container.innerHTML = `<span style="font-size: 11px; font-weight: 900; opacity: 0.5; display: block; width: 100%; margin-bottom: 2px;">RECENTS:</span>`;
     
-    history.forEach((key, idx) => {
-        const pillWrapper = document.createElement('div');
-        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
-        const randomTilt = (Math.random() * 4 - 2).toFixed(2);
+    history.forEach(key => {
+        const pill = document.createElement('div');
+        pill.innerText = key;
         
-        // Drag and Drop configuration properties
-        pillWrapper.setAttribute("draggable", "true");
-        pillWrapper.setAttribute("data-index", idx);
+        // Stylized Mini Neo-Brutalist Comic Badge Look
+        pill.style.background = "#fff";
+        pill.style.border = "2px solid #111";
+        pill.style.boxShadow = "2px 2px 0px #111";
+        pill.style.padding = "4px 8px";
+        pill.style.fontSize = "11px";
+        pill.style.fontWeight = "bold";
+        pill.style.cursor = "pointer";
+        pill.style.textTransform = "uppercase";
+        pill.style.transition = "all 0.05s ease";
         
-        // Stylizing
-        pillWrapper.style.display = "inline-flex";
-        pillWrapper.style.alignItems = "center";
-        pillWrapper.style.gap = "6px";
-        pillWrapper.style.background = randomBg;
-        pillWrapper.style.border = "2px solid var(--ink-black, #111)";
-        pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)";
-        pillWrapper.style.padding = "4px 8px";
-        pillWrapper.style.fontSize = "15px";
-        pillWrapper.style.fontWeight = "bold";
-        pillWrapper.style.cursor = "grab"; // Changes cursor to a hand grab symbol
-        pillWrapper.style.textTransform = "uppercase";
-        pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
-        pillWrapper.style.transition = "transform 0.05s ease, opacity 0.1s ease";
+        // Hover dynamics
+        pill.onmouseenter = () => { pill.style.transform = "translate(-1px, -1px)"; pill.style.boxShadow = "3px 3px 0px #111"; };
+        pill.onmouseleave = () => { pill.style.transform = "none"; pill.style.boxShadow = "2px 2px 0px #111"; };
         
-        // --- DRAG EVENT LISTENERS ---
-        pillWrapper.ondragstart = (e) => {
-            draggedItemIndex = idx;
-            pillWrapper.style.opacity = "0.4"; // Fades the card out slightly while holding it
-            e.dataTransfer.effectAllowed = "move";
-        };
-        
-        pillWrapper.ondragend = () => {
-            pillWrapper.style.opacity = "1";
-            draggedItemIndex = null;
-            // Clear any lingering target borders
-            document.querySelectorAll('#searchHistoryContainer > div').forEach(el => {
-                if(el.style.borderStyle === "dashed") el.style.borderStyle = "solid";
-            });
-        };
-        
-        pillWrapper.ondragover = (e) => {
-            e.preventDefault(); // Required to allow drop execution!
-            return false;
-        };
-
-        pillWrapper.ondragenter = () => {
-            if (idx !== draggedItemIndex) {
-                pillWrapper.style.borderStyle = "dashed"; // Give visual feedback over drag target
-            }
-        };
-
-        pillWrapper.ondragleave = () => {
-            pillWrapper.style.borderStyle = "solid";
-        };
-        
-        pillWrapper.ondrop = (e) => {
-            e.preventDefault();
-            if (draggedItemIndex !== null && draggedItemIndex !== idx) {
-                let updatedHistory = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-                
-                // Cut the dragged item out of its original row slot
-                const [reorderedItem] = updatedHistory.splice(draggedItemIndex, 1);
-                // Inject it directly into the new destination slot drop coordinates
-                updatedHistory.splice(idx, 0, reorderedItem);
-                
-                // Save your custom arrangement order back to browser memory
-                localStorage.setItem('mangaSearchHistory', JSON.stringify(updatedHistory));
-                renderSearchHistory();
-            }
-        };
-        
-        // --- SEARCH ENGINE TRIGGER CLICK ---
-        pillWrapper.onclick = () => {
+        // 3. Execution Click: Simulates an archive card click perfectly
+        pill.onclick = () => {
             const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
             if (match) {
+                // Instantly force-fill input value
                 const searchInput = document.getElementById('sheetKeySearch');
                 if (searchInput) searchInput.value = match.key;
                 
+                // Directly bypass dropdown logic and show data views instantly
                 const payloadOutput = document.getElementById('sheetPayloadArea');
                 const actionsHeader = document.getElementById('searchActionsHeader');
                 const buttonGroup = document.getElementById('searchButtonGroup');
@@ -785,15 +718,13 @@ function renderSearchHistory() {
                     suggestionsBox.innerHTML = "";
                     suggestionsBox.style.setProperty('display', 'none', 'important');
                 }
+                
+                // Bump this item to the front of history again
+                saveToSearchHistory(match.key);
             }
         };
         
-        pillWrapper.innerHTML = `
-            <span>${key}</span>
-            <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; cursor: pointer; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
-        `;
-        
-        container.appendChild(pillWrapper);
+        container.appendChild(pill);
     });
 }
 
