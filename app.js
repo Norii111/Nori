@@ -844,3 +844,218 @@ function renderSearchHistory() {
         container.appendChild(pillWrapper);
     });
 }
+
+// ==========================================
+// 🌟 REAL-TIME WIB TRACKING SYSTEM & ENGINE
+// ==========================================
+
+const MARKET_TIMETABLE = {
+    "TOTO MACAU PAGI": 0.0,            // 00:00 WIB
+    "HUAHIN 0100": 0.5,                // 00:30 WIB
+    "KENTUCKY MIDDAY": 1.083,          // 01:05 WIB
+    "BANGKOK 0130": 1.0,               // 01:00 WIB
+    "FLORIDA MIDDAY": 1.333,           // 01:20 WIB
+    "NEW YORK MIDDAY": 2.25,           // 02:15 WIB
+    "BRUNEI 02": 2.5,                  // 02:30 WIB
+    "CAROLINA DAY": 2.75,              // 02:45 WIB
+    "OREGON03": 3.833,                 // 03:50 WIB
+    "OREGON06": 6.833,                 // 06:50 WIB
+    "BANGKOK 0930": 9.0,               // 09:00 WIB
+    "CALIFORNIA": 9.416,               // 09:25 WIB
+    "FLORIDA EVENING": 9.583,          // 09:35 WIB
+    "OREGON09": 9.833,                 // 09:50 WIB
+    "NEWYORKEVE": 10.416,              // 10:25 WIB
+    "KENTUCKYEVE": 10.75,              // 10:45 WIB
+    "TOTO CAMBODIA": 10.75,            // 10:45 WIB
+    "CAMBODIA": 10.75,                 // Fallback catch
+    "CHELSEA 11": 11.0,                // 11:00 WIB
+    "CAROLINAEVE": 11.283,             // 11:17 WIB
+    "BULLSEYE": 12.0,                  // 12:00 WIB
+    "POIPET12": 12.25,                 // 12:15 WIB
+    "OREGON12": 12.833,                // 12:50 WIB
+    "TOTOMACAU SIANG": 13.0,           // 13:00 WIB
+    "SYDNEY": 13.816,                  // 13:49 WIB
+    "JAKARTA 1400": 13.916,            // 13:55 WIB
+    "BRUNEI 14": 14.5,                 // 14:30 WIB
+    "CHELSEA 15": 15.0,                // 15:00 WIB
+    "TOTOMACAU 5D SORE": 15.25,        // 15:15 WIB
+    "POIPET15": 15.25,                 // 15:15 WIB
+    "TOTOMALI 1530": 15.25,            // 15:15 WIB
+    "TOTOMACAU SORE": 16.0,            // 16:00 WIB
+    "HUAHIN 1630": 16.0,               // 16:00 WIB
+    "SINGAPORE": 17.5,                 // 17:30 WIB
+    "MAGNUM4D": 18.166,                // 18:10 WIB
+    "TOTOMACAU MALAM 1": 19.0,         // 19:00 WIB
+    "CHELSEA 19": 19.0,                // 19:00 WIB
+    "POIPET19": 19.5,                  // 19:30 WIB
+    "PCSO": 19.833,                    // 19:50 WIB
+    "TOTOMALI 2030": 20.25,            // 20:15 WIB
+    "HUAHIN 2100": 20.5,               // 20:30 WIB
+    "CHELSEA 21": 21.0,                // 21:00 WIB
+    "TOTOMACAU 5D MALAM": 21.25,       // 21:15 WIB
+    "NEVADA": 21.25,                   // 21:15 WIB
+    "BRUNEI 21": 21.5,                 // 21:30 WIB
+    "TOTO MACAU MALAM 2": 22.0,        // 22:00 WIB
+    "POIPET22": 22.5,                  // 22:30 WIB
+    "HONGKONG": 22.983,                // 22:59 WIB
+    "TOTO MACAU MALAM 3": 23.0,        // 23:00 WIB
+    "TOTOMALI 2330": 23.25,            // 23:15 WIB
+    "JAKARTA 2330": 23.416,            // 23:25 WIB
+    "KING KONG 4D": 23.5               // 23:30 WIB
+};
+
+const softMangaColors = ["#f5f0e1", "#eaf2f8", "#fef9e7", "#f4ecf7", "#e8f8f5", "#fdf2e9"];
+
+setInterval(() => {
+    const predictionsTab = document.getElementById('predictionsTab');
+    const isVisible = predictionsTab && predictionsTab.style.display !== 'none';
+    
+    if (isVisible && typeof predictionSheetData !== 'undefined' && predictionSheetData.length > 0) {
+        renderPredictionWorkspace();
+    }
+}, 1000);
+
+function renderPredictionWorkspace() {
+    const timedGrid = document.getElementById('predictionCardGrid');
+    const alwaysOnGrid = document.getElementById('alwaysOnCardGrid');
+    if (!timedGrid || !alwaysOnGrid) return;
+
+    const now = new Date();
+    const utcHours = now.getUTCHours();
+    const utcMinutes = now.getUTCMinutes();
+    const utcSeconds = now.getUTCSeconds();
+    let wibDecimalHours = (utcHours + 7) % 24 + (utcMinutes / 60) + (utcSeconds / 3600);
+
+    timedGrid.innerHTML = ""; 
+    alwaysOnGrid.innerHTML = "";
+
+    predictionSheetData.forEach((row, idx) => {
+        if (!row.key) return;
+        const marketNameNormalized = row.key.trim().toUpperCase();
+        
+        const isAlwaysOn = marketNameNormalized.includes("PREDIKSI") || 
+                           marketNameNormalized.includes("HOKI DRAW") || 
+                           marketNameNormalized.includes("HOKIDRAW");
+
+        let isLive = true;
+        let timeRemainingString = "ALWAYS ACTIVE";
+
+        if (!isAlwaysOn) {
+            let drawTargetHour = null;
+            
+            for (let key in MARKET_TIMETABLE) {
+                if (marketNameNormalized.includes(key)) {
+                    drawTargetHour = MARKET_TIMETABLE[key];
+                    break;
+                }
+            }
+
+            if (drawTargetHour !== null) {
+                let diff = drawTargetHour - wibDecimalHours;
+                
+                if (diff < -21) diff += 24; 
+                if (diff > 3) diff -= 24;
+
+                if (diff > 0 && diff <= 3) {
+                    isLive = true;
+                    const totalSecs = Math.floor(diff * 3600);
+                    const hrs = Math.floor(totalSecs / 3600);
+                    const mins = Math.floor((totalSecs % 3600) / 60);
+                    const secs = totalSecs % 60;
+                    timeRemainingString = `LIVE: -${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                } else {
+                    isLive = false;
+                    timeRemainingString = "EXPIRED (GRAYED)";
+                }
+            } else {
+                timeRemainingString = "NO DEADLINE TRACKED";
+            }
+        }
+
+        const card = document.createElement('div');
+        card.className = "prediction-manga-card";
+        card.setAttribute("data-title", marketNameNormalized);
+
+        // Styling Config: height auto lets it stretch down to show all prediction payload rows
+        card.style.boxSizing = "border-box";
+        card.style.width = "calc(20% - 13px)"; 
+        card.style.minWidth = "185px";
+        card.style.height = "auto";
+        card.style.minHeight = "220px";
+        card.style.padding = "14px";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.position = "relative";
+        card.style.border = "4px solid #111";
+        card.style.cursor = "pointer";
+        card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
+
+        if (isAlwaysOn) {
+            card.style.background = "#e3ebd9";
+            card.style.boxShadow = "6px 6px 0px #111";
+            card.style.opacity = "1";
+        } else if (isLive) {
+            card.style.background = softMangaColors[idx % softMangaColors.length];
+            card.style.boxShadow = "6px 6px 0px #111";
+            card.style.opacity = "1";
+        } else {
+            card.style.background = "#e5e1d5";
+            card.style.boxShadow = "2px 2px 0px #111";
+            card.style.opacity = "0.45";
+        }
+
+        const randomTilt = isLive ? (Math.sin(idx) * 2.5).toFixed(2) : "0";
+        card.style.transform = `rotate(${randomTilt}deg)`;
+
+        if (isLive) {
+            card.onmouseenter = () => {
+                card.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
+                card.style.boxShadow = "8px 8px 0px #111";
+            };
+            card.onmouseleave = () => {
+                card.style.transform = `rotate(${randomTilt}deg)`;
+                card.style.boxShadow = "6px 6px 0px #111";
+            };
+        }
+
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 2px; text-align: left; width: 100%;">
+                <div style="width: 85%; text-align: left;">
+                    <strong style="font-size:13px; font-weight:900; text-transform:uppercase; letter-spacing:-0.3px; line-height:1.2; display:block; color:#111; text-align: left; white-space: normal; word-break: break-word;">${row.key}</strong>
+                </div>
+                <span style="font-size:9px; font-weight:900; opacity:0.35; width: 15%; text-align: right;">#${idx + 1}</span>
+            </div>
+            <div style="font-size: 9px; font-weight: 900; color: ${isLive ? (isAlwaysOn ? '#27ae60' : '#d35400') : '#7f8c8d'}; margin-top: 2px; text-transform: uppercase; letter-spacing:0.5px; text-align: left; width: 100%;">
+                ${timeRemainingString}
+            </div>
+            <hr style="border:none; border-top: 3px solid #111; margin: 6px 0 10px 0; padding:0; width: 100%;">
+            <div style="flex-grow:1; font-size:12px; font-weight:bold; white-space:pre-wrap; word-break:break-word; line-height:1.4; color:#111; font-family:inherit; text-align: left; width: 100%; overflow: visible;">
+                ${row.payload}
+            </div>
+        `;
+
+        card.onclick = () => {
+            if (typeof navigator.clipboard !== 'undefined') {
+                navigator.clipboard.writeText(row.payload)
+                    .then(() => { if (typeof showToast === 'function') showToast(`Copied payload for ${row.key}!`); })
+                    .catch(() => alert(`Payload matrix: \n${row.payload}`));
+            }
+        };
+
+        if (isAlwaysOn) {
+            alwaysOnGrid.appendChild(card);
+        } else {
+            timedGrid.appendChild(card);
+        }
+    });
+}
+
+function filterPredictionCards() {
+    const filterText = document.getElementById('predictionSearch').value.trim().toUpperCase();
+    const cards = document.querySelectorAll('.prediction-manga-card');
+
+    cards.forEach(card => {
+        const title = card.getAttribute('data-title') || "";
+        card.style.display = title.includes(filterText) ? "flex" : "none";
+    });
+}
