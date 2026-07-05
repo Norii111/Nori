@@ -491,30 +491,65 @@ function changeToRandomGif() {
 }
 
 function renderPortal() {
-    document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
+    const primaryGasArea = document.getElementById('primaryGasArea');
+    if (primaryGasArea) {
+        primaryGasArea.value = offlineDatabase.primaryGAS;
+    }
+    
     const bottomGrid = document.getElementById('bottomGrid');
     if (!bottomGrid) return;
     bottomGrid.innerHTML = '';
 
-    offlineDatabase.bottomSnippets.forEach(item => {
-        const randomBg = getRandomMangaColor();
+    offlineDatabase.bottomSnippets.forEach((item, idx) => {
+        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
         const card = document.createElement('div');
         card.className = 'snippet-card';
+        
+        // --- RESTORING NEO-BRUTALIST MANGA VISUAL MATRIX ---
+        card.style.boxSizing = "border-box";
         card.style.backgroundColor = randomBg;
-        card.style.border = "3px solid #111";
-        card.style.padding = "12px";
-        card.style.borderRadius = "6px";
-        card.style.boxShadow = "4px 4px 0px #111";
+        card.style.border = "4px solid var(--ink-black, #111)";
+        card.style.padding = "14px";
+        card.style.cursor = "pointer";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.position = "relative";
+        card.style.borderRadius = "0px"; // Strict sharp angles
+        card.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
+        
+        // Hand-placed, beautifully messy organic tilt matrix
+        const randomTilt = (Math.random() * 4 - 2).toFixed(2);
+        card.style.transform = `rotate(${randomTilt}deg)`;
+
         card.innerHTML = `
-            <div style="overflow: hidden;">
-                <strong style="display:block; margin-bottom:4px; font-size:14px; text-transform:uppercase;">${item.title}</strong>
-                <p style="font-size:11px; color:#333; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-family:monospace;">${item.content.substring(0, 60)}...</p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                <div style="max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <strong style="font-size: 14px; text-transform: uppercase; letter-spacing: -0.5px; display: block; color: var(--ink-black, #111); font-weight: 900;">${item.title}</strong>
+                </div>
+                <span style="font-size: 10px; font-weight: bold; opacity: 0.5; font-family: monospace;">#${idx + 1}</span>
             </div>
-            <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 12px;">
-                <button class="manga-btn danger" style="font-size:10px; padding:3px 6px;" onclick="deleteSnippet(${item.id})">Delete</button>
-                <button class="manga-btn" style="font-size:10px; padding:3px 6px;" onclick="viewSnippet(${item.id})">Swap View</button>
+            <hr style="border: none; border-top: 3px solid var(--ink-black, #111); margin: 4px 0 8px 0;">
+            <p style="font-size: 11px; color: #111; margin: 0; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; font-family: monospace; line-height: 1.4; white-space: pre-wrap; word-break: break-word;">${item.content.substring(0, 80)}...</p>
+            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; position: relative; z-index: 10;">
+                <button class="manga-btn danger" style="font-size: 10px; padding: 3px 8px; font-weight: 900;" onclick="event.stopPropagation(); deleteSnippet(${item.id})">DELETE</button>
+                <button class="manga-btn" style="font-size: 10px; padding: 3px 8px; font-weight: 900;" onclick="event.stopPropagation(); viewSnippet(${item.id})">SWAP VIEW</button>
             </div>
         `;
+
+        // Interactive spring mechanics
+        card.onmouseenter = () => {
+            card.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
+            card.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
+        };
+        card.onmouseleave = () => {
+            card.style.transform = `rotate(${randomTilt}deg)`;
+            card.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
+        };
+        
+        card.onclick = () => {
+            viewSnippet(item.id);
+        };
+
         bottomGrid.appendChild(card);
     });
 }
