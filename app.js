@@ -638,28 +638,45 @@ function showToast(message) {
 }
 
 
-const MAX_HISTORY = 5; // Limits history to the last 5 unique searches
+const MAX_HISTORY = 6; // Feel free to adjust this number!
 
-// 1. Core Logic: Save a selected title to localStorage
+// 1. Updated Core Logic: Saves unique entries without moving existing items to position #1 on click
 function saveToSearchHistory(key) {
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
     
-    // Remove if it already exists (so it bumps to the front of the list)
-    history = history.filter(item => item !== key);
+    // Check if the item already exists in history
+    const exists = history.some(item => item.toUpperCase() === key.toUpperCase());
     
-    // Add to the front of the array
-    history.unshift(key);
-    
-    // Cap at maximum history limit
-    if (history.length > MAX_HISTORY) {
-        history.pop();
+    if (!exists) {
+        // Only insert at position 1 if it's a completely brand new unique search
+        history.unshift(key);
+        
+        if (history.length > MAX_HISTORY) {
+            history.pop();
+        }
+        
+        localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
+        renderSearchHistory();
     }
-    
+}
+
+// Helper to delete one specific card from history
+function deleteSingleHistoryItem(key, event) {
+    event.stopPropagation(); // Prevents clicking the delete button from opening the search!
+    let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
+    history = history.filter(item => item.toUpperCase() !== key.toUpperCase());
     localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
     renderSearchHistory();
 }
 
-// 2. UI Logic: Render the mini Neo-Brutalist history pills
+// Helper to wipe out all history items at once
+function clearAllSearchHistory() {
+    localStorage.removeItem('mangaSearchHistory');
+    renderSearchHistory();
+    showToast("Cleared search history memory index.");
+}
+
+// 2. Updated UI Logic: Hand-placed style, random archive colors, drag/drop support, individual deleting
 function renderSearchHistory() {
     const container = document.getElementById('searchHistoryContainer');
     if (!container) return;
@@ -671,37 +688,55 @@ function renderSearchHistory() {
         return;
     }
     
-    // Build the layout header + pills
-    container.innerHTML = `<span style="font-size: 11px; font-weight: 900; opacity: 0.5; display: block; width: 100%; margin-bottom: 2px;">RECENTS:</span>`;
+    // Header Wrapper with Clear All Action button built-in
+    container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
+            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS:</span>
+            <button onclick="clearAllSearchHistory()" style="background: none; border: none; font-size: 10px; font-weight: 900; color: #cc0000; cursor: pointer; text-transform: uppercase; text-decoration: underline; padding: 0;">[ Clear All ]</button>
+        </div>
+    `;
     
-    history.forEach(key => {
-        const pill = document.createElement('div');
-        pill.innerText = key;
+    history.forEach((key, idx) => {
+        const pillWrapper = document.createElement('div');
         
-        // Stylized Mini Neo-Brutalist Comic Badge Look
-        pill.style.background = "#fff";
-        pill.style.border = "2px solid #111";
-        pill.style.boxShadow = "2px 2px 0px #111";
-        pill.style.padding = "4px 8px";
-        pill.style.fontSize = "11px";
-        pill.style.fontWeight = "bold";
-        pill.style.cursor = "pointer";
-        pill.style.textTransform = "uppercase";
-        pill.style.transition = "all 0.05s ease";
+        // Pick a random soft manga paper color from your existing array
+        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
+        
+        // Random micro-rotation tilt for that classic "arrangedly messy" look
+        const randomTilt = (Math.random() * 4 - 2).toFixed(2);
+        
+        // Setup structural layout styles
+        pillWrapper.style.display = "inline-flex";
+        pillWrapper.style.alignItems = "center";
+        pillWrapper.style.gap = "6px";
+        pillWrapper.style.background = randomBg;
+        pillWrapper.style.border = "2px solid var(--ink-black, #111)";
+        pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)";
+        pillWrapper.style.padding = "4px 8px";
+        pillWrapper.style.fontSize = "11px";
+        pillWrapper.style.fontWeight = "bold";
+        pillWrapper.style.cursor = "pointer";
+        pillWrapper.style.textTransform = "uppercase";
+        pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
+        pillWrapper.style.transition = "all 0.05s ease";
         
         // Hover dynamics
-        pill.onmouseenter = () => { pill.style.transform = "translate(-1px, -1px)"; pill.style.boxShadow = "3px 3px 0px #111"; };
-        pill.onmouseleave = () => { pill.style.transform = "none"; pill.style.boxShadow = "2px 2px 0px #111"; };
+        pillWrapper.onmouseenter = () => { 
+            pillWrapper.style.transform = `rotate(${randomTilt}deg) translate(-1px, -1px)`; 
+            pillWrapper.style.boxShadow = "4px 4px 0px var(--ink-black, #111)"; 
+        };
+        pillWrapper.onmouseleave = () => { 
+            pillWrapper.style.transform = `rotate(${randomTilt}deg)`; 
+            pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)"; 
+        };
         
-        // 3. Execution Click: Simulates an archive card click perfectly
-        pill.onclick = () => {
+        // Execution Click: Simulates archive view loading cleanly without changing array position
+        pillWrapper.onclick = () => {
             const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
             if (match) {
-                // Instantly force-fill input value
                 const searchInput = document.getElementById('sheetKeySearch');
                 if (searchInput) searchInput.value = match.key;
                 
-                // Directly bypass dropdown logic and show data views instantly
                 const payloadOutput = document.getElementById('sheetPayloadArea');
                 const actionsHeader = document.getElementById('searchActionsHeader');
                 const buttonGroup = document.getElementById('searchButtonGroup');
@@ -718,13 +753,16 @@ function renderSearchHistory() {
                     suggestionsBox.innerHTML = "";
                     suggestionsBox.style.setProperty('display', 'none', 'important');
                 }
-                
-                // Bump this item to the front of history again
-                saveToSearchHistory(match.key);
             }
         };
         
-        container.appendChild(pill);
+        // Inject pill content with the tiny deletion trigger tag
+        pillWrapper.innerHTML = `
+            <span>${key}</span>
+            <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
+        `;
+        
+        container.appendChild(pillWrapper);
     });
 }
 
