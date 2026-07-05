@@ -52,13 +52,14 @@ async function syncGoogleSheetData() {
         showToast(`Sync finished! Loaded ${googleSheetData.length} records.`);
         
         if (isArchiveOpen) renderArchiveContainer();
-        renderPredictionCards(); // Keep predictions dynamic when data changes
+        renderPredictionCards(); 
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
         showToast("Error pulling cloud sheets registry.");
     }
 }
 
+// FIXED: Robust CSV parser ensuring multi-line fields inside Column F don't get truncated
 function parseCsvStrictAB(text) {
     googleSheetData = [];
     let lines = [];
@@ -90,15 +91,14 @@ function parseCsvStrictAB(text) {
 
     for (let i = 1; i < lines.length; i++) {
         let cols = lines[i];
+        // Must ensure there are enough entries processed to parse out Column E and F safely
         if (cols.length >= 2) {
             let colA = cols[0] ? cols[0].trim() : "";
             let colB = cols[1] ? cols[1].trim() : ""; 
-            
-            // Fixed: Pulling exactly from Column E (index 4) and Column F (index 5) safely
             let colE = cols[4] ? cols[4].trim() : "";
             let colF = cols[5] ? cols[5].trim() : "";
             
-            if (colA || colE) {
+            if (colA || colE || colF) {
                 googleSheetData.push({ 
                     key: colA, 
                     payload: colB, 
@@ -129,7 +129,7 @@ function querySheetMatrix() {
         return;
     }
     
-    const filteredMatches = googleSheetData.filter(row => row.key.toUpperCase().includes(searchKey));
+    const filteredMatches = googleSheetData.filter(row => row.key && row.key.toUpperCase().includes(searchKey));
     
     if (filteredMatches.length > 0) {
         suggestionsBox.innerHTML = "";
@@ -266,6 +266,7 @@ function renderArchiveContainer() {
     const totalItems = googleSheetData.length;
 
     googleSheetData.forEach((row, idx) => {
+        if (!row.key) return; // Skip rows lacking search titles
         const rowDiv = document.createElement('div');
         rowDiv.style.boxSizing = "border-box";
         rowDiv.style.width = "calc(20% - 13px)"; 
@@ -342,13 +343,12 @@ function renderArchiveContainer() {
     });
 }
 
-/* --- DYNAMIC PREDICTION ENGINE FUNCTIONS --- */
+// FIXED: Comprehensive prediction element renderer with min-height overrides to keep raw Column F entries text full 
 function renderPredictionCards() {
     const container = document.getElementById('predictionCardGrid');
     if (!container) return;
     container.innerHTML = "";
 
-    // Pull rows that contain values populated within prediction targets
     const validPreds = googleSheetData.filter(row => row.predTitle || row.predContent);
 
     if (validPreds.length === 0) {
@@ -363,9 +363,9 @@ function renderPredictionCards() {
 
         card.className = "prediction-item-card";
         card.style.boxSizing = "border-box";
-        card.style.width = "calc(25% - 12px)"; // Expanded width to give text more breathing room
+        card.style.width = "calc(25% - 12px)"; 
         card.style.minWidth = "220px";
-        card.style.minHeight = "240px"; // Changed to min-height to allow full content extension
+        card.style.minHeight = "260px"; // Auto expands cleanly for complete text blocks
         card.style.border = "3px solid var(--ink-black, #111)";
         card.style.background = randomBg;
         card.style.padding = "14px";
@@ -375,11 +375,10 @@ function renderPredictionCards() {
         card.style.transform = `rotate(${tilt}deg)`;
         card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
 
-        // Removed -webkit-line-clamp constraint so the text is fully shown
         card.innerHTML = `
             <strong style="font-size:14px; display:block; text-transform:uppercase; margin-bottom:2px; word-break:break-word;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
             <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:6px 0;">
-            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; flex-grow:1;">${row.predContent || 'No descriptor registers linked.'}</div>
+            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; flex-grow:1; overflow:visible;">${row.predContent || 'No descriptor registers linked.'}</div>
         `;
 
         card.onmouseenter = () => {
@@ -409,7 +408,6 @@ function filterPredictionCards() {
     });
 }
 
-/* --- CORE TAB SWITCH WITH SHIFT CORRECTIONS --- */
 function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
     const searchTab = document.getElementById('searchMenuTab');
@@ -417,10 +415,8 @@ function switchTab(tabName) {
     const logsTab = document.getElementById('logsTab');
     const navLinks = document.querySelectorAll('.nav-links a');
 
-    // Remove active styles across all nodes cleanly
     navLinks.forEach(link => link.classList.remove('active'));
     
-    // Completely terminate layout displays on tabs to avoid pushed spaces
     dashTab.style.display = 'none';
     searchTab.style.display = 'none';
     predictionsTab.style.display = 'none';
@@ -442,18 +438,17 @@ function switchTab(tabName) {
         clearAndHideSearch();
     } else if (tabName === 'predictions') {
         predictionsTab.style.display = 'grid';
-        navLinks[2].classList.add('active'); // Dynamic highlights mapped explicitly here
+        navLinks[2].classList.add('active'); 
         showToast("Switched to Prediction Registry Deck");
         renderPredictionCards();
     } else if (tabName === 'logs') {
         logsTab.style.display = 'grid';
-        navLinks[3].classList.add('active'); // Shifted safely to terminal element layout profile
+        navLinks[3].classList.add('active'); 
         showToast("Viewing Core System Performance Records");
     }
     changeToRandomGif();
 }
 
-// --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
 document.addEventListener('keydown', function(e) {
     if (e.altKey && (e.key === 'c' || e.key === 'C')) {
         e.preventDefault();
@@ -793,14 +788,14 @@ function renderSearchHistory() {
             if (draggedItemIndex !== null && draggedItemIndex !== idx) {
                 let updatedHistory = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
                 const [reorderedItem] = updatedHistory.splice(draggedItemIndex, 1);
-                updatedHistory.splice(idx, 0,reorderedItem);
+                updatedHistory.splice(idx, 0, reorderedItem);
                 localStorage.setItem('mangaSearchHistory', JSON.stringify(updatedHistory));
                 renderSearchHistory();
             }
         };
         
         pillWrapper.onclick = () => {
-            const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
+            const match = googleSheetData.find(row => row.key && row.key.toUpperCase() === key.toUpperCase());
             if (match) {
                 const searchInput = document.getElementById('sheetKeySearch');
                 if (searchInput) searchInput.value = match.key;
