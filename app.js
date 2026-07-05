@@ -677,16 +677,112 @@ var closeModal = () => document.getElementById('mangaModal').classList.remove('o
 function submitNewNote() {
     const name = document.getElementById('modalInput').value.trim();
     if (name) {
-        offlineDatabase.bottomSnippets.push({ id: Date.now(), title: name, content: "// Empty markdown or script entry" });
-        renderPortal(); closeModal(); changeToRandomGif();
-        showToast(`Created block: "${name}"`);
+        // Create a safe-string filename for GitHub (lowercase, dashes instead of spaces)
+        const safeFileName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const filePath = `scripts/${safeFileName}.user.js`;
+
+        const newSnippet = { 
+            id: Date.now(), 
+            title: name, 
+            filePath: filePath,
+            content: "// Paste your massive userscript here\n" 
+        };
+
+        offlineDatabase.bottomSnippets.push(newSnippet);
+        localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
+        
+        renderPortal(); 
+        closeModal(); 
+        
+        // Instantly activate this new note in your workspace view for editing
+        viewSnippet(newSnippet.id);
+        showToast(`Created slot: "${name}"`);
     } else {
         showToast("Error: Name cannot be blank!");
     }
 }
 
 function launchMainGAS() { window.open(offlineDatabase.mainGasLink, '_blank'); showToast("Launching main script portal via tinyurl..."); }
-function savePrimaryGAS() { offlineDatabase.primaryGAS = document.getElementById('primaryGasArea').value; showToast("Changes synced to local workspace memory!"); }
+async function savePrimaryGAS() { 
+    const mainTextarea = document.getElementById('primaryGasArea');
+    if (!mainTextarea) return;
+
+    const currentTextValue = mainTextarea.value;
+
+    if (offlineDatabase.activeSnippetId) {
+        // Find the note we are currently looking at
+        const activeItem = offlineDatabase.bottomSnippets.find(x => x.id === offlineDatabase.activeSnippetId);
+        if (activeItem) {
+            // Step A: Save it locally immediately so you never lose it
+            activeItem.content = currentTextValue;
+            localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
+            showToast("Saved locally! Syncing to GitHub cloud...");
+
+            // Step B: Fire it directly to GitHub without making you click anything else
+            await pushSnippetToGitHub(activeItem.id);
+        }
+    } else {
+        // Fallback for your centerpiece default workspace
+        offlineDatabase.primaryGAS = currentTextValue;
+        localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
+        showToast("Changes synced to baseline dashboard!");
+    }
+}
+
+async function pushSnippetToGitHub(id) {
+    const item = offlineDatabase.bottomSnippets.find(x => x.id === id);
+    if (!item) return;
+
+    const token = offlineDatabase.githubToken;
+    const owner = offlineDatabase.githubOwner;
+    const repo = offlineDatabase.githubRepo;
+
+    if (!token || !owner || !repo) {
+        showToast("⚠️ Local save OK, but missing GitHub credentials to push to cloud.");
+        return;
+    }
+
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${item.filePath}`;
+    let currentSha = null;
+
+    // Check for existing file SHA signature
+    try {
+        const checkResponse = await fetch(apiUrl, {
+            headers: { "Authorization": `token ${token}` }
+        });
+        if (checkResponse.ok) {
+            const fileData = await checkResponse.json();
+            currentSha = fileData.sha;
+        }
+    } catch (e) { /* New file path */ }
+
+    // Convert massive script safely to Base64
+    const utf8Bytes = new TextEncoder().encode(item.content);
+    const base64Content = btoa(String.fromCharCode(...utf8Bytes));
+
+    const payload = {
+        message: `Command Center Auto-Sync: ${item.title}`,
+        content: base64Content
+    };
+    if (currentSha) payload.sha = currentSha;
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: "PUT",
+            headers: {
+                "Authorization": `token ${token}`,
+                "Accept": "application/vnd.github.v3+json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error("GitHub rejected upload pipeline.");
+        showToast(`🚀 Cloud sync complete! Verified on GitHub.`);
+    } catch (error) {
+        showToast(`GitHub error: ${error.message}`);
+    }
+}
 
 function addSystemLog(text) {
     const area = document.getElementById('systemLogsArea');
