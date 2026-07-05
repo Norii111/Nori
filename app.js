@@ -14,11 +14,12 @@ let focusedSuggestionIndex = -1;
 let isArchiveOpen = false;
 
 let offlineDatabase = {
-    githubOwner: "Norii111", 
-    githubRepo: "Nori",       
     mainGasLink: "https://tinyurl.com/Noro11",
     primaryGAS: "// Your centerpiece code environment connected to your tinyurl script structure\nfunction coreAutomation() {\n  console.log('Running seamlessly from your custom dashboard centerpiece.');\n}",
-    bottomSnippets: [] // Dynamically populated by GitHub scanner
+    bottomSnippets: [
+        { id: 1, title: "Tampermonkey Macro", content: "// userscript configurations..." },
+        { id: 2, title: "Discord Webhook Text", content: "Random notation blocks saved locally." }
+    ]
 };
 
 const softMangaColors = [
@@ -29,31 +30,6 @@ let activeDeleteTargetId = null;
 let currentLondonStep = 0; 
 let selectedPieceCoord = null; 
 let chessBoardState = {};
-
-// --- BOOT EXECUTION FLOW ---
-window.onload = async function() {
-    // 1. Initialize UI static states
-    if (typeof changeToRandomGif === "function") changeToRandomGif();
-    if (typeof renderSearchHistory === "function") renderSearchHistory(); 
-    
-    // 2. Fetch live data components from networks
-    await syncSnippetsFromGitHub(); 
-    await syncGoogleSheetData();
-    
-    // 3. Render matching layouts to DOM hooks
-    renderPortal();
-
-    // 4. Register event matrix listeners
-    const gifFrame = document.querySelector('.blank-character-frame');
-    if (gifFrame) {
-        gifFrame.addEventListener('click', () => {
-            changeToRandomGif(); 
-            triggerGifFlip(); 
-            showToast("Shifting avatar transmission matrix...");
-        });
-    }
-    setInterval(triggerGifFlip, 12000); 
-};
 
 function resetChessBoardState() {
     chessBoardState = {
@@ -73,8 +49,10 @@ async function syncGoogleSheetData() {
         
         parseCsvStrictAB(rawCsvText);
         addSystemLog(`Sync completed. Loaded ${googleSheetData.length} records into lookup index.`);
+        showToast(`Sync finished! Loaded ${googleSheetData.length} records.`);
         
         if (isArchiveOpen) renderArchiveContainer();
+        renderPredictionCards(); // Keep predictions dynamic when data changes
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
         showToast("Error pulling cloud sheets registry.");
@@ -92,8 +70,12 @@ function parseCsvStrictAB(text) {
         let next = text[i+1];
 
         if (c === '"') {
-            if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
-            else { inQuotes = !inQuotes; }
+            if (inQuotes && next === '"') { 
+                row[row.length - 1] += '"'; 
+                i++; 
+            } else { 
+                inQuotes = !inQuotes; 
+            }
         } else if (c === ',' && !inQuotes) {
             row.push("");
         } else if ((c === '\r' || c === '\n') && !inQuotes) {
@@ -109,10 +91,20 @@ function parseCsvStrictAB(text) {
     for (let i = 1; i < lines.length; i++) {
         let cols = lines[i];
         if (cols.length >= 2) {
-            let colA = cols[0].trim();
-            let colB = cols[1].trim(); 
-            if (colA) {
-                googleSheetData.push({ key: colA, payload: colB });
+            let colA = cols[0] ? cols[0].trim() : "";
+            let colB = cols[1] ? cols[1].trim() : ""; 
+            
+            // Fixed: Pulling exactly from Column E (index 4) and Column F (index 5) safely
+            let colE = cols[4] ? cols[4].trim() : "";
+            let colF = cols[5] ? cols[5].trim() : "";
+            
+            if (colA || colE) {
+                googleSheetData.push({ 
+                    key: colA, 
+                    payload: colB, 
+                    predTitle: colE, 
+                    predContent: colF 
+                });
             }
         }
     }
@@ -185,7 +177,6 @@ function highlightSuggestion(index) {
     }
 }
 
-// Fixed Double-Keyword Syntax Bug here!
 function selectFinalMatch(match) {
     const searchInput = document.getElementById('sheetKeySearch');
     const payloadOutput = document.getElementById('sheetPayloadArea');
@@ -201,7 +192,7 @@ function selectFinalMatch(match) {
     actionsHeader.style.display = "flex";    
     buttonGroup.style.display = "flex";    
 
-    saveToSearchHistory(match.key); 
+    saveToSearchHistory(match.key);
 }
 
 function clearAndHideSearch() {
@@ -237,18 +228,6 @@ function copySearchPayload() {
         });
 }
 
-function injectPayloadToWorkspace() {
-    const activePayload = document.getElementById('sheetPayloadArea').value;
-    if (!activePayload || activePayload.startsWith("❌")) {
-        showToast("Error: No data loaded to pull.");
-        return;
-    }
-    offlineDatabase.primaryGAS = activePayload;
-    document.getElementById('primaryGasArea').value = activePayload;
-    showToast("Loaded description payload data to dashboard workspace console!");
-    switchTab('dashboard');
-}
-
 function toggleArchiveView() {
     const archiveBox = document.getElementById('sheetArchiveArea');
     const searchInput = document.getElementById('sheetKeySearch');
@@ -272,7 +251,7 @@ function renderArchiveContainer() {
     if (!archiveBox) return;
 
     if (googleSheetData.length === 0) {
-        archiveBox.innerHTML = "<p style='font-size:14px; font-weight:bold; text-align:center;'>Archive empty. Pull fresh matrix.</p>";
+        archiveBox.innerHTML = "<p style='font-size:14px; font-weight:bold; text-align:center; font-family:inherit;'>Archive empty. Pull fresh matrix.</p>";
         return;
     }
 
@@ -292,6 +271,7 @@ function renderArchiveContainer() {
         rowDiv.style.width = "calc(20% - 13px)"; 
         rowDiv.style.minWidth = "180px";        
         rowDiv.style.height = "220px";          
+        
         rowDiv.style.border = "4px solid var(--ink-black, #111)";
         rowDiv.style.background = softMangaColors[idx % softMangaColors.length] || "#fff";
         rowDiv.style.padding = "14px";
@@ -299,6 +279,7 @@ function renderArchiveContainer() {
         rowDiv.style.display = "flex";
         rowDiv.style.flexDirection = "column";
         rowDiv.style.position = "relative";
+        rowDiv.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
         rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
 
         const randomTilt = (Math.random() * 5 - 2.5).toFixed(2);
@@ -313,12 +294,12 @@ function renderArchiveContainer() {
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
                 <div style="max-width: 75%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                     ${timelineTag}
-                    <strong style="font-size:15px; text-transform:uppercase; letter-spacing:-0.5px; display:block;">${row.key}</strong>
+                    <strong style="font-size:15px; font-family:inherit; text-transform:uppercase; letter-spacing:-0.5px; display:block;">${row.key}</strong>
                 </div>
-                <span style="font-size:10px; font-weight:bold; opacity:0.6;">#${idx + 2}</span>
+                <span style="font-size:10px; font-weight:bold; opacity:0.6; font-family:inherit;">#${idx + 2}</span>
             </div>
-            <hr style="border: none; border-top: 3px solid var(--ink-black, #111); margin: 4px 0 8px 0;">
-            <div style="font-size:12px; color:#111; line-height:1.4; flex-grow:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; white-space:pre-wrap; word-break:break-word;">${row.payload}</div>
+            <hr style="border: none; border-top: 3px solid var(--ink-black, #111); margin: 4px 0 8px 0; padding:0;">
+            <div style="font-size:12px; font-family:inherit; color:#111; line-height:1.4; flex-grow:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; white-space:pre-wrap; word-break:break-word;">${row.payload}</div>
         `;
 
         rowDiv.onmouseenter = () => {
@@ -361,10 +342,123 @@ function renderArchiveContainer() {
     });
 }
 
+/* --- DYNAMIC PREDICTION ENGINE FUNCTIONS --- */
+function renderPredictionCards() {
+    const container = document.getElementById('predictionCardGrid');
+    if (!container) return;
+    container.innerHTML = "";
+
+    // Pull rows that contain values populated within prediction targets
+    const validPreds = googleSheetData.filter(row => row.predTitle || row.predContent);
+
+    if (validPreds.length === 0) {
+        container.innerHTML = "<p style='font-weight:bold; font-size:13px; text-align:center; width:100%; margin-top:20px;'>Matrix registries empty inside Columns E/F ranges.</p>";
+        return;
+    }
+
+    validPreds.forEach((row, idx) => {
+        const card = document.createElement('div');
+        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
+        const tilt = (Math.random() * 4 - 2).toFixed(2);
+
+        card.className = "prediction-item-card";
+        card.style.boxSizing = "border-box";
+        card.style.width = "calc(25% - 12px)"; // Expanded width to give text more breathing room
+        card.style.minWidth = "220px";
+        card.style.minHeight = "240px"; // Changed to min-height to allow full content extension
+        card.style.border = "3px solid var(--ink-black, #111)";
+        card.style.background = randomBg;
+        card.style.padding = "14px";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
+        card.style.transform = `rotate(${tilt}deg)`;
+        card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
+
+        // Removed -webkit-line-clamp constraint so the text is fully shown
+        card.innerHTML = `
+            <strong style="font-size:14px; display:block; text-transform:uppercase; margin-bottom:2px; word-break:break-word;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
+            <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:6px 0;">
+            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; flex-grow:1;">${row.predContent || 'No descriptor registers linked.'}</div>
+        `;
+
+        card.onmouseenter = () => {
+            card.style.transform = `rotate(${tilt}deg) translate(-2px, -2px)`;
+            card.style.boxShadow = "7px 7px 0px var(--ink-black, #111)";
+        };
+        card.onmouseleave = () => {
+            card.style.transform = `rotate(${tilt}deg)`;
+            card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
+        };
+
+        container.appendChild(card);
+    });
+}
+
+function filterPredictionCards() {
+    const searchVal = document.getElementById('predictionSearch').value.trim().toUpperCase();
+    const cards = document.querySelectorAll('#predictionCardGrid > div');
+    
+    cards.forEach(card => {
+        const textStr = card.innerText.toUpperCase();
+        if (textStr.includes(searchVal)) {
+            card.style.display = "flex";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+
+/* --- CORE TAB SWITCH WITH SHIFT CORRECTIONS --- */
+function switchTab(tabName) {
+    const dashTab = document.getElementById('dashboardTab');
+    const searchTab = document.getElementById('searchMenuTab');
+    const predictionsTab = document.getElementById('predictionsTab');
+    const logsTab = document.getElementById('logsTab');
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    // Remove active styles across all nodes cleanly
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    // Completely terminate layout displays on tabs to avoid pushed spaces
+    dashTab.style.display = 'none';
+    searchTab.style.display = 'none';
+    predictionsTab.style.display = 'none';
+    logsTab.style.display = 'none';
+
+    document.getElementById('searchSuggestions').style.display = "none";
+    document.getElementById('sheetArchiveArea').style.display = "none";
+    isArchiveOpen = false;
+
+    if (tabName === 'dashboard') {
+        dashTab.style.display = 'grid';
+        navLinks[0].classList.add('active');
+        showToast("Switched to Main Command Dashboard");
+    } else if (tabName === 'searchTab') {
+        searchTab.style.display = 'grid';
+        navLinks[1].classList.add('active');
+        showToast("Switched to Sheet Search Engine");
+        document.getElementById('sheetKeySearch').value = ""; 
+        clearAndHideSearch();
+    } else if (tabName === 'predictions') {
+        predictionsTab.style.display = 'grid';
+        navLinks[2].classList.add('active'); // Dynamic highlights mapped explicitly here
+        showToast("Switched to Prediction Registry Deck");
+        renderPredictionCards();
+    } else if (tabName === 'logs') {
+        logsTab.style.display = 'grid';
+        navLinks[3].classList.add('active'); // Shifted safely to terminal element layout profile
+        showToast("Viewing Core System Performance Records");
+    }
+    changeToRandomGif();
+}
+
+// --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
 document.addEventListener('keydown', function(e) {
     if (e.altKey && (e.key === 'c' || e.key === 'C')) {
         e.preventDefault();
-        if (document.getElementById('searchMenuTab').style.display !== 'none') {
+        const searchTabVisible = document.getElementById('searchMenuTab').style.display !== 'none';
+        if (searchTabVisible) {
             copySearchPayload();
         }
         return;
@@ -491,65 +585,26 @@ function changeToRandomGif() {
 }
 
 function renderPortal() {
-    const primaryGasArea = document.getElementById('primaryGasArea');
-    if (primaryGasArea) {
-        primaryGasArea.value = offlineDatabase.primaryGAS;
-    }
-    
+    document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
     const bottomGrid = document.getElementById('bottomGrid');
     if (!bottomGrid) return;
     bottomGrid.innerHTML = '';
 
-    offlineDatabase.bottomSnippets.forEach((item, idx) => {
-        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
+    offlineDatabase.bottomSnippets.forEach(item => {
+        const randomBg = getRandomMangaColor();
         const card = document.createElement('div');
         card.className = 'snippet-card';
-        
-        // --- RESTORING NEO-BRUTALIST MANGA VISUAL MATRIX ---
-        card.style.boxSizing = "border-box";
         card.style.backgroundColor = randomBg;
-        card.style.border = "4px solid var(--ink-black, #111)";
-        card.style.padding = "14px";
-        card.style.cursor = "pointer";
-        card.style.display = "flex";
-        card.style.flexDirection = "column";
-        card.style.position = "relative";
-        card.style.borderRadius = "0px"; // Strict sharp angles
-        card.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
-        
-        // Hand-placed, beautifully messy organic tilt matrix
-        const randomTilt = (Math.random() * 4 - 2).toFixed(2);
-        card.style.transform = `rotate(${randomTilt}deg)`;
-
         card.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
-                <div style="max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    <strong style="font-size: 14px; text-transform: uppercase; letter-spacing: -0.5px; display: block; color: var(--ink-black, #111); font-weight: 900;">${item.title}</strong>
-                </div>
-                <span style="font-size: 10px; font-weight: bold; opacity: 0.5; font-family: monospace;">#${idx + 1}</span>
+            <div style="overflow: hidden;">
+                <strong style="display:block; margin-bottom:4px; font-size:14px;">${item.title}</strong>
+                <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${item.content}</p>
             </div>
-            <hr style="border: none; border-top: 3px solid var(--ink-black, #111); margin: 4px 0 8px 0;">
-            <p style="font-size: 11px; color: #111; margin: 0; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; font-family: monospace; line-height: 1.4; white-space: pre-wrap; word-break: break-word;">${item.content.substring(0, 80)}...</p>
-            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; position: relative; z-index: 10;">
-                <button class="manga-btn danger" style="font-size: 10px; padding: 3px 8px; font-weight: 900;" onclick="event.stopPropagation(); deleteSnippet(${item.id})">DELETE</button>
-                <button class="manga-btn" style="font-size: 10px; padding: 3px 8px; font-weight: 900;" onclick="event.stopPropagation(); viewSnippet(${item.id})">SWAP VIEW</button>
+            <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
+                <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick="deleteSnippet(${item.id})">Delete</button>
+                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="viewSnippet(${item.id})">Swap View</button>
             </div>
         `;
-
-        // Interactive spring mechanics
-        card.onmouseenter = () => {
-            card.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
-            card.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
-        };
-        card.onmouseleave = () => {
-            card.style.transform = `rotate(${randomTilt}deg)`;
-            card.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
-        };
-        
-        card.onclick = () => {
-            viewSnippet(item.id);
-        };
-
         bottomGrid.appendChild(card);
     });
 }
@@ -574,39 +629,6 @@ function copyTextAreaContent() {
     navigator.clipboard.writeText(textarea.value)
         .then(() => showToast("Copied workspace script to clipboard!"))
         .catch(() => showToast("Error executing clipboard pipeline."));
-}
-
-function switchTab(tabName) {
-    const dashTab = document.getElementById('dashboardTab');
-    const searchTab = document.getElementById('searchMenuTab');
-    const logsTab = document.getElementById('logsTab');
-    const navLinks = document.querySelectorAll('.nav-links a');
-
-    navLinks.forEach(link => link.classList.remove('active'));
-    dashTab.style.display = 'none';
-    searchTab.style.display = 'none';
-    logsTab.style.display = 'none';
-
-    document.getElementById('searchSuggestions').style.display = "none";
-    document.getElementById('sheetArchiveArea').style.display = "none";
-    isArchiveOpen = false;
-
-    if (tabName === 'dashboard') {
-        dashTab.style.display = 'grid';
-        navLinks[0].classList.add('active');
-        showToast("Switched to Main Command Dashboard");
-    } else if (tabName === 'searchTab') {
-        searchTab.style.display = 'grid';
-        navLinks[1].classList.add('active');
-        showToast("Switched to Sheet Search Engine");
-        document.getElementById('sheetKeySearch').value = ""; 
-        clearAndHideSearch();
-    } else if (tabName === 'logs') {
-        logsTab.style.display = 'grid';
-        navLinks[2].classList.add('active');
-        showToast("Viewing Core System Performance Records");
-    }
-    changeToRandomGif();
 }
 
 function openModal() {
@@ -667,48 +689,117 @@ function showToast(message) {
     }, 2500);
 }
 
-const MAX_HISTORY = 5; 
+const MAX_HISTORY = 20; 
 
 function saveToSearchHistory(key) {
     let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-    history = history.filter(item => item !== key);
-    history.unshift(key);
-    if (history.length > MAX_HISTORY) {
-        history.pop();
+    const exists = history.some(item => item.toUpperCase() === key.toUpperCase());
+    
+    if (!exists) {
+        history.unshift(key);
+        if (history.length > MAX_HISTORY) history.pop();
+        localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
+        renderSearchHistory();
     }
+}
+
+function deleteSingleHistoryItem(key, event) {
+    event.stopPropagation(); 
+    let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
+    history = history.filter(item => item.toUpperCase() !== key.toUpperCase());
     localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
     renderSearchHistory();
 }
+
+function clearAllSearchHistory() {
+    localStorage.removeItem('mangaSearchHistory');
+    renderSearchHistory();
+    showToast("Cleared search history memory index.");
+}
+
+let draggedItemIndex = null;
 
 function renderSearchHistory() {
     const container = document.getElementById('searchHistoryContainer');
     if (!container) return;
     
     const history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
+    
     if (history.length === 0) {
         container.innerHTML = "";
         return;
     }
     
-    container.innerHTML = `<span style="font-size: 11px; font-weight: 900; opacity: 0.5; display: block; width: 100%; margin-bottom: 2px;">RECENTS:</span>`;
+    container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
+            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS (DRAG TO REARRANGE):</span>
+            <button onclick="clearAllSearchHistory()" style="background: none; border: none; font-size: 10px; font-weight: 900; color: #cc0000; cursor: pointer; text-transform: uppercase; text-decoration: underline; padding: 0;">[ Clear All ]</button>
+        </div>
+    `;
     
-    history.forEach(key => {
-        const pill = document.createElement('div');
-        pill.innerText = key;
-        pill.style.background = "#fff";
-        pill.style.border = "2px solid #111";
-        pill.style.boxShadow = "2px 2px 0px #111";
-        pill.style.padding = "4px 8px";
-        pill.style.fontSize = "11px";
-        pill.style.fontWeight = "bold";
-        pill.style.cursor = "pointer";
-        pill.style.textTransform = "uppercase";
-        pill.style.transition = "all 0.05s ease";
+    history.forEach((key, idx) => {
+        const pillWrapper = document.createElement('div');
+        const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
+        const randomTilt = (Math.random() * 4 - 2).toFixed(2);
         
-        pill.onmouseenter = () => { pill.style.transform = "translate(-1px, -1px)"; pill.style.boxShadow = "3px 3px 0px #111"; };
-        pill.onmouseleave = () => { pill.style.transform = "none"; pill.style.boxShadow = "2px 2px 0px #111"; };
+        pillWrapper.setAttribute("draggable", "true");
+        pillWrapper.setAttribute("data-index", idx);
         
-        pill.onclick = () => {
+        pillWrapper.style.display = "inline-flex";
+        pillWrapper.style.alignItems = "center";
+        pillWrapper.style.gap = "6px";
+        pillWrapper.style.background = randomBg;
+        pillWrapper.style.border = "2px solid var(--ink-black, #111)";
+        pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)";
+        pillWrapper.style.padding = "4px 8px";
+        pillWrapper.style.fontSize = "15px";
+        pillWrapper.style.fontWeight = "bold";
+        pillWrapper.style.cursor = "grab"; 
+        pillWrapper.style.textTransform = "uppercase";
+        pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
+        pillWrapper.style.transition = "transform 0.05s ease, opacity 0.1s ease";
+        
+        pillWrapper.ondragstart = (e) => {
+            draggedItemIndex = idx;
+            pillWrapper.style.opacity = "0.4"; 
+            e.dataTransfer.effectAllowed = "move";
+        };
+        
+        pillWrapper.ondragend = () => {
+            pillWrapper.style.opacity = "1";
+            draggedItemIndex = null;
+            document.querySelectorAll('#searchHistoryContainer > div').forEach(el => {
+                if(el.style.borderStyle === "dashed") el.style.borderStyle = "solid";
+            });
+        };
+        
+        pillWrapper.ondragover = (e) => {
+            e.preventDefault(); 
+            return false;
+        };
+
+        pillWrapper.ondragenter = () => {
+            if (idx !== draggedItemIndex) {
+                pillWrapper.style.borderStyle = "dashed"; 
+            }
+        };
+
+        pillWrapper.ondragleave = () => {
+            pillWrapper.style.borderStyle = "solid";
+        };
+        
+        pillWrapper.ondrop = (e) => {
+            e.preventDefault();
+            if (draggedItemIndex !== null && draggedItemIndex !== idx) {
+                let updatedHistory = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
+                const [reorderedItem] = updatedHistory.splice(draggedItemIndex, 1);
+                updatedHistory.splice(idx, 0,reorderedItem);
+                localStorage.setItem('mangaSearchHistory', JSON.stringify(updatedHistory));
+                renderSearchHistory();
+            }
+        };
+        
+        pillWrapper.onclick = () => {
             const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
             if (match) {
                 const searchInput = document.getElementById('sheetKeySearch');
@@ -730,46 +821,28 @@ function renderSearchHistory() {
                     suggestionsBox.innerHTML = "";
                     suggestionsBox.style.setProperty('display', 'none', 'important');
                 }
-                
-                saveToSearchHistory(match.key);
             }
         };
-        container.appendChild(pill);
+        
+        pillWrapper.innerHTML = `
+            <span>${key}</span>
+            <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; cursor: pointer; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
+        `;
+        
+        container.appendChild(pillWrapper);
     });
 }
 
-// --- GITHUB USERSCRIPTS SCANNING ENGINE ---
-async function syncSnippetsFromGitHub() {
-    const owner = offlineDatabase.githubOwner;
-    const repo = offlineDatabase.githubRepo;
-    if (!owner || !repo) return;
-
-    try {
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/scripts`);
-        if (!response.ok) return;
-
-        const files = await response.json();
-        offlineDatabase.bottomSnippets = [];
-
-        for (let file of files) {
-            if (file.type === "file" && file.name.endsWith(".user.js")) {
-                const cleanTitle = file.name
-                    .replace(".user.js", "")
-                    .replace(/-/g, " ")
-                    .replace(/\b\w/g, c => c.toUpperCase());
-
-                const contentResponse = await fetch(`${file.download_url}?cb=${Date.now()}`);
-                const rawCode = contentResponse.ok ? await contentResponse.text() : "// Error loading stream";
-
-                offlineDatabase.bottomSnippets.push({
-                    id: Date.now() + Math.random(), 
-                    title: cleanTitle,
-                    content: rawCode
-                });
-            }
-        }
-        addSystemLog(`Synced ${offlineDatabase.bottomSnippets.length} automation entries seamlessly from cloud directories.`);
-    } catch (error) {
-        console.error("GitHub folder sync error:", error);
+window.onload = function() {
+    renderPortal();
+    changeToRandomGif();
+    renderSearchHistory();
+    syncGoogleSheetData();
+    const gifFrame = document.querySelector('.blank-character-frame');
+    if (gifFrame) {
+        gifFrame.addEventListener('click', () => {
+            changeToRandomGif(); triggerGifFlip(); showToast("Shifting avatar transmission matrix...");
+        });
     }
-}
+    setInterval(triggerGifFlip, 12000); 
+};
