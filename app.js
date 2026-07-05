@@ -632,15 +632,17 @@ function renderPortal() {
         card.className = 'snippet-card';
         card.style.backgroundColor = randomBg;
         card.innerHTML = `
-            <div style="overflow: hidden;">
-                <strong style="display:block; margin-bottom:4px; font-size:14px;">${item.title}</strong>
-                <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${item.content}</p>
-            </div>
-            <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
-                <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick="deleteSnippet(${item.id})">Delete</button>
-                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="viewSnippet(${item.id})">Swap View</button>
-            </div>
-        `;
+    <div style="overflow: hidden;">
+        <strong style="display:block; margin-bottom:4px; font-size:14px;">${item.title}</strong>
+        <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
+            🌐 Auto-sync enabled
+        </p>
+    </div>
+    <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
+        <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick="deleteSnippet(${item.id})">Delete</button>
+        <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="viewSnippet(${item.id})">Swap View</button>
+    </div>
+`;
         bottomGrid.appendChild(card);
     });
 }
