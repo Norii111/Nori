@@ -356,11 +356,11 @@ function renderPredictionCards() {
         return;
     }
 
-    // Ensure the container grid isolates columns properly and drops row-stretching
-    container.style.display = "flex";
-    container.style.flexWrap = "wrap";
-    container.style.gap = "20px";
-    container.style.alignItems = "flex-start";
+    // Force the wrapper layout to abandon uniform row heights completely
+    container.style.setProperty('display', 'flex', 'important');
+    container.style.setProperty('flex-wrap', 'wrap', 'important');
+    container.style.setProperty('gap', '20px', 'important');
+    container.style.setProperty('align-items', 'flex-start', 'important'); // Crucial for variable card heights
 
     validPreds.forEach((row, idx) => {
         const card = document.createElement('div');
@@ -370,7 +370,8 @@ function renderPredictionCards() {
         card.style.boxSizing = "border-box";
         card.style.width = "calc(25% - 15px)"; 
         card.style.minWidth = "240px";
-        card.style.alignSelf = "flex-start"; // Fixed: Prevents card stretching to match neighbor lines
+        card.style.height = "auto"; // Prevents stretching completely
+        card.style.alignSelf = "flex-start"; 
         card.style.border = "3px solid var(--ink-black, #111)";
         card.style.background = randomBg;
         card.style.padding = "14px";
@@ -378,21 +379,45 @@ function renderPredictionCards() {
         card.style.flexDirection = "column";
         card.style.boxShadow = "5px 5px 0px var(--ink-black, #111)";
         card.style.transition = "transform 0.1s ease, box-shadow 0.1s ease";
-        card.style.margin = "0 0 10px 0"; // Clean floor offset separation tracking
+        card.style.margin = "0 0 10px 0";
 
-        // Escaped string safely injected into clipboard macro inline block
-        const safeCopyContent = (row.predContent || '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-
+        // Card Content Structure
         card.innerHTML = `
             <strong style="font-size:14px; display:block; text-transform:uppercase; margin-bottom:2px; word-break:break-word;">${row.predTitle || 'UNTITLED MATRIX'}</strong>
             <hr style="border:none; border-top:2px solid var(--ink-black, #111); margin:6px 0;">
-            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; flex-grow:1; margin-bottom: 12px;">${row.predContent || 'No descriptor registers linked.'}</div>
-            <div style="display:flex; justify-content:flex-end; border-top:1px dashed #111; padding-top:8px; margin-top:auto;">
-                <button class="manga-btn" style="font-size:10px; padding:4px 10px; font-weight:bold; cursor:pointer;" onclick="navigator.clipboard.writeText(\`${safeCopyContent}\`).then(() => showToast('Card content copied!'))">
-                    [ COPY CONTENT ]
-                </button>
-            </div>
+            <div style="font-size:12px; line-height:1.4; color:#111; white-space:pre-wrap; word-break:break-word; margin-bottom: 14px;">${row.predContent || 'No descriptor registers linked.'}</div>
         `;
+
+        // Action Row Footer
+        const actionRow = document.createElement('div');
+        actionRow.style.display = "flex";
+        actionRow.style.justifyContent = "flex-end";
+        actionRow.style.borderTop = "2px dashed #111";
+        actionRow.style.paddingTop = "8px";
+        actionRow.style.marginTop = "auto";
+
+        // Explicitly styled copy button so it displays cleanly regardless of your outer CSS structure
+        const copyBtn = document.createElement('button');
+        copyBtn.innerText = "📋 COPY CARD";
+        copyBtn.style.background = "var(--ink-black, #111)";
+        copyBtn.style.color = "var(--bg-paper, #fff)";
+        copyBtn.style.border = "2px solid #111";
+        copyBtn.style.fontSize = "10px";
+        copyBtn.style.fontWeight = "bold";
+        copyBtn.style.padding = "4px 8px";
+        copyBtn.style.cursor = "pointer";
+        copyBtn.style.boxShadow = "2px 2px 0px #111";
+
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            const textToCopy = row.predContent || '';
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast("Card text sent to your clipboard!");
+            });
+        };
+
+        actionRow.appendChild(copyBtn);
+        card.appendChild(actionRow);
 
         card.onmouseenter = () => {
             card.style.transform = "translate(-2px, -2px)";
