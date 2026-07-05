@@ -13,13 +13,10 @@ let googleSheetData = [];
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
 
-let offlineDatabase = JSON.parse(localStorage.getItem('mangaOfflineDB')) || {
-    githubToken: "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", // Must be hardcoded to survive app refreshes!
-    githubOwner: "Norii111",                            // Matches your exact account layout
-    githubRepo: "Nori",                                 // Capital 'N' to exactly match your repository name
-    mainGasLink: "https://tinyurl.com/Noro11",
-    primaryGAS: "// Workspace",
-    bottomSnippets: []                                  // Your notes collect cleanly here
+let offlineDatabase = {
+    githubOwner: "Norii111", // Your GitHub username
+    githubRepo: "Nori",       // Your repository name
+    bottomSnippets: [] 
 };
 
 const softMangaColors = [
@@ -1004,36 +1001,49 @@ function renderSearchHistory() {
 
 // 1. UPDATED: Automatically scan and pull down your files from GitHub on boot
 window.onload = async function() {
-    renderPortal();
-    changeToRandomGif();
-    renderSearchHistory();
-    syncGoogleSheetData();
+    // 1. Clear out previous session items to guarantee a fresh fetch from GitHub truth
+    if (typeof offlineDatabase !== 'undefined') {
+        offlineDatabase.bottomSnippets = [];
+    }
+
+    // 2. Initialize secondary UI elements
+    if (typeof changeToRandomGif === "function") changeToRandomGif();
+    if (typeof renderSearchHistory === "function") renderSearchHistory();
+    if (typeof syncGoogleSheetData === "function") syncGoogleSheetData();
     
-    // Cloud Core: Download your userscripts folder straight from GitHub to build cards
+    // 3. FETCH FIRST: Pull scripts folder straight from GitHub to build snippets array
     await syncSnippetsFromGitHub();
 
+    // 4. RENDER LATER: Draw the cards only AFTER the download loop is 100% finished
+    if (typeof renderPortal === "function") renderPortal();
+
+    // 5. Setup Avatar Frame Event Handlers
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
         gifFrame.addEventListener('click', () => {
-            changeToRandomGif(); triggerGifFlip(); showToast("Shifting avatar transmission matrix...");
+            if (typeof changeToRandomGif === "function") changeToRandomGif();
+            if (typeof triggerGifFlip === "function") triggerGifFlip();
+            if (typeof showToast === "function") showToast("Shifting avatar transmission matrix...");
         });
     }
-    setInterval(triggerGifFlip, 12000); 
+    if (typeof triggerGifFlip === "function") {
+        setInterval(triggerGifFlip, 12000); 
+    }
 };
 
-// 2. NEW: The automated file scanner engine
+// Clean, public-friendly automated file scanner engine
 async function syncSnippetsFromGitHub() {
-    const token = offlineDatabase.githubToken;
-    const owner = offlineDatabase.githubOwner;
-    const repo = offlineDatabase.githubRepo;
+    const owner = offlineDatabase.githubOwner || "Norii111";
+    const repo = offlineDatabase.githubRepo || "Nori";
 
-    if (!token || !owner || !repo) return; // Silent skip if keys aren't set yet
+    if (!owner || !repo) {
+        console.warn("GitHub Owner or Repo config is missing.");
+        return; 
+    }
 
     try {
-        // Fetch the list of everything inside your scripts directory on GitHub
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/scripts`, {
-            headers: { "Authorization": `token ${token}` }
-        });
+        // Fetch public directory layout inside your scripts folder (No Token Needed!)
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/scripts`);
 
         if (!response.ok) {
             if (response.status === 404) console.log("Scripts directory does not exist on GitHub yet.");
@@ -1042,24 +1052,25 @@ async function syncSnippetsFromGitHub() {
 
         const files = await response.json();
         
-        // Clear old temporary local entries and rebuild from the cloud truth
+        // Reset local block list to hold the incoming files cleanly
         offlineDatabase.bottomSnippets = [];
 
-        // Loop through every file found on GitHub and create a card for it
+        // Loop through files found on GitHub
         for (let file of files) {
             if (file.type === "file" && file.name.endsWith(".user.js")) {
-                // Format file name back into a readable title (e.g., "manga-refresher" -> "Manga Refresher")
+                
+                // Format file name back into a readable title (e.g., "wololo.user.js" -> "Wololo")
                 const cleanTitle = file.name
                     .replace(".user.js", "")
                     .replace(/-/g, " ")
                     .replace(/\b\w/g, c => c.toUpperCase());
 
-                // Fetch the actual raw text content of this script from GitHub
+                // Fetch the actual raw text content of this script using a cache buster
                 const contentResponse = await fetch(`${file.download_url}?cb=${Date.now()}`);
                 const rawCode = contentResponse.ok ? await contentResponse.text() : "// Error loading stream";
 
                 offlineDatabase.bottomSnippets.push({
-                    id: Date.now() + Math.random(), // Unique temporary ID
+                    id: Date.now() + Math.random(), 
                     title: cleanTitle,
                     filePath: file.path,
                     content: rawCode
@@ -1067,9 +1078,8 @@ async function syncSnippetsFromGitHub() {
             }
         }
 
-        // Lock it to current session and refresh the UI layout matrix
+        // Lock the mapping structure into current computer memory
         localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
-        renderPortal();
         console.log(`Synced ${offlineDatabase.bottomSnippets.length} scripts seamlessly from GitHub.`);
     } catch (error) {
         console.error("GitHub directory sync failed:", error);
