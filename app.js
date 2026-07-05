@@ -13,13 +13,13 @@ let googleSheetData = [];
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
 
-let offlineDatabase = {
+let offlineDatabase = JSON.parse(localStorage.getItem('mangaOfflineDB')) || {
+    githubToken: "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", // Must be hardcoded to survive app refreshes!
+    githubOwner: "Norii111",                            // Matches your exact account layout
+    githubRepo: "Nori",                                 // Capital 'N' to exactly match your repository name
     mainGasLink: "https://tinyurl.com/Noro11",
-    primaryGAS: "// Your centerpiece code environment connected to your tinyurl script structure\nfunction coreAutomation() {\n  console.log('Running seamlessly from your custom dashboard centerpiece.');\n}",
-    bottomSnippets: [
-        { id: 1, title: "Tampermonkey Macro", content: "// userscript configurations..." },
-        { id: 2, title: "Discord Webhook Text", content: "Random notation blocks saved locally." }
-    ]
+    primaryGAS: "// Workspace",
+    bottomSnippets: []                                  // Your notes collect cleanly here
 };
 
 const softMangaColors = [
