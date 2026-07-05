@@ -176,6 +176,8 @@ function selectFinalMatch(match) {
     payloadOutput.style.display = "block"; 
     actionsHeader.style.display = "flex";    
     buttonGroup.style.display = "flex";    
+
+    saveToSearchHistory(match.key); // 🌟 ADD THIS LINE HERE to save manual selections
 }
 
 function clearAndHideSearch() {
@@ -360,6 +362,7 @@ function renderArchiveContainer() {
             // 4. Wipe archive UI out of frame cleanly
             archiveBox.style.display = "none";
             isArchiveOpen = false;
+            saveToSearchHistory(row.key);
         };
 
         archiveBox.appendChild(rowDiv);
@@ -634,9 +637,101 @@ function showToast(message) {
     }, 2500);
 }
 
+
+const MAX_HISTORY = 5; // Limits history to the last 5 unique searches
+
+// 1. Core Logic: Save a selected title to localStorage
+function saveToSearchHistory(key) {
+    let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
+    
+    // Remove if it already exists (so it bumps to the front of the list)
+    history = history.filter(item => item !== key);
+    
+    // Add to the front of the array
+    history.unshift(key);
+    
+    // Cap at maximum history limit
+    if (history.length > MAX_HISTORY) {
+        history.pop();
+    }
+    
+    localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
+    renderSearchHistory();
+}
+
+// 2. UI Logic: Render the mini Neo-Brutalist history pills
+function renderSearchHistory() {
+    const container = document.getElementById('searchHistoryContainer');
+    if (!container) return;
+    
+    const history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
+    
+    if (history.length === 0) {
+        container.innerHTML = "";
+        return;
+    }
+    
+    // Build the layout header + pills
+    container.innerHTML = `<span style="font-size: 11px; font-weight: 900; opacity: 0.5; display: block; width: 100%; margin-bottom: 2px;">RECENTS:</span>`;
+    
+    history.forEach(key => {
+        const pill = document.createElement('div');
+        pill.innerText = key;
+        
+        // Stylized Mini Neo-Brutalist Comic Badge Look
+        pill.style.background = "#fff";
+        pill.style.border = "2px solid #111";
+        pill.style.boxShadow = "2px 2px 0px #111";
+        pill.style.padding = "4px 8px";
+        pill.style.fontSize = "11px";
+        pill.style.fontWeight = "bold";
+        pill.style.cursor = "pointer";
+        pill.style.textTransform = "uppercase";
+        pill.style.transition = "all 0.05s ease";
+        
+        // Hover dynamics
+        pill.onmouseenter = () => { pill.style.transform = "translate(-1px, -1px)"; pill.style.boxShadow = "3px 3px 0px #111"; };
+        pill.onmouseleave = () => { pill.style.transform = "none"; pill.style.boxShadow = "2px 2px 0px #111"; };
+        
+        // 3. Execution Click: Simulates an archive card click perfectly
+        pill.onclick = () => {
+            const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
+            if (match) {
+                // Instantly force-fill input value
+                const searchInput = document.getElementById('sheetKeySearch');
+                if (searchInput) searchInput.value = match.key;
+                
+                // Directly bypass dropdown logic and show data views instantly
+                const payloadOutput = document.getElementById('sheetPayloadArea');
+                const actionsHeader = document.getElementById('searchActionsHeader');
+                const buttonGroup = document.getElementById('searchButtonGroup');
+                const suggestionsBox = document.getElementById('searchSuggestions');
+                
+                if (payloadOutput && actionsHeader && buttonGroup) {
+                    payloadOutput.value = match.payload;
+                    payloadOutput.style.display = "block";
+                    actionsHeader.style.display = "flex";
+                    buttonGroup.style.display = "flex";
+                }
+                
+                if (suggestionsBox) {
+                    suggestionsBox.innerHTML = "";
+                    suggestionsBox.style.setProperty('display', 'none', 'important');
+                }
+                
+                // Bump this item to the front of history again
+                saveToSearchHistory(match.key);
+            }
+        };
+        
+        container.appendChild(pill);
+    });
+}
+
 window.onload = function() {
     renderPortal();
     changeToRandomGif();
+    renderSearchHistory();
     syncGoogleSheetData();
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
