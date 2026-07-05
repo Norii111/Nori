@@ -676,31 +676,66 @@ function openModal() {
 }
 var closeModal = () => document.getElementById('mangaModal').classList.remove('open');
 
-function submitNewNote() {
+async function submitNewNote() {
     const name = document.getElementById('modalInput').value.trim();
-    if (name) {
-        // Create a safe-string filename for GitHub (lowercase, dashes instead of spaces)
-        const safeFileName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const filePath = `scripts/${safeFileName}.user.js`;
+    const scriptContent = document.getElementById('modalContentInput').value;
 
-        const newSnippet = { 
-            id: Date.now(), 
-            title: name, 
-            filePath: filePath,
-            content: "// Paste your massive userscript here\n" 
-        };
+    if (!name) {
+        showToast("Error: Title cannot be blank!");
+        return;
+    }
 
-        offlineDatabase.bottomSnippets.push(newSnippet);
-        localStorage.setItem('mangaOfflineDB', JSON.stringify(offlineDatabase));
+    const token = offlineDatabase.githubToken;
+    const owner = offlineDatabase.githubOwner;
+    const repo = offlineDatabase.githubRepo;
+
+    if (!token || !owner || !repo) {
+        showToast("⚠️ Missing GitHub configuration! Check your hardcoded token/repo settings.");
+        return;
+    }
+
+    showToast("Streaming notepad entry to GitHub...");
+
+    // Generate a clean filename (e.g., "Manga Reader 123" -> "manga-reader-123.user.js")
+    const safeFileName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const filePath = `scripts/${safeFileName}.user.js`;
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+
+    // Convert the content input safely into Base64 for the GitHub API pipeline
+    const utf8Bytes = new TextEncoder().encode(scriptContent);
+    const base64Content = btoa(String.fromCharCode(...utf8Bytes));
+
+    const payload = {
+        message: `Notepad Creation: Added ${name}`,
+        content: base64Content
+    };
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: "PUT",
+            headers: {
+                "Authorization": `token ${token}`,
+                "Accept": "application/vnd.github.v3+json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error("GitHub deployment pipeline rejected file creation.");
+
+        showToast(`🚀 "${name}" saved directly to GitHub!`);
         
-        renderPortal(); 
-        closeModal(); 
-        
-        // Instantly activate this new note in your workspace view for editing
-        viewSnippet(newSnippet.id);
-        showToast(`Created slot: "${name}"`);
-    } else {
-        showToast("Error: Name cannot be blank!");
+        // Reset and clean up modal text fields
+        document.getElementById('modalInput').value = "";
+        document.getElementById('modalContentInput').value = "";
+        closeModal();
+
+        // Refresh the cards on your dashboard by re-scanning your repository contents
+        await syncSnippetsFromGitHub();
+
+    } catch (error) {
+        console.error(error);
+        showToast(`Sync Failed: ${error.message}`);
     }
 }
 
