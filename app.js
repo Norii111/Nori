@@ -478,18 +478,10 @@ function executeMove(fromCoord, toCoord) {
 }
 
 function executeFinalDestruction() {
-    if (activeDeleteTargetId) {
-        const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === activeDeleteTargetId);
-        offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== activeDeleteTargetId);
-        addSystemLog(`DELETE: ${targetItem.title} removed.`);
-        renderPortal();
-    } else {
-        // This triggers when you click the Dev Vault link (since no delete target is set)
-        unlockDeveloperMode();
-    }
-    
-    closeChessModal();
-    changeToRandomGif();
+    const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === activeDeleteTargetId);
+    offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== activeDeleteTargetId);
+    renderPortal(); closeChessModal(); changeToRandomGif();
+    showToast(`DESTRUCTION SUCCESS: Removed "${targetItem ? targetItem.title : 'Item'}"`);
 }
 
 function closeChessModal() {
@@ -558,30 +550,17 @@ function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
     const searchTab = document.getElementById('searchMenuTab');
     const logsTab = document.getElementById('logsTab');
-    const devTab = document.getElementById('developerTab'); 
     const navLinks = document.querySelectorAll('.nav-links a');
 
-    // --- SELF-DESTRUCT LOGIC ---
-    // If we are moving to any tab other than the developer tab, 
-    // the vault must be hidden and locked.
-    if (tabName !== 'developerTab' && devTab) {
-        devTab.style.display = 'none';
-    }
-
-    // Reset all nav active states
     navLinks.forEach(link => link.classList.remove('active'));
-    
-    // Hide all main containers
     dashTab.style.display = 'none';
     searchTab.style.display = 'none';
     logsTab.style.display = 'none';
 
-    // Clear search-related UI states
     document.getElementById('searchSuggestions').style.display = "none";
     document.getElementById('sheetArchiveArea').style.display = "none";
     isArchiveOpen = false;
 
-    // Routing Logic
     if (tabName === 'dashboard') {
         dashTab.style.display = 'grid';
         navLinks[0].classList.add('active');
@@ -596,16 +575,10 @@ function switchTab(tabName) {
         logsTab.style.display = 'grid';
         navLinks[2].classList.add('active');
         showToast("Viewing Core System Performance Records");
-    } else if (tabName === 'developerTab') {
-        // This only displays if you successfully cleared the chess lock
-        if (devTab) {
-            devTab.style.display = 'grid';
-            showToast("ADMIN ACCESS: Developer Vault Engaged.");
-        }
     }
-    
     changeToRandomGif();
 }
+
 function openModal() {
     document.getElementById('mangaModal').classList.add('open');
     document.getElementById('modalInput').value = '';
@@ -822,21 +795,6 @@ function renderSearchHistory() {
         
         container.appendChild(pillWrapper);
     });
-}
-
-
-// --- DEV VAULT SECURITY GATEKEEPER ---
-
-function requestDeveloperAccess() {
-    addSystemLog("Access request: DEV VAULT. Initiating Defense Matrix.");
-    openChessModal();
-}
-
-function unlockDeveloperMode() {
-    document.getElementById('developerTab').style.display = "grid";
-    switchTab('developerTab'); 
-    addSystemLog("SECURITY BREACHED: Developer Console Unlocked.");
-    showToast("VAULT OPEN: Admin privileges active.");
 }
 
 window.onload = function() {
