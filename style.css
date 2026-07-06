@@ -209,15 +209,11 @@ body {
 /* CORE FRAMES DESIGNED LIKE COMIC BOOK PANELS */
 
 .main-content {
-
-    display: grid;
-
-    grid-template-rows: 3.2fr 2fr;
-
+    display: flex;       /* Changed from grid to flex */
+    flex-direction: column;
     gap: 18px;
-
     height: 100%;
-
+    overflow-y: auto;    /* Ensures long content doesn't break the layout */
 }
 
 
