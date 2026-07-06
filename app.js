@@ -9,6 +9,12 @@ const gifs = [
 ];
 
 const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHGQy-jlVIqKK8eNY5KAyKmalHnluD0Dbznly-mCn_e3loE9poQD46AkqKOAZYH5BcZ4Rs50Q9pZzJ/pub?output=csv";
+const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbyD3obZPofuu-J2ml0S6CPvZ9KxEWPj5xQGxyyC9Lr17kCsJUM1tck_ArNr7mooqpZMBA/exec";
+
+let devToolsUnlocked = false;
+let devToolsRows = [];
+let chessLockContext = { type: null, payload: null };
+
 let googleSheetData = []; 
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
@@ -406,10 +412,31 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+function handleDevToolsClick() {
+    if (devToolsUnlocked) {
+        switchTab('devTools');
+    } else {
+        requestDevToolsAccess();
+    }
+}
+
+function requestDevToolsAccess() {
+    openChessLock({ type: 'devtools' }, "Execute London Line to Authorize Dev Access");
+}
+
 function deleteSnippet(id) {
-    activeDeleteTargetId = id; currentLondonStep = 0; selectedPieceCoord = null;
-    resetChessBoardState(); renderChessBoard();
+    openChessLock({ type: 'delete', payload: id }, "Execute London Line to Authorize Deletion");
+}
+
+function openChessLock(context, promptText) {
+    chessLockContext = context;
+    currentLondonStep = 0;
+    selectedPieceCoord = null;
+    resetChessBoardState();
+    renderChessBoard();
     document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: INITIATE MOVE 1";
+    const promptEl = document.getElementById('chessLockPrompt');
+    if (promptEl) promptEl.innerText = promptText;
     document.getElementById('chessAuthModal').classList.add('open');
 }
 
@@ -458,7 +485,7 @@ function handleSquareClick(clickedCoord) {
         } 
         else if (currentLondonStep === 2 && movingPiece === '♘' && selectedPieceCoord === 'f1' && clickedCoord === 'e3') {
             executeMove(selectedPieceCoord, clickedCoord);
-            executeFinalDestruction();
+            executeChessSuccess();
         } 
         else {
             currentLondonStep = 0; selectedPieceCoord = null;
@@ -477,16 +504,27 @@ function executeMove(fromCoord, toCoord) {
     renderChessBoard();
 }
 
-function executeFinalDestruction() {
-    const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === activeDeleteTargetId);
-    offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== activeDeleteTargetId);
-    renderPortal(); closeChessModal(); changeToRandomGif();
-    showToast(`DESTRUCTION SUCCESS: Removed "${targetItem ? targetItem.title : 'Item'}"`);
+function executeChessSuccess() {
+    if (chessLockContext.type === 'delete') {
+        const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === chessLockContext.payload);
+        offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== chessLockContext.payload);
+        renderPortal();
+        showToast(`DESTRUCTION SUCCESS: Removed "${targetItem ? targetItem.title : 'Item'}"`);
+    } else if (chessLockContext.type === 'devtools') {
+        devToolsUnlocked = true;
+        showToast("ACCESS GRANTED: Dev Tools unlocked.");
+        switchTab('devTools');
+        loadDevToolsData();
+    }
+    closeChessModal();
+    changeToRandomGif();
 }
 
 function closeChessModal() {
     document.getElementById('chessAuthModal').classList.remove('open');
-    activeDeleteTargetId = null; currentLondonStep = 0; selectedPieceCoord = null;
+    chessLockContext = { type: null, payload: null };
+    currentLondonStep = 0;
+    selectedPieceCoord = null;
 }
 
 function getRandomMangaColor() { return softMangaColors[Math.floor(Math.random() * softMangaColors.length)]; }
@@ -550,31 +588,37 @@ function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
     const searchTab = document.getElementById('searchMenuTab');
     const logsTab = document.getElementById('logsTab');
+    const devTab = document.getElementById('devToolsTab');
     const navLinks = document.querySelectorAll('.nav-links a');
 
     navLinks.forEach(link => link.classList.remove('active'));
     dashTab.style.display = 'none';
     searchTab.style.display = 'none';
     logsTab.style.display = 'none';
+    devTab.style.display = 'none';
 
     document.getElementById('searchSuggestions').style.display = "none";
     document.getElementById('sheetArchiveArea').style.display = "none";
     isArchiveOpen = false;
 
     if (tabName === 'dashboard') {
-        dashTab.style.display = 'grid';
+        dashTab.style.display = 'flex';
         navLinks[0].classList.add('active');
         showToast("Switched to Main Command Dashboard");
     } else if (tabName === 'searchTab') {
-        searchTab.style.display = 'grid';
+        searchTab.style.display = 'flex';
         navLinks[1].classList.add('active');
         showToast("Switched to Sheet Search Engine");
-        document.getElementById('sheetKeySearch').value = ""; 
+        document.getElementById('sheetKeySearch').value = "";
         clearAndHideSearch();
     } else if (tabName === 'logs') {
-        logsTab.style.display = 'grid';
+        logsTab.style.display = 'flex';
         navLinks[2].classList.add('active');
         showToast("Viewing Core System Performance Records");
+    } else if (tabName === 'devTools') {
+        devTab.style.display = 'flex';
+        navLinks[3].classList.add('active');
+        showToast("DEV TOOLS ACCESS GRANTED");
     }
     changeToRandomGif();
 }
@@ -795,6 +839,137 @@ function renderSearchHistory() {
         
         container.appendChild(pillWrapper);
     });
+}
+
+
+async function loadDevToolsData() {
+    const table = document.getElementById('devToolsTable');
+    table.innerHTML = "<tr><td style='padding:10px;'>Loading live rows...</td></tr>";
+    try {
+        const response = await fetch(`${gasWebAppUrl}?api=devtools`);
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message || "Unknown error");
+        devToolsRows = result.rows;
+        renderDevToolsTable();
+        addSystemLog(`Dev Tools: loaded ${devToolsRows.length} live rows.`);
+    } catch (err) {
+        table.innerHTML = `<tr><td style='padding:10px; color:#cc0000; font-weight:bold;'>Error loading data: ${err.message}</td></tr>`;
+        addSystemLog(`Dev Tools load error: ${err.message}`);
+    }
+}
+
+function renderDevToolsTable() {
+    const table = document.getElementById('devToolsTable');
+    if (devToolsRows.length === 0) {
+        table.innerHTML = "<tr><td style='padding:10px;'>No rows found.</td></tr>";
+        return;
+    }
+
+    let html = `
+        <tr style="text-align:left; border-bottom:3px solid var(--ink-black);">
+            <th style="padding:8px;">Keyword</th>
+            <th style="padding:8px;">Description</th>
+            <th style="padding:8px; width:140px;">Actions</th>
+        </tr>
+    `;
+
+    devToolsRows.forEach(row => {
+        html += `
+            <tr data-row="${row._row}" style="border-bottom:1px solid var(--ink-black);">
+                <td style="padding:8px; vertical-align:top;">
+                    <input type="text" value="${escapeHtml(row.key)}" data-field="key" style="width:100%; border:2px solid var(--ink-black); padding:4px; font-family:inherit; font-weight:bold; box-sizing:border-box;">
+                </td>
+                <td style="padding:8px; vertical-align:top;">
+                    <textarea data-field="description" style="width:100%; min-height:50px; margin-top:0; box-sizing:border-box; font-size:12px;">${escapeHtml(row.description)}</textarea>
+                </td>
+                <td style="padding:8px; vertical-align:top;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <button class="manga-btn" style="font-size:10px; padding:3px 6px;" onclick="saveDevRow(${row._row}, this)">💾 Save</button>
+                        <button class="manga-btn danger" style="font-size:10px; padding:3px 6px;" onclick="deleteDevRow(${row._row})">🗑 Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    table.innerHTML = html;
+}
+
+function escapeHtml(str) {
+    if (str === undefined || str === null) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+async function saveDevRow(rowNum, btnEl) {
+    const tr = btnEl.closest('tr');
+    const key = tr.querySelector('[data-field="key"]').value;
+    const description = tr.querySelector('[data-field="description"]').value;
+
+    try {
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'edit', row: rowNum, key, description })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        showToast(`Row ${rowNum} updated.`);
+        addSystemLog(`Dev Tools: row ${rowNum} updated.`);
+    } catch (err) {
+        showToast("Error saving row: " + err.message);
+    }
+}
+
+async function deleteDevRow(rowNum) {
+    if (!confirm("Delete this row permanently from the live Google Sheet?")) return;
+    try {
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'delete', row: rowNum })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        showToast(`Row ${rowNum} deleted.`);
+        addSystemLog(`Dev Tools: row ${rowNum} deleted.`);
+        loadDevToolsData();
+    } catch (err) {
+        showToast("Error deleting row: " + err.message);
+    }
+}
+
+function openDevAddForm() {
+    document.getElementById('devToolsAddForm').style.display = 'flex';
+    document.getElementById('devAddKey').value = '';
+    document.getElementById('devAddDesc').value = '';
+}
+function closeDevAddForm() {
+    document.getElementById('devToolsAddForm').style.display = 'none';
+}
+async function submitDevAdd() {
+    const key = document.getElementById('devAddKey').value.trim();
+    const description = document.getElementById('devAddDesc').value.trim();
+    if (!key) { showToast("Error: Keyword cannot be blank!"); return; }
+
+    try {
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'add', key, description })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        showToast("New row added to live sheet!");
+        addSystemLog("Dev Tools: new row added.");
+        closeDevAddForm();
+        loadDevToolsData();
+    } catch (err) {
+        showToast("Error adding row: " + err.message);
+    }
 }
 
 window.onload = function() {
