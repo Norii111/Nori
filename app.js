@@ -911,7 +911,7 @@ function renderDevToolsTable() {
                     <input type="text" value="${escapeHtml(row.key)}" data-field="key" style="width:100%; border:2px solid var(--ink-black); padding:4px; font-family:inherit; font-weight:bold; box-sizing:border-box;">
                 </td>
                 <td style="padding:8px; vertical-align:top;">
-                    <textarea data-field="description" style="width:100%; min-height:50px; margin-top:0; box-sizing:border-box; font-size:12px;">${escapeHtml(row.description)}</textarea>
+                    <textarea data-field="description" style="width:100%; min-height:519px; margin-top:0; box-sizing:border-box; font-size:12px;">${escapeHtml(row.description)}</textarea>
                 </td>
                 <td style="padding:8px; vertical-align:top;">
                     <div style="display:flex; flex-direction:column; gap:6px;">
