@@ -444,11 +444,14 @@ function deleteSnippet(id) {
     openChessLock({ type: 'delete', payload: id }, "Execute London Line to Authorize Deletion");
 }
 
+let currentChessGridLayout = null; // Add this as a global variable near the top with other chess vars
+
 function openChessLock(context, promptText) {
     chessLockContext = context;
     currentLondonStep = 0;
     selectedPieceCoord = null;
     resetChessBoardState();
+    currentChessGridLayout = getRandomizedGridLayout(); // SHUFFLE ONCE HERE
     renderChessBoard();
     document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: INITIATE MOVE 1";
     const promptEl = document.getElementById('chessLockPrompt');
@@ -461,7 +464,7 @@ function renderChessBoard() {
     if (!boardContainer) return;
     boardContainer.innerHTML = '';
     
-const gridLayout = getRandomizedGridLayout();
+const gridLayout = currentChessGridLayout;
     
     gridLayout.forEach(tile => {
         const square = document.createElement('div');
@@ -911,7 +914,7 @@ function renderDevToolsTable() {
                     <input type="text" value="${escapeHtml(row.key)}" data-field="key" style="width:100%; border:2px solid var(--ink-black); padding:4px; font-family:inherit; font-weight:bold; box-sizing:border-box;">
                 </td>
                 <td style="padding:8px; vertical-align:top;">
-                    <textarea data-field="description" style="width:100%; min-height:519px; margin-top:0; box-sizing:border-box; font-size:12px;">${escapeHtml(row.description)}</textarea>
+                   <textarea data-field="description" style="width:100%; min-height:100px; max-height:200px; margin-top:0; box-sizing:border-box; font-size:12px; resize:vertical;">${escapeHtml(row.description)}</textarea>
                 </td>
                 <td style="padding:8px; vertical-align:top;">
                     <div style="display:flex; flex-direction:column; gap:6px;">
