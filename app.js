@@ -10,7 +10,12 @@ const gifs = [
 
 const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHGQy-jlVIqKK8eNY5KAyKmalHnluD0Dbznly-mCn_e3loE9poQD46AkqKOAZYH5BcZ4Rs50Q9pZzJ/pub?output=csv";
 const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbyD3obZPofuu-J2ml0S6CPvZ9KxEWPj5xQGxyyC9Lr17kCsJUM1tck_ArNr7mooqpZMBA/exec";
- 
+
+
+let userScripts = [];
+let currentSicilianGridLayout = null; // For second chess puzzle
+let userScriptBeingEdited = null; // Track which script is being edited
+
 let devToolsUnlocked = false;
 let devToolsRows = [];
 let chessLockContext = { type: null, payload: null };
@@ -59,6 +64,97 @@ function getRandomizedGridLayout() {
     }
     
     return baseLayout;
+}
+
+function getRandomizedSicilianLayout() {
+    // Sicilian Defense (black pieces) - mirror of London System
+    const baseLayout = [
+        { coord: 'a4', isDark: false }, { coord: 'b4', isDark: true },  { coord: 'c4', isDark: false },
+        { coord: 'a3', isDark: true },  { coord: 'b3', isDark: false }, { coord: 'c3', isDark: true },
+        { coord: 'a1', isDark: false }, { coord: 'b1', isDark: true },  { coord: 'f1', isDark: false }
+    ];
+    
+    // Fisher-Yates shuffle
+    for (let i = baseLayout.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [baseLayout[i], baseLayout[j]] = [baseLayout[j], baseLayout[i]];
+    }
+    
+    return baseLayout;
+}
+
+function resetSicilianBoardState() {
+    chessBoardState = {
+        'a4': '',    'b4': '',    'c4': '',
+        'a3': '♟',  'b3': '',    'c3': '',    
+        'a1': '♝',  'b1': '',    'f1': '♞'    
+    };
+}
+
+function openUserScriptChessLock(context, promptText) {
+    chessLockContext = context;
+    currentLondonStep = 0;
+    selectedPieceCoord = null;
+    resetSicilianBoardState();
+    currentSicilianGridLayout = getRandomizedSicilianLayout(); // Shuffle once
+    renderSicilianChessBoard();
+    document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: INITIATE MOVE 1 (SICILIAN)";
+    const promptEl = document.getElementById('chessLockPrompt');
+    if (promptEl) promptEl.innerText = promptText;
+    document.getElementById('chessAuthModal').classList.add('open');
+}
+
+function renderSicilianChessBoard() {
+    const boardContainer = document.getElementById('mangaChessBoard');
+    if (!boardContainer) return;
+    boardContainer.innerHTML = '';
+    
+    const gridLayout = currentSicilianGridLayout;
+    
+    gridLayout.forEach(tile => {
+        const square = document.createElement('div');
+        const piece = chessBoardState[tile.coord] || '';
+        let squareClass = `chess-square ${tile.isDark ? 'dark-tile' : ''}`;
+        if (selectedPieceCoord === tile.coord) squareClass += ' selected-piece-highlight'; 
+        
+        square.className = squareClass;
+        square.innerHTML = `${piece} <span class="square-coord">${tile.coord}</span>`;
+        square.onclick = () => handleSicilianSquareClick(tile.coord);
+        boardContainer.appendChild(square);
+    });
+}
+
+function handleSicilianSquareClick(clickedCoord) {
+    const clickedPiece = chessBoardState[clickedCoord];
+    if (selectedPieceCoord === clickedCoord) { selectedPieceCoord = null; renderSicilianChessBoard(); return; }
+    if (clickedPiece !== '') { selectedPieceCoord = clickedCoord; renderSicilianChessBoard(); return; }
+    
+    if (selectedPieceCoord) {
+        const movingPiece = chessBoardState[selectedPieceCoord];
+        if (currentLondonStep === 0 && movingPiece === '♟' && selectedPieceCoord === 'a3' && clickedCoord === 'a4') {
+            executeMove(selectedPieceCoord, clickedCoord);
+            currentLondonStep = 1;
+            document.getElementById('chessStepIndicator').innerText = "LOCK STAGE 1 BREACHED: INITIATE MOVE 2";
+            showToast("Move 1 accepted...");
+        } 
+        else if (currentLondonStep === 1 && movingPiece === '♝' && selectedPieceCoord === 'a1' && clickedCoord === 'c4') {
+            executeMove(selectedPieceCoord, clickedCoord);
+            currentLondonStep = 2;
+            document.getElementById('chessStepIndicator').innerText = "LOCK STAGE 2 BREACHED: INITIATE MOVE 3";
+            showToast("Move 2 accepted...");
+        } 
+        else if (currentLondonStep === 2 && movingPiece === '♞' && selectedPieceCoord === 'f1' && clickedCoord === 'b1') {
+            executeMove(selectedPieceCoord, clickedCoord);
+            executeChessSuccess();
+        } 
+        else {
+            currentLondonStep = 0; selectedPieceCoord = null;
+            resetSicilianBoardState(); renderSicilianChessBoard();
+            document.getElementById('chessStepIndicator').innerText = "SECURITY ALERT: MATRIX RESET";
+            showToast("BLUNDER! Access Denied.");
+            changeToRandomGif();
+        }
+    }
 }
 
 async function syncGoogleSheetData() {
@@ -532,9 +628,168 @@ function executeChessSuccess() {
         loadDevToolsData();
     } else if (chessLockContext.type === 'devRowDelete') {
         performDevRowDeletion(chessLockContext.payload);
+    } else if (chessLockContext.type === 'userScriptEdit') {
+        openUserScriptEditForm(chessLockContext.payload);
+    } else if (chessLockContext.type === 'userScriptDelete') {
+        performUserScriptDeletion(chessLockContext.payload);
     }
     closeChessModal();
     changeToRandomGif();
+}
+
+async function loadUserScripts() {
+    try {
+        const response = await fetch(`${gasWebAppUrl}?api=userscripts`);
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        userScripts = result.scripts;
+        renderUserScriptCards();
+        addSystemLog(`Loaded ${userScripts.length} userscripts.`);
+    } catch (err) {
+        addSystemLog(`Error loading userscripts: ${err.message}`);
+        showToast("Error loading userscripts");
+    }
+}
+
+function renderUserScriptCards() {
+    const bottomGrid = document.getElementById('bottomGrid');
+    // Keep existing bottom snippets, add userscripts after
+    const existingHTML = bottomGrid.innerHTML;
+    
+    // Or if you want to replace, uncomment this:
+    // bottomGrid.innerHTML = '';
+    
+    userScripts.forEach(script => {
+        const randomBg = getRandomMangaColor();
+        const card = document.createElement('div');
+        card.className = 'snippet-card';
+        card.style.backgroundColor = randomBg;
+        card.innerHTML = `
+            <div style="overflow: hidden;">
+                <strong style="display:block; margin-bottom:4px; font-size:14px;">${escapeHtml(script.title)}</strong>
+                <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">📄 Drive userscript</p>
+            </div>
+            <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
+                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="openUserScriptEditChess('${script.driveFileID}')">Edit</button>
+                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="openUserScriptDeleteChess('${script.driveFileID}')">Delete</button>
+                <button class="manga-btn primary-save" style="font-size:11px; padding:3px 8px;" onclick="copyUserScript('${script.driveFileID}')">Copy</button>
+            </div>
+        `;
+        bottomGrid.appendChild(card);
+    });
+}
+
+function openUserScriptEditChess(fileID) {
+    openUserScriptChessLock({ type: 'userScriptEdit', payload: fileID }, "Execute Sicilian Defense to Authorize Edit");
+}
+
+function openUserScriptDeleteChess(fileID) {
+    openUserScriptChessLock({ type: 'userScriptDelete', payload: fileID }, "Execute Sicilian Defense to Authorize Deletion");
+}
+
+async function openUserScriptEditForm(fileID) {
+    const script = userScripts.find(s => s.driveFileID === fileID);
+    if (!script) { showToast("Script not found"); return; }
+    
+    userScriptBeingEdited = fileID;
+    
+    try {
+        const response = await fetch(`${gasWebAppUrl}?api=userscripts&action=getContent&fileID=${fileID}`);
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        
+        // Open modal or show edit area
+        document.getElementById('modalInput').value = script.title;
+        document.getElementById('primaryGasArea').value = result.content;
+        showToast(`Loaded: "${script.title}"`);
+        switchTab('dashboard');
+    } catch (err) {
+        showToast("Error loading script content: " + err.message);
+    }
+}
+
+async function saveEditedUserScript() {
+    if (!userScriptBeingEdited) { showToast("No script selected"); return; }
+    
+    const title = document.getElementById('modalInput').value.trim();
+    const content = document.getElementById('primaryGasArea').value;
+    
+    if (!title) { showToast("Title cannot be blank"); return; }
+    
+    try {
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'updateUserScript', fileID: userScriptBeingEdited, title, content })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        
+        showToast("Script updated!");
+        addSystemLog("Userscript updated");
+        userScriptBeingEdited = null;
+        loadUserScripts();
+    } catch (err) {
+        showToast("Error saving script: " + err.message);
+    }
+}
+
+async function performUserScriptDeletion(fileID) {
+    try {
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'deleteUserScript', fileID })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        
+        showToast("Script unlinked (file kept on Drive)");
+        addSystemLog("Userscript unlinked");
+        loadUserScripts();
+    } catch (err) {
+        showToast("Error deleting script: " + err.message);
+    }
+}
+
+async function copyUserScript(fileID) {
+    try {
+        const response = await fetch(`${gasWebAppUrl}?api=userscripts&action=getContent&fileID=${fileID}`);
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        
+        navigator.clipboard.writeText(result.content)
+            .then(() => showToast("Userscript copied to clipboard!"))
+            .catch(() => showToast("Failed to copy"));
+    } catch (err) {
+        showToast("Error: " + err.message);
+    }
+}
+
+async function submitNewUserScript() {
+    const title = document.getElementById('modalInput').value.trim();
+    const content = document.getElementById('primaryGasArea').value.trim();
+    
+    if (!title) { showToast("Title cannot be blank"); return; }
+    if (!content) { showToast("Content cannot be blank"); return; }
+    
+    try {
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'addUserScript', title, content })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        
+        showToast("Userscript added to Drive!");
+        addSystemLog("New userscript created");
+        document.getElementById('modalInput').value = '';
+        document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
+        loadUserScripts();
+    } catch (err) {
+        showToast("Error adding script: " + err.message);
+    }
 }
 
 function closeChessModal() {
@@ -997,6 +1252,7 @@ window.onload = function() {
     changeToRandomGif();
     renderSearchHistory();
     syncGoogleSheetData();
+    loadUserScripts();
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
         gifFrame.addEventListener('click', () => {
