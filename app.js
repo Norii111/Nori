@@ -45,6 +45,22 @@ function resetChessBoardState() {
     };
 }
 
+function getRandomizedGridLayout() {
+    const baseLayout = [
+        { coord: 'c4', isDark: false }, { coord: 'd4', isDark: true },  { coord: 'e4', isDark: false },
+        { coord: 'c3', isDark: true },  { coord: 'd3', isDark: false }, { coord: 'e3', isDark: true },
+        { coord: 'c1', isDark: false }, { coord: 'd1', isDark: true },  { coord: 'f1', isDark: false }
+    ];
+    
+    // Fisher-Yates shuffle
+    for (let i = baseLayout.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [baseLayout[i], baseLayout[j]] = [baseLayout[j], baseLayout[i]];
+    }
+    
+    return baseLayout;
+}
+
 async function syncGoogleSheetData() {
     addSystemLog("Connecting to Google Sheets cloud matrix...");
     try {
@@ -445,11 +461,7 @@ function renderChessBoard() {
     if (!boardContainer) return;
     boardContainer.innerHTML = '';
     
-    const gridLayout = [
-        { coord: 'c4', isDark: false }, { coord: 'd4', isDark: true },  { coord: 'e4', isDark: false },
-        { coord: 'c3', isDark: true },  { coord: 'd3', isDark: false }, { coord: 'e3', isDark: true },
-        { coord: 'c1', isDark: false }, { coord: 'd1', isDark: true },  { coord: 'f1', isDark: false }
-    ];
+const gridLayout = getRandomizedGridLayout();
     
     gridLayout.forEach(tile => {
         const square = document.createElement('div');
@@ -515,6 +527,8 @@ function executeChessSuccess() {
         showToast("ACCESS GRANTED: Dev Tools unlocked.");
         switchTab('devTools');
         loadDevToolsData();
+    } else if (chessLockContext.type === 'devRowDelete') {
+        performDevRowDeletion(chessLockContext.payload);
     }
     closeChessModal();
     changeToRandomGif();
@@ -525,6 +539,23 @@ function closeChessModal() {
     chessLockContext = { type: null, payload: null };
     currentLondonStep = 0;
     selectedPieceCoord = null;
+}
+
+async function performDevRowDeletion(rowNum) {
+    try {
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'delete', row: rowNum })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+        showToast(`Row ${rowNum} deleted.`);
+        addSystemLog(`Dev Tools: row ${rowNum} deleted.`);
+        loadDevToolsData();
+    } catch (err) {
+        showToast("Error deleting row: " + err.message);
+    }
 }
 
 function getRandomMangaColor() { return softMangaColors[Math.floor(Math.random() * softMangaColors.length)]; }
@@ -925,21 +956,7 @@ async function saveDevRow(rowNum, btnEl) {
 }
 
 async function deleteDevRow(rowNum) {
-    if (!confirm("Delete this row permanently from the live Google Sheet?")) return;
-    try {
-        const response = await fetch(gasWebAppUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'delete', row: rowNum })
-        });
-        const result = await response.json();
-        if (!result.ok) throw new Error(result.message);
-        showToast(`Row ${rowNum} deleted.`);
-        addSystemLog(`Dev Tools: row ${rowNum} deleted.`);
-        loadDevToolsData();
-    } catch (err) {
-        showToast("Error deleting row: " + err.message);
-    }
+    openChessLock({ type: 'devRowDelete', payload: rowNum }, "Execute London Line to Authorize Row Deletion");
 }
 
 function openDevAddForm() {
