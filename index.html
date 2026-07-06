@@ -15,21 +15,9 @@
                 <a href="#" class="active" onclick="switchTab('dashboard')">COMMAND CENTER</a>
                 <a href="#" onclick="switchTab('searchTab')">SEARCH ENGINE</a>
                 <a href="#" onclick="switchTab('logs')">SYSTEM LOGS</a>
-                <a href="#" onclick="requestDeveloperAccess()" style="color: var(--ink-black); font-weight: 900; border-top: 1px solid var(--ink-black); margin-top: 10px; padding-top: 10px;">[ DEV VAULT ]</a>
             </nav>
             <div class="blank-character-frame sidebar-art"></div>
         </aside>
-
-        <main class="main-content" id="developerTab" style="display: none;">
-            <section class="manga-panel">
-                <div class="panel-header">
-                    <h3>DEVELOPER CONSOLE: READ/WRITE</h3>
-                    <button class="manga-btn" onclick="syncGoogleSheetData()">🔄 Sync Master</button>
-                </div>
-                <input type="text" id="devSheetSearch" placeholder="Search rows to Edit/Delete..." oninput="queryDevSheet()" style="width: 100%; margin-bottom: 10px; padding: 10px; border: 3px solid var(--ink-black);">
-                <div id="devSheetContainer" style="display: flex; flex-direction: column; gap: 5px;"></div>
-            </section>
-        </main>
 
         <main class="main-content" id="dashboardTab">
             <section class="manga-panel primary-gas-panel">
