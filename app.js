@@ -10,7 +10,7 @@ const gifs = [
 
 const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHGQy-jlVIqKK8eNY5KAyKmalHnluD0Dbznly-mCn_e3loE9poQD46AkqKOAZYH5BcZ4Rs50Q9pZzJ/pub?output=csv";
 const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbyD3obZPofuu-J2ml0S6CPvZ9KxEWPj5xQGxyyC9Lr17kCsJUM1tck_ArNr7mooqpZMBA/exec";
-
+ 
 let devToolsUnlocked = false;
 let devToolsRows = [];
 let chessLockContext = { type: null, payload: null };
