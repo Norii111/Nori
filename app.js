@@ -370,10 +370,8 @@ function copyPredictionCardContent(cardId) {
         return;
     }
 
-    const text = `${card.title}\n\n${card.content}`;
-
-    navigator.clipboard.writeText(text)
-        .then(() => showToast(`Copied prediction: ${card.title}`))
+    navigator.clipboard.writeText(card.content || '')
+        .then(() => showToast('Prediction content copied.'))
         .catch(() => showToast('Copy failed.'));
 }
 
