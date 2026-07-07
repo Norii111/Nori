@@ -785,6 +785,15 @@ function clearDriveNoteWorkspaceState() {
     }
 }
 
+function requestDriveNoteEditLock() {
+    if (!userScriptBeingViewed) {
+        showToast('Swap View a Drive note first.');
+        return;
+    }
+
+    openUserScriptEditChess(userScriptBeingViewed);
+}
+
 function enableDriveNoteEdit() {
     if (!userScriptBeingViewed) {
         showToast('Swap View a Drive note first.');
@@ -877,11 +886,18 @@ function openUserScriptDeleteChess(fileID) {
 }
 
 async function openUserScriptEditForm(fileID) {
-    await swapUserScriptView(fileID);
-
     if (userScriptBeingViewed === fileID) {
         enableDriveNoteEdit();
+        return;
     }
+
+    await swapUserScriptView(fileID);
+
+    setTimeout(() => {
+        if (userScriptBeingViewed === fileID) {
+            enableDriveNoteEdit();
+        }
+    }, 260);
 }
     
 async function saveEditedUserScript() {
