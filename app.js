@@ -2033,7 +2033,7 @@ function renderSearchHistory() {
         };
 
         const pinButton = document.createElement('span');
-        pinButton.textContent = item.pinned ? '♝' : '♟';
+        pinButton.textContent = item.pinned ? '♝' : '♙';
         pinButton.title = item.pinned ? 'Unpin recent search' : 'Pin recent search';
         pinButton.style.cursor = "pointer";
         pinButton.style.fontSize = "13px";
