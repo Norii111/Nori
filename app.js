@@ -2035,7 +2035,7 @@ function renderSearchHistory() {
         };
 
         const pinButton = document.createElement('span');
-        pinButton.textContent = item.pinned ? '♝' : '♙';
+        pinButton.textContent = item.pinned ? '♝' : '♖';
         pinButton.title = item.pinned ? 'Unpin recent search' : 'Pin recent search';
         pinButton.style.cursor = "pointer";
         pinButton.style.fontSize = "13px";
@@ -2523,6 +2523,21 @@ setInterval(() => {
         renderPredictionCards(getVisiblePredictionCards());
     }
 }, 30000);
+
+
+function installHorizontalNoteScroll() {
+    const grid = document.getElementById('bottomGrid');
+    if (!grid) return;
+
+    grid.addEventListener('wheel', function (e) {
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            e.preventDefault();
+            grid.scrollLeft += e.deltaY;
+        }
+    }, { passive: false });
+}
+
+window.addEventListener('load', installHorizontalNoteScroll);
 
 window.onload = function() {
     loadPredictionTimeConfig();
