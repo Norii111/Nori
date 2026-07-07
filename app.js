@@ -14,8 +14,12 @@ const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbyfYCRLFSQmWBH40ps
 
 let userScripts = [];
 const driveNoteContentCache = new Map();
+const driveNoteFetchedAt = new Map();
+
 let isLoadingUserScripts = false;
 let lastDriveSyncAt = 0;
+
+const DRIVE_NOTE_CACHE_TTL = 60000; // 60 seconds
 let currentSicilianGridLayout = null; // For second chess puzzle
 
 let userScriptBeingEdited = null; // Drive note currently unlocked for editing
@@ -888,6 +892,28 @@ function showDriveNoteInWorkspace(script, content, showMessage = true) {
     changeToRandomGif();
 }
 
+
+
+function updateDriveNoteContentSilently(fileID, script, freshContent) {
+    driveNoteContentCache.set(fileID, freshContent);
+    driveNoteFetchedAt.set(fileID, Date.now());
+
+    if (userScriptBeingViewed !== fileID) return;
+    if (isDriveNoteEditMode) return; // Never overwrite while user is editing.
+
+    const textarea = document.getElementById('primaryGasArea');
+    if (!textarea) return;
+
+    if (textarea.value !== freshContent) {
+        textarea.value = freshContent || '';
+    }
+
+    setDriveNoteViewMode({
+        title: script.title,
+        editable: false
+    });
+}
+
 async function swapUserScriptView(fileID) {
     const script = userScripts.find(s => s.driveFileID === fileID);
 
@@ -897,10 +923,19 @@ async function swapUserScriptView(fileID) {
         return;
     }
 
-    if (driveNoteContentCache.has(fileID)) {
+    const hasCachedContent = driveNoteContentCache.has(fileID);
+    const lastFetched = driveNoteFetchedAt.get(fileID) || 0;
+    const cacheIsFresh = Date.now() - lastFetched < DRIVE_NOTE_CACHE_TTL;
+
+    if (hasCachedContent) {
         showDriveNoteInWorkspace(script, driveNoteContentCache.get(fileID), true);
+
+        if (cacheIsFresh) {
+            return;
+        }
     } else {
         const textarea = document.getElementById('primaryGasArea');
+
         currentSnippetBeingEdited = null;
         userScriptBeingViewed = fileID;
 
@@ -924,12 +959,15 @@ async function swapUserScriptView(fileID) {
         const result = await response.json();
         if (!result.ok) throw new Error(result.message || 'Could not load Drive note');
 
-        const hadCachedContent = driveNoteContentCache.has(fileID);
+        const freshContent = result.content || '';
 
-const freshContent = result.content || '';
-driveNoteContentCache.set(fileID, freshContent);
-
-showDriveNoteInWorkspace(script, freshContent, !hadCachedContent);
+        if (hasCachedContent) {
+            updateDriveNoteContentSilently(fileID, script, freshContent);
+        } else {
+            driveNoteContentCache.set(fileID, freshContent);
+            driveNoteFetchedAt.set(fileID, Date.now());
+            showDriveNoteInWorkspace(script, freshContent, true);
+        }
 
     } catch (err) {
         const msg = String(err.message || '').toLowerCase();
@@ -1034,6 +1072,7 @@ async function saveEditedUserScript() {
 if (localScript) localScript.title = title;
 
 driveNoteContentCache.set(fileID, content);
+driveNoteFetchedAt.set(fileID, Date.now());
 
 showToast('Drive note saved!');
 addSystemLog('Drive note updated');
@@ -1069,6 +1108,7 @@ async function performUserScriptDeletion(fileID) {
 addSystemLog("Userscript unlinked");
 
 driveNoteContentCache.delete(fileID);
+        driveNoteFetchedAt.delete(fileID);
 userScripts = userScripts.filter(s => s.driveFileID !== fileID);
 
 if (userScriptBeingViewed === fileID) {
