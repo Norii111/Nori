@@ -38,6 +38,11 @@ let chessLockContext = { type: null, payload: null };
 
 let googleSheetData = []; 
 let predictionCards = [];
+let predictionTimeConfig = {};
+let predictionTimeDraftConfig = {};
+let predictionTimeEditMode = false;
+
+const PREDICTION_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
 
@@ -224,8 +229,8 @@ async function syncGoogleSheetData() {
         addSystemLog(`Sync completed. Loaded ${googleSheetData.length} records into lookup index.`);
         showToast(`Sync finished! Loaded ${googleSheetData.length} records.`);
         
-        if (isArchiveOpen) renderArchiveContainer();
-        renderPredictionCards();
+if (isArchiveOpen) renderArchiveContainer();
+renderPredictionCards(getVisiblePredictionCards());
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
         showToast("Error pulling cloud sheets registry.");
@@ -321,8 +326,9 @@ function renderPredictionCards(cardsToRender = predictionCards) {
         const cardEl = document.createElement('div');
         const randomBg = softMangaColors[index % softMangaColors.length] || '#f4f3ef';
         const randomTilt = (Math.random() * 3 - 1.5).toFixed(2);
+        const isActive = isPredictionCardActive(card);
 
-        cardEl.className = 'prediction-card';
+        cardEl.className = `prediction-card ${isActive ? 'prediction-card-active' : 'prediction-card-expired'}`;
         cardEl.style.background = randomBg;
         cardEl.style.setProperty('--card-tilt', `${randomTilt}deg`);
         cardEl.style.transform = `rotate(${randomTilt}deg)`;
@@ -330,9 +336,21 @@ function renderPredictionCards(cardsToRender = predictionCards) {
         cardEl.innerHTML = `
             <div class="prediction-card-pin">●</div>
 
+            <div class="prediction-card-timer ${isActive ? 'timer-live' : 'timer-dead'}">
+                ${isActive ? 'LIVE' : 'BURNT OUT'} · ${escapeHtml(getPredictionTimerLabel(card))}
+            </div>
+
+            ${renderPredictionTimerEditor(card)}
+
             <div class="prediction-card-topline">
                 <h4 class="prediction-card-title">${escapeHtml(card.title)}</h4>
-                <button class="manga-btn prediction-copy-btn" onclick='copyPredictionCardContent(${JSON.stringify(card.id)})'>Copy</button>
+                <button
+                    class="manga-btn prediction-copy-btn"
+                    onclick='copyPredictionCardContent(${JSON.stringify(card.id)})'
+                    ${isActive ? '' : 'disabled'}
+                >
+                    Copy
+                </button>
             </div>
 
             <div class="prediction-card-content">${escapeHtml(card.content)}</div>
@@ -370,25 +388,31 @@ function copyPredictionCardContent(cardId) {
         return;
     }
 
+    if (!isPredictionCardActive(card)) {
+        showToast('This card is burnt out.');
+        return;
+    }
+
     navigator.clipboard.writeText(card.content || '')
         .then(() => showToast('Prediction content copied.'))
         .catch(() => showToast('Copy failed.'));
 }
 
 function copyVisiblePredictionCards() {
-    const visibleCards = getVisiblePredictionCards();
+    const visibleCards = getVisiblePredictionCards()
+        .filter(card => isPredictionCardActive(card));
 
     if (!visibleCards.length) {
-        showToast('No visible prediction cards to copy.');
+        showToast('No live prediction cards to copy.');
         return;
     }
 
     const text = visibleCards
-        .map(card => `${card.title}\n${card.content}`)
+        .map(card => card.content || '')
         .join('\n\n---\n\n');
 
     navigator.clipboard.writeText(text)
-        .then(() => showToast(`Copied ${visibleCards.length} visible prediction cards.`))
+        .then(() => showToast(`Copied ${visibleCards.length} live cards.`))
         .catch(() => showToast('Copy failed.'));
 }
 
@@ -398,6 +422,110 @@ function clearPredictionSearch() {
     if (input) input.value = '';
 
     renderPredictionCards(predictionCards);
+}
+
+
+function clonePredictionTimeConfig(config) {
+    return JSON.parse(JSON.stringify(config || {}));
+}
+
+async function loadPredictionTimeConfig() {
+    try {
+        const response = await fetch(`${gasWebAppUrl}?api=predictionTimes&t=${Date.now()}`, {
+            cache: 'no-store'
+        });
+
+        const result = await response.json();
+
+        if (!result.ok) {
+            throw new Error(result.message || 'Could not load prediction timer config.');
+        }
+
+        predictionTimeConfig = result.config && typeof result.config === 'object'
+            ? result.config
+            : {};
+
+        predictionTimeDraftConfig = clonePredictionTimeConfig(predictionTimeConfig);
+
+        renderPredictionCards(getVisiblePredictionCards());
+
+        addSystemLog('Prediction timer config loaded.');
+
+    } catch (err) {
+        predictionTimeConfig = {};
+        predictionTimeDraftConfig = {};
+        addSystemLog(`Prediction timer load error: ${err.message}`);
+        showToast('Could not load prediction timers.');
+    }
+}
+
+async function savePredictionTimeConfigToDrive() {
+    try {
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'savePredictionTimes',
+                config: predictionTimeDraftConfig
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.ok) {
+            throw new Error(result.message || 'Could not save prediction timers.');
+        }
+
+        predictionTimeConfig = clonePredictionTimeConfig(predictionTimeDraftConfig);
+        predictionTimeEditMode = false;
+
+        updatePredictionTimeToolbar();
+        renderPredictionCards(getVisiblePredictionCards());
+
+        showToast('Prediction timers saved.');
+        addSystemLog('Prediction timers saved to Drive.');
+
+    } catch (err) {
+        showToast('Timer save failed.');
+        addSystemLog(`Prediction timer save error: ${err.message}`);
+    }
+}
+
+function requestPredictionTimeAccess() {
+    openUserScriptChessLock(
+        { type: 'predictionTimeEdit' },
+        'Execute Sicilian Defense to Authorize Prediction Timer Edit'
+    );
+}
+
+function enablePredictionTimeEditMode() {
+    predictionTimeDraftConfig = clonePredictionTimeConfig(predictionTimeConfig);
+    predictionTimeEditMode = true;
+
+    updatePredictionTimeToolbar();
+    renderPredictionCards(getVisiblePredictionCards());
+
+    showToast('Prediction timer edit mode enabled.');
+}
+
+function cancelPredictionTimeEdit() {
+    predictionTimeDraftConfig = clonePredictionTimeConfig(predictionTimeConfig);
+    predictionTimeEditMode = false;
+
+    updatePredictionTimeToolbar();
+    renderPredictionCards(getVisiblePredictionCards());
+
+    showToast('Prediction timer edit cancelled.');
+}
+
+function updatePredictionTimeToolbar() {
+    const setButton = document.getElementById('predictionSetTimeButton');
+    const saveButton = document.getElementById('predictionSaveTimeButton');
+    const cancelButton = document.getElementById('predictionCancelTimeButton');
+
+    if (setButton) setButton.style.display = predictionTimeEditMode ? 'none' : 'inline-block';
+    if (saveButton) saveButton.style.display = predictionTimeEditMode ? 'inline-block' : 'none';
+    if (cancelButton) cancelButton.style.display = predictionTimeEditMode ? 'inline-block' : 'none';
 }
 
 
@@ -802,13 +930,14 @@ function executeMove(fromCoord, toCoord) {
     selectedPieceCoord = null;
 
     if (
-        chessLockContext.type === 'userScriptEdit' ||
-        chessLockContext.type === 'userScriptDelete'
-    ) {
-        renderSicilianChessBoard();
-    } else {
-        renderChessBoard();
-    }
+    chessLockContext.type === 'userScriptEdit' ||
+    chessLockContext.type === 'userScriptDelete' ||
+    chessLockContext.type === 'predictionTimeEdit'
+) {
+    renderSicilianChessBoard();
+} else {
+    renderChessBoard();
+}
 }
 
 function executeChessSuccess() {
@@ -829,7 +958,9 @@ function executeChessSuccess() {
         openUserScriptEditForm(chessLockContext.payload);
     } else if (chessLockContext.type === 'userScriptDelete') {
         performUserScriptDeletion(chessLockContext.payload);
-    }
+    } else if (chessLockContext.type === 'predictionTimeEdit') {
+    enablePredictionTimeEditMode();
+}
     closeChessModal();
     changeToRandomGif();
 }
@@ -2090,6 +2221,203 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+
+function getPredictionTimerSource() {
+    return predictionTimeEditMode ? predictionTimeDraftConfig : predictionTimeConfig;
+}
+
+function getPredictionTimer(cardTitle) {
+    const source = getPredictionTimerSource();
+    return source[cardTitle] || null;
+}
+
+function timeStringToMinutes(timeString) {
+    if (!timeString) return null;
+
+    const clean = String(timeString).trim();
+    const match = clean.match(/^(\d{1,2}):(\d{2})$/);
+
+    if (!match) return null;
+
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+
+    return hours * 60 + minutes;
+}
+
+function isPredictionDayAllowed(timer) {
+    if (!timer || !Array.isArray(timer.days) || timer.days.length === 0) {
+        return true;
+    }
+
+    if (timer.days.includes('EVERYDAY')) {
+        return true;
+    }
+
+    const today = PREDICTION_DAYS[new Date().getDay()];
+    return timer.days.includes(today);
+}
+
+function isPredictionCardActive(card) {
+    const timer = getPredictionTimer(card.title);
+
+    // No timer set = always live
+    if (!timer) return true;
+
+    const start = timeStringToMinutes(timer.start);
+    const end = timeStringToMinutes(timer.end);
+
+    // Incomplete timer = always live
+    if (start === null || end === null) return true;
+
+    if (!isPredictionDayAllowed(timer)) return false;
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    if (start <= end) {
+        return currentMinutes >= start && currentMinutes <= end;
+    }
+
+    // Overnight timer, example 23:30 → 01:00
+    return currentMinutes >= start || currentMinutes <= end;
+}
+
+function getPredictionTimerLabel(card) {
+    const timer = getPredictionTimer(card.title);
+
+    if (!timer || !timer.start || !timer.end) {
+        return 'ALWAYS ON';
+    }
+
+    const days = Array.isArray(timer.days) && timer.days.length
+        ? timer.days.join(',')
+        : 'EVERYDAY';
+
+    return `${timer.start} → ${timer.end} · ${days}`;
+}
+
+function ensurePredictionTimerDraft(cardTitle) {
+    if (!predictionTimeDraftConfig[cardTitle]) {
+        predictionTimeDraftConfig[cardTitle] = {
+            start: '',
+            end: '',
+            days: ['EVERYDAY']
+        };
+    }
+
+    if (!Array.isArray(predictionTimeDraftConfig[cardTitle].days)) {
+        predictionTimeDraftConfig[cardTitle].days = ['EVERYDAY'];
+    }
+
+    return predictionTimeDraftConfig[cardTitle];
+}
+
+function setPredictionTimerValue(cardTitle, field, value) {
+    const timer = ensurePredictionTimerDraft(cardTitle);
+
+    if (field === 'start' || field === 'end') {
+        timer[field] = value;
+    }
+}
+
+function togglePredictionDay(cardTitle, day, checked) {
+    const timer = ensurePredictionTimerDraft(cardTitle);
+
+    if (day === 'EVERYDAY') {
+        timer.days = checked ? ['EVERYDAY'] : [];
+        renderPredictionCards(getVisiblePredictionCards());
+        return;
+    }
+
+    timer.days = timer.days.filter(item => item !== 'EVERYDAY');
+
+    if (checked) {
+        if (!timer.days.includes(day)) {
+            timer.days.push(day);
+        }
+    } else {
+        timer.days = timer.days.filter(item => item !== day);
+    }
+
+    renderPredictionCards(getVisiblePredictionCards());
+}
+
+function clearPredictionTimer(cardTitle) {
+    delete predictionTimeDraftConfig[cardTitle];
+    renderPredictionCards(getVisiblePredictionCards());
+}
+
+function renderPredictionTimerEditor(card) {
+    if (!predictionTimeEditMode) return '';
+
+    const timer = ensurePredictionTimerDraft(card.title);
+
+    const days = Array.isArray(timer.days) ? timer.days : ['EVERYDAY'];
+    const titleKey = JSON.stringify(card.title);
+
+    const dayButtons = [
+        'EVERYDAY',
+        'SUN',
+        'MON',
+        'TUE',
+        'WED',
+        'THU',
+        'FRI',
+        'SAT'
+    ].map(day => {
+        const checked = days.includes(day);
+
+        return `
+            <label class="prediction-day-chip ${checked ? 'active' : ''}">
+                <input
+                    type="checkbox"
+                    ${checked ? 'checked' : ''}
+                    onchange='togglePredictionDay(${titleKey}, ${JSON.stringify(day)}, this.checked)'
+                >
+                ${day === 'EVERYDAY' ? 'EVERY' : day}
+            </label>
+        `;
+    }).join('');
+
+    return `
+        <div class="prediction-time-editor" onclick="event.stopPropagation()">
+            <div class="prediction-time-row">
+                <label>
+                    Start
+                    <input
+                        type="time"
+                        value="${escapeHtml(timer.start || '')}"
+                        oninput='setPredictionTimerValue(${titleKey}, "start", this.value)'
+                    >
+                </label>
+
+                <label>
+                    End
+                    <input
+                        type="time"
+                        value="${escapeHtml(timer.end || '')}"
+                        oninput='setPredictionTimerValue(${titleKey}, "end", this.value)'
+                    >
+                </label>
+            </div>
+
+            <div class="prediction-day-row">
+                ${dayButtons}
+            </div>
+
+            <button class="manga-btn danger prediction-clear-time-btn" onclick='clearPredictionTimer(${titleKey})'>
+                Clear Timer
+            </button>
+        </div>
+    `;
+}
+
+
+
+
 function installCasualSourceGuard() {
     document.addEventListener('contextmenu', function (e) {
         e.preventDefault();
@@ -2115,9 +2443,16 @@ function installCasualSourceGuard() {
 installCasualSourceGuard();
 
 
+setInterval(() => {
+    const predictionTab = document.getElementById('predictionTab');
 
+    if (predictionTab && predictionTab.style.display !== 'none' && !predictionTimeEditMode) {
+        renderPredictionCards(getVisiblePredictionCards());
+    }
+}, 30000);
 
 window.onload = function() {
+    loadPredictionTimeConfig();
     loadOfflineDatabaseFromStorage();
     renderPortal();
     changeToRandomGif();
