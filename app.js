@@ -15,6 +15,8 @@ const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbyfYCRLFSQmWBH40ps
 let userScripts = [];
 let currentSicilianGridLayout = null; // For second chess puzzle
 let userScriptBeingEdited = null; // Track which script is being edited
+let currentSnippetBeingEdited = null; // Track which local note is loaded in the workspace
+const OFFLINE_DATABASE_STORAGE_KEY = 'mangaOfflineDatabase';
 
 let devToolsUnlocked = false;
 let devToolsRows = [];
@@ -67,16 +69,18 @@ function getRandomizedGridLayout() {
 }
 
 function getRandomizedSicilianLayout() {
-    return [
-        { coord: 'c7', isDark: true },
-        { coord: 'c5', isDark: false },
-
-        { coord: 'e2', isDark: false },
-        { coord: 'e4', isDark: true },
-
-        { coord: 'b1', isDark: false },
-        { coord: 'c3', isDark: true }
+    const baseLayout = [
+        { coord: 'e2', isDark: false }, { coord: 'e4', isDark: true },  { coord: 'd4', isDark: false },
+        { coord: 'c7', isDark: true },  { coord: 'c5', isDark: false }, { coord: 'd5', isDark: true },
+        { coord: 'b8', isDark: false }, { coord: 'c6', isDark: true },  { coord: 'b6', isDark: false }
     ];
+
+    for (let i = baseLayout.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [baseLayout[i], baseLayout[j]] = [baseLayout[j], baseLayout[i]];
+    }
+
+    return baseLayout;
 }
 
 function resetSicilianBoardState() {
@@ -85,8 +89,11 @@ function resetSicilianBoardState() {
         'e4': '',
         'c7': '♟',
         'c5': '',
-        'b1': '♘',
-        'c3': ''
+        'b8': '♞',
+        'c6': '',
+        'd4': '',
+        'd5': '',
+        'b6': ''
     };
 }
 
@@ -150,7 +157,7 @@ function handleSicilianSquareClick(clickedCoord) {
             executeMove(selectedPieceCoord, clickedCoord);
             currentLondonStep = 1;
             document.getElementById('chessStepIndicator').innerText =
-                "WHITE MOVE ACCEPTED: NOW PLAY ...c5";
+                "WHITE MOVE ACCEPTED: MOVE 2 — BLACK c7 → c5";
             showToast("1.e4 accepted...");
         }
 
@@ -159,6 +166,19 @@ function handleSicilianSquareClick(clickedCoord) {
             movingPiece === '♟' &&
             selectedPieceCoord === 'c7' &&
             clickedCoord === 'c5'
+        ) {
+            executeMove(selectedPieceCoord, clickedCoord);
+            currentLondonStep = 2;
+            document.getElementById('chessStepIndicator').innerText =
+                "SICILIAN ACCEPTED: MOVE 3 — BLACK Nb8 → c6";
+            showToast("...c5 accepted...");
+        }
+
+        else if (
+            currentLondonStep === 2 &&
+            movingPiece === '♞' &&
+            selectedPieceCoord === 'b8' &&
+            clickedCoord === 'c6'
         ) {
             executeMove(selectedPieceCoord, clickedCoord);
             executeChessSuccess();
@@ -645,10 +665,12 @@ function executeMove(fromCoord, toCoord) {
 
 function executeChessSuccess() {
     if (chessLockContext.type === 'delete') {
-        const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === chessLockContext.payload);
-        offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== chessLockContext.payload);
-        renderPortal();
-        showToast(`DESTRUCTION SUCCESS: Removed "${targetItem ? targetItem.title : 'Item'}"`);
+    const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === chessLockContext.payload);
+    offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== chessLockContext.payload);
+    persistOfflineDatabase();
+    renderPortal();
+    showToast(`DESTRUCTION SUCCESS: Removed "${targetItem ? targetItem.title : 'Item'}"`);
+}
     } else if (chessLockContext.type === 'devtools') {
         devToolsUnlocked = true;
         showToast("ACCESS GRANTED: Dev Tools unlocked.");
@@ -671,7 +693,7 @@ async function loadUserScripts() {
         const result = await response.json();
         if (!result.ok) throw new Error(result.message);
         userScripts = result.scripts;
-        renderUserScriptCards();
+        renderPortal({ resetWorkspace: false });
         addSystemLog(`Loaded ${userScripts.length} userscripts.`);
     } catch (err) {
         addSystemLog(`Error loading userscripts: ${err.message}`);
@@ -844,6 +866,33 @@ async function performDevRowDeletion(rowNum) {
     }
 }
 
+function loadOfflineDatabaseFromStorage() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(OFFLINE_DATABASE_STORAGE_KEY));
+        if (!saved || typeof saved !== 'object') return;
+
+        offlineDatabase = {
+            ...offlineDatabase,
+            ...saved,
+            bottomSnippets: Array.isArray(saved.bottomSnippets)
+                ? saved.bottomSnippets
+                : offlineDatabase.bottomSnippets
+        };
+    } catch (err) {
+        console.warn('Could not load local notes:', err);
+        showToast("Could not load saved local notes.");
+    }
+}
+
+function persistOfflineDatabase() {
+    try {
+        localStorage.setItem(OFFLINE_DATABASE_STORAGE_KEY, JSON.stringify(offlineDatabase));
+    } catch (err) {
+        console.warn('Could not save local notes:', err);
+        showToast("Could not save local notes in this browser.");
+    }
+}
+
 function getRandomMangaColor() { return softMangaColors[Math.floor(Math.random() * softMangaColors.length)]; }
 function triggerGifFlip() { const frame = document.querySelector('.blank-character-frame'); if (frame) frame.classList.toggle('flipped'); }
 
@@ -855,9 +904,17 @@ function changeToRandomGif() {
     }
 }
 
-function renderPortal() {
-    document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
+function renderPortal(options = {}) {
+    const { resetWorkspace = true } = options;
+    const textarea = document.getElementById('primaryGasArea');
     const bottomGrid = document.getElementById('bottomGrid');
+    if (!textarea || !bottomGrid) return;
+
+    if (resetWorkspace) {
+        currentSnippetBeingEdited = null;
+        textarea.value = offlineDatabase.primaryGAS;
+    }
+
     bottomGrid.innerHTML = '';
 
     offlineDatabase.bottomSnippets.forEach(item => {
@@ -867,30 +924,50 @@ function renderPortal() {
         card.style.backgroundColor = randomBg;
         card.innerHTML = `
             <div style="overflow: hidden;">
-                <strong style="display:block; margin-bottom:4px; font-size:14px;">${item.title}</strong>
-                <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${item.content}</p>
+                <strong style="display:block; margin-bottom:4px; font-size:14px;">${escapeHtml(item.title)}</strong>
+                <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${escapeHtml(item.content)}</p>
             </div>
             <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
-                <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick="deleteSnippet(${item.id})">Delete</button>
-                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="viewSnippet(${item.id})">Swap View</button>
+                <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick="deleteSnippet(${Number(item.id)})">Delete</button>
+                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="viewSnippet(${Number(item.id)})">Swap View</button>
             </div>
         `;
         bottomGrid.appendChild(card);
     });
+
+    renderPortal({ resetWorkspace: false });
 }
 
 function viewSnippet(id) {
     const textarea = document.getElementById('primaryGasArea');
     const item = offlineDatabase.bottomSnippets.find(x => x.id === id);
     if (item) {
+        currentSnippetBeingEdited = id;
         textarea.classList.add('page-turn');
         setTimeout(() => {
             textarea.value = item.content;
             textarea.classList.remove('page-turn');
-            showToast(`Loaded: "${item.title}"`);
+            showToast(`Loaded note: "${item.title}". Press Save to update this note.`);
             changeToRandomGif();
         }, 220);
     }
+}
+
+function saveCurrentSnippet() {
+    if (!currentSnippetBeingEdited) return false;
+
+    const item = offlineDatabase.bottomSnippets.find(x => x.id === currentSnippetBeingEdited);
+    if (!item) {
+        currentSnippetBeingEdited = null;
+        showToast("Selected note no longer exists.");
+        return false;
+    }
+
+    item.content = document.getElementById('primaryGasArea').value;
+    persistOfflineDatabase();
+    renderPortal({ resetWorkspace: false });
+    showToast(`Saved note: "${item.title}"`);
+    return true;
 }
 
 function copyTextAreaContent() {
@@ -950,16 +1027,29 @@ var closeModal = () => document.getElementById('mangaModal').classList.remove('o
 function submitNewNote() {
     const name = document.getElementById('modalInput').value.trim();
     if (name) {
-        offlineDatabase.bottomSnippets.push({ id: Date.now(), title: name, content: "// Empty markdown or script entry" });
-        renderPortal(); closeModal(); changeToRandomGif();
-        showToast(`Created block: "${name}"`);
+        offlineDatabase.bottomSnippets.push({
+            id: Date.now(),
+            title: name,
+            content: "// Empty markdown or script entry"
+        });
+        persistOfflineDatabase();
+        renderPortal();
+        closeModal();
+        changeToRandomGif();
+        showToast(`Created note: "${name}"`);
     } else {
         showToast("Error: Name cannot be blank!");
     }
 }
 
 function launchMainGAS() { window.open(offlineDatabase.mainGasLink, '_blank'); showToast("Launching main script portal via tinyurl..."); }
-function savePrimaryGAS() { offlineDatabase.primaryGAS = document.getElementById('primaryGasArea').value; showToast("Changes synced to local workspace memory!"); }
+function savePrimaryGAS() {
+    if (saveCurrentSnippet()) return;
+
+    offlineDatabase.primaryGAS = document.getElementById('primaryGasArea').value;
+    persistOfflineDatabase();
+    showToast("Changes synced to local workspace memory!");
+}
 
 function addSystemLog(text) {
     const area = document.getElementById('systemLogsArea');
@@ -1276,6 +1366,7 @@ async function submitDevAdd() {
 }
 
 window.onload = function() {
+    loadOfflineDatabaseFromStorage();
     renderPortal();
     changeToRandomGif();
     renderSearchHistory();
