@@ -69,25 +69,24 @@ function getRandomizedGridLayout() {
 function getRandomizedSicilianLayout() {
     return [
         { coord: 'c7', isDark: true },
-        { coord: 'e7', isDark: false },
-        { coord: 'g7', isDark: true },
-
         { coord: 'c5', isDark: false },
-        { coord: 'e5', isDark: true },
-        { coord: 'g5', isDark: false },
 
-        { coord: 'c2', isDark: true },
         { coord: 'e2', isDark: false },
-        { coord: 'e4', isDark: true }
+        { coord: 'e4', isDark: true },
+
+        { coord: 'b1', isDark: false },
+        { coord: 'c3', isDark: true }
     ];
 }
 
 function resetSicilianBoardState() {
     chessBoardState = {
-        'e4': '',
         'e2': '♙',
+        'e4': '',
+        'c7': '♟',
         'c5': '',
-        'c7': '♟'
+        'b1': '♘',
+        'c3': ''
     };
 }
 
