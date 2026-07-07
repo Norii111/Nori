@@ -9,7 +9,7 @@ const gifs = [
 ];
 
 const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHGQy-jlVIqKK8eNY5KAyKmalHnluD0Dbznly-mCn_e3loE9poQD46AkqKOAZYH5BcZ4Rs50Q9pZzJ/pub?output=csv";
-const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbywskUILI9tPKr3AIacnAHhX7hKc53aPhKDsVPK_m3KtMO44xCILHmYTLXX42Tnf5J9TA/exec";
+const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbyfYCRLFSQmWBH40psZiZUA7bK9VjibZu5UgAwI8OXqRzZB1bfeo2ieLJiP9KVx3HfMrQ/exec";
 
 
 let userScripts = [];
