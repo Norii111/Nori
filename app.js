@@ -1630,17 +1630,28 @@ async function savePrimaryGAS() {
 function showToast(message) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
+
+    container.style.pointerEvents = 'none';
     
     const toast = document.createElement('div');
-    toast.className = 'toast-banner'; // Ensure this matches your style.css rules
+    toast.className = 'toast-banner';
+
     toast.style.background = 'var(--ink-black, #111)';
     toast.style.color = 'var(--bg-paper, #fff)';
     toast.style.border = '2px solid var(--ink-black)';
-    toast.style.padding = '10px 16px';
+    toast.style.padding = '8px 12px';
     toast.style.marginBottom = '8px';
     toast.style.fontWeight = 'bold';
-    toast.style.fontSize = '12px';
+    toast.style.fontSize = '11px';
+    toast.style.lineHeight = '1.25';
     toast.style.boxShadow = '4px 4px 0px var(--ink-black)';
+    toast.style.maxWidth = '260px';
+    toast.style.width = 'fit-content';
+    toast.style.marginLeft = 'auto';
+    toast.style.whiteSpace = 'normal';
+    toast.style.overflowWrap = 'anywhere';
+    toast.style.pointerEvents = 'none';
+
     toast.innerText = message;
     
     container.appendChild(toast);
@@ -1648,7 +1659,7 @@ function showToast(message) {
     setTimeout(() => {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 300);
-    }, 2500);
+    }, 2200);
 }
 
 
