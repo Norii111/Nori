@@ -308,6 +308,7 @@ function parseCsvStrictAB(text) {
 
 
 function renderPredictionCards(cardsToRender = predictionCards) {
+    
     const grid = document.getElementById('predictionCardGrid');
     if (!grid) return;
 
@@ -321,6 +322,7 @@ function renderPredictionCards(cardsToRender = predictionCards) {
         `;
         return;
     }
+    cardsToRender = sortPredictionCardsByTime(cardsToRender);
 
     cardsToRender.forEach((card, index) => {
         const cardEl = document.createElement('div');
@@ -328,7 +330,7 @@ function renderPredictionCards(cardsToRender = predictionCards) {
         const randomTilt = (Math.random() * 3 - 1.5).toFixed(2);
         const isActive = isPredictionCardActive(card);
 
-        cardEl.className = `prediction-card ${isActive ? 'prediction-card-active' : 'prediction-card-expired'}`;
+        cardEl.className = `prediction-card ${isActive ? 'prediction-card-active' : 'prediction-card-expired'} ${predictionTimeEditMode ? 'prediction-card-editing' : ''}`;
         cardEl.style.background = randomBg;
         cardEl.style.setProperty('--card-tilt', `${randomTilt}deg`);
         cardEl.style.transform = `rotate(${randomTilt}deg)`;
@@ -494,7 +496,7 @@ async function savePredictionTimeConfigToDrive() {
 function requestPredictionTimeAccess() {
     openUserScriptChessLock(
         { type: 'predictionTimeEdit' },
-        'Execute Sicilian Defense to Authorize Prediction Timer Edit'
+        ''
     );
 }
 
@@ -2234,18 +2236,69 @@ function getPredictionTimer(cardTitle) {
 function timeStringToMinutes(timeString) {
     if (!timeString) return null;
 
-    const clean = String(timeString).trim();
-    const match = clean.match(/^(\d{1,2}):(\d{2})$/);
+    const clean = String(timeString).trim().toUpperCase();
 
-    if (!match) return null;
+    // Supports: 03:46, 3:46, 23:10
+    let match24 = clean.match(/^(\d{1,2}):(\d{2})$/);
+    if (match24) {
+        const hours = Number(match24[1]);
+        const minutes = Number(match24[2]);
 
-    const hours = Number(match[1]);
-    const minutes = Number(match[2]);
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
 
-    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+        return hours * 60 + minutes;
+    }
 
-    return hours * 60 + minutes;
+    // Supports: 3:46 AM, 03:46 PM
+    let match12 = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+    if (match12) {
+        let hours = Number(match12[1]);
+        const minutes = Number(match12[2]);
+        const meridiem = match12[3];
+
+        if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return null;
+
+        if (meridiem === 'AM' && hours === 12) hours = 0;
+        if (meridiem === 'PM' && hours !== 12) hours += 12;
+
+        return hours * 60 + minutes;
+    }
+
+    return null;
 }
+
+function normalizeTimeString(timeString) {
+    if (!timeString) return '';
+
+    const clean = String(timeString).trim().toUpperCase();
+
+    const match24 = clean.match(/^(\d{1,2}):(\d{2})$/);
+    if (match24) {
+        const hours = Number(match24[1]);
+        const minutes = Number(match24[2]);
+
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return '';
+
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    const match12 = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+    if (match12) {
+        let hours = Number(match12[1]);
+        const minutes = Number(match12[2]);
+        const meridiem = match12[3];
+
+        if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return '';
+
+        if (meridiem === 'AM' && hours === 12) hours = 0;
+        if (meridiem === 'PM' && hours !== 12) hours += 12;
+
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    return '';
+}
+
 
 function isPredictionDayAllowed(timer) {
     if (!timer || !Array.isArray(timer.days) || timer.days.length === 0) {
@@ -2308,6 +2361,9 @@ function ensurePredictionTimerDraft(cardTitle) {
         };
     }
 
+    predictionTimeDraftConfig[cardTitle].start = normalizeTimeString(predictionTimeDraftConfig[cardTitle].start);
+    predictionTimeDraftConfig[cardTitle].end = normalizeTimeString(predictionTimeDraftConfig[cardTitle].end);
+
     if (!Array.isArray(predictionTimeDraftConfig[cardTitle].days)) {
         predictionTimeDraftConfig[cardTitle].days = ['EVERYDAY'];
     }
@@ -2319,7 +2375,7 @@ function setPredictionTimerValue(cardTitle, field, value) {
     const timer = ensurePredictionTimerDraft(cardTitle);
 
     if (field === 'start' || field === 'end') {
-        timer[field] = value;
+        timer[field] = normalizeTimeString(value);
     }
 }
 
@@ -2442,6 +2498,23 @@ function installCasualSourceGuard() {
 
 installCasualSourceGuard();
 
+
+function sortPredictionCardsByTime(cards) {
+    return [...cards].sort((a, b) => {
+        const timerA = getPredictionTimer(a.title);
+        const timerB = getPredictionTimer(b.title);
+
+        const startA = timerA ? timeStringToMinutes(timerA.start) : null;
+        const startB = timerB ? timeStringToMinutes(timerB.start) : null;
+
+        // No timer goes last
+        if (startA === null && startB === null) return 0;
+        if (startA === null) return 1;
+        if (startB === null) return -1;
+
+        return startA - startB;
+    });
+}
 
 setInterval(() => {
     const predictionTab = document.getElementById('predictionTab');
