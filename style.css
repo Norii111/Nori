@@ -733,10 +733,10 @@ textarea.page-turn {
     gap: 18px;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 14px 10px 60px 10px;
+    padding: 14px 10px 80px 10px;
     box-sizing: border-box;
     position: relative;
-    z-index: 2;
+    z-index: 20;
 }
 
 .prediction-card {
@@ -753,15 +753,14 @@ textarea.page-turn {
         box-shadow 0.12s ease,
         min-height 0.12s ease;
     z-index: 1;
-    isolation: isolate;
 }
 
 .prediction-card:hover {
     height: auto;
     min-height: 190px;
     overflow: visible;
-    z-index: 999;
-    transform: rotate(0deg) translateY(-6px) scale(1.02) !important;
+    z-index: 99999;
+    transform: rotate(0deg) scale(1.02) !important;
     box-shadow: 10px 10px 0px var(--ink-black);
 }
 
@@ -848,4 +847,10 @@ textarea.page-turn {
     font-size: 13px;
     font-weight: bold;
     box-shadow: 5px 5px 0px var(--ink-black);
+}
+
+.prediction-filter-bar {
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 5;
 }
