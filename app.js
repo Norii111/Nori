@@ -720,8 +720,8 @@ function ensureDriveNoteToolbar() {
             <input id="driveNoteTitleInput" type="text" readonly
                 placeholder="Drive note title"
                 style="flex:1; min-width:0; padding:8px 10px; border-radius:10px; border:1px solid #bdb7a8; font-family:inherit; font-weight:bold; background:#f8f6ef;" />
-            <button id="driveNoteEditButton" class="manga-btn" type="button" onclick="enableDriveNoteEdit()">Edit</button>
-        `;
+<button id="driveNoteEditButton" class="manga-btn" type="button" onclick="requestDriveNoteEditLock()">Edit</button>
+`;
 
         textarea.parentNode.insertBefore(toolbar, textarea);
     }
