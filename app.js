@@ -17,7 +17,10 @@ const driveNoteContentCache = new Map();
 const driveNoteFetchedAt = new Map();
 
 let isLoadingUserScripts = false;
+let isPreloadingDriveNotes = false;
 let lastDriveSyncAt = 0;
+
+const DRIVE_NOTE_PRELOAD_CONCURRENCY = 5;
 
 const DRIVE_NOTE_CACHE_TTL = 60000; // 60 seconds
 let currentSicilianGridLayout = null; // For second chess puzzle
@@ -728,6 +731,7 @@ async function loadUserScripts(options = {}) {
         }
 
         renderPortal({ resetWorkspace: false });
+        preloadDriveNoteContents({ silent: true });
 
         if (!silent) {
             showToast(`Synced ${userScripts.length} Drive notes.`);
@@ -851,9 +855,109 @@ function enableDriveNoteEdit() {
     showToast('Edit mode enabled. Title and content are unlocked.');
 }
 
+
+function isMissingDriveFileError(err) {
+    const msg = String(err.message || '').toLowerCase();
+
+    return (
+        msg.includes('not found') ||
+        msg.includes('no such file') ||
+        msg.includes('deleted') ||
+        msg.includes('trashed') ||
+        msg.includes('permission')
+    );
+}
+
+async function fetchDriveNoteContent(fileID) {
+    const response = await fetch(
+        `${gasWebAppUrl}?api=userscripts&action=getContent&fileID=${encodeURIComponent(fileID)}&t=${Date.now()}`,
+        { cache: 'no-store' }
+    );
+
+    const result = await response.json();
+
+    if (!result.ok) {
+        throw new Error(result.message || 'Could not load Drive note');
+    }
+
+    return result.content || '';
+}
+
+async function preloadDriveNoteContents(options = {}) {
+    const { silent = true } = options;
+
+    if (isPreloadingDriveNotes) return;
+
+    const scriptsToPreload = userScripts.filter(script => {
+        return script.driveFileID && !driveNoteContentCache.has(script.driveFileID);
+    });
+
+    if (!scriptsToPreload.length) return;
+
+    isPreloadingDriveNotes = true;
+
+    if (!silent) {
+        showToast(`Preloading ${scriptsToPreload.length} Drive notes...`);
+    }
+
+    let index = 0;
+
+    async function worker() {
+        while (index < scriptsToPreload.length) {
+            const script = scriptsToPreload[index++];
+            const fileID = script.driveFileID;
+
+            try {
+                const content = await fetchDriveNoteContent(fileID);
+
+                driveNoteContentCache.set(fileID, content);
+                driveNoteFetchedAt.set(fileID, Date.now());
+
+            } catch (err) {
+                if (isMissingDriveFileError(err)) {
+                    removeStaleDriveNote(fileID, 'A Drive note was removed because the file no longer exists.');
+                } else {
+                    addSystemLog(`Preload failed for "${script.title}": ${err.message}`);
+                }
+            }
+        }
+    }
+
+    try {
+        const workerCount = Math.min(DRIVE_NOTE_PRELOAD_CONCURRENCY, scriptsToPreload.length);
+        await Promise.all(Array.from({ length: workerCount }, worker));
+
+        if (!silent) {
+            showToast('Drive notes preloaded.');
+        }
+
+        addSystemLog(`Preloaded ${scriptsToPreload.length} Drive notes.`);
+
+    } finally {
+        isPreloadingDriveNotes = false;
+    }
+}
+
+function triggerWorkspaceFlip(textarea) {
+    if (!textarea) return;
+
+    textarea.classList.remove('page-turn');
+
+    // Force browser to restart the animation even if the class was just used.
+    void textarea.offsetWidth;
+
+    textarea.classList.add('page-turn');
+
+    clearTimeout(textarea._pageTurnTimer);
+    textarea._pageTurnTimer = setTimeout(() => {
+        textarea.classList.remove('page-turn');
+    }, 280);
+}
+
 function removeStaleDriveNote(fileID, message = 'Drive note no longer exists.') {
     userScripts = userScripts.filter(s => s.driveFileID !== fileID);
     driveNoteContentCache.delete(fileID);
+    driveNoteFetchedAt.delete(fileID);
 
     if (userScriptBeingViewed === fileID) {
         clearDriveNoteWorkspaceState();
@@ -871,19 +975,16 @@ function showDriveNoteInWorkspace(script, content, showMessage = true) {
     currentSnippetBeingEdited = null;
     userScriptBeingViewed = script.driveFileID;
 
-    textarea.classList.add('page-turn');
-    textarea.value = content || '';
+    switchTab('dashboard');
 
-    requestAnimationFrame(() => {
-        textarea.classList.remove('page-turn');
-    });
+    textarea.value = content || '';
 
     setDriveNoteViewMode({
         title: script.title,
         editable: false
     });
 
-    switchTab('dashboard');
+    triggerWorkspaceFlip(textarea);
 
     if (showMessage) {
         showToast(`Viewing Drive note: "${script.title}". Press Edit to modify it.`);
@@ -923,62 +1024,38 @@ async function swapUserScriptView(fileID) {
         return;
     }
 
-    const hasCachedContent = driveNoteContentCache.has(fileID);
-    const lastFetched = driveNoteFetchedAt.get(fileID) || 0;
-    const cacheIsFresh = Date.now() - lastFetched < DRIVE_NOTE_CACHE_TTL;
-
-    if (hasCachedContent) {
+    if (driveNoteContentCache.has(fileID)) {
         showDriveNoteInWorkspace(script, driveNoteContentCache.get(fileID), true);
-
-        if (cacheIsFresh) {
-            return;
-        }
-    } else {
-        const textarea = document.getElementById('primaryGasArea');
-
-        currentSnippetBeingEdited = null;
-        userScriptBeingViewed = fileID;
-
-        textarea.readOnly = true;
-        textarea.value = 'Loading Drive note...';
-
-        setDriveNoteViewMode({
-            title: script.title,
-            editable: false
-        });
-
-        switchTab('dashboard');
+        return;
     }
 
+    const textarea = document.getElementById('primaryGasArea');
+
+    currentSnippetBeingEdited = null;
+    userScriptBeingViewed = fileID;
+
+    switchTab('dashboard');
+
+    textarea.readOnly = true;
+    textarea.value = 'Loading Drive note...';
+
+    setDriveNoteViewMode({
+        title: script.title,
+        editable: false
+    });
+
+    triggerWorkspaceFlip(textarea);
+
     try {
-        const response = await fetch(
-            `${gasWebAppUrl}?api=userscripts&action=getContent&fileID=${encodeURIComponent(fileID)}&t=${Date.now()}`,
-            { cache: 'no-store' }
-        );
+        const freshContent = await fetchDriveNoteContent(fileID);
 
-        const result = await response.json();
-        if (!result.ok) throw new Error(result.message || 'Could not load Drive note');
+        driveNoteContentCache.set(fileID, freshContent);
+        driveNoteFetchedAt.set(fileID, Date.now());
 
-        const freshContent = result.content || '';
-
-        if (hasCachedContent) {
-            updateDriveNoteContentSilently(fileID, script, freshContent);
-        } else {
-            driveNoteContentCache.set(fileID, freshContent);
-            driveNoteFetchedAt.set(fileID, Date.now());
-            showDriveNoteInWorkspace(script, freshContent, true);
-        }
+        showDriveNoteInWorkspace(script, freshContent, true);
 
     } catch (err) {
-        const msg = String(err.message || '').toLowerCase();
-
-        if (
-            msg.includes('not found') ||
-            msg.includes('no such file') ||
-            msg.includes('deleted') ||
-            msg.includes('trashed') ||
-            msg.includes('permission')
-        ) {
+        if (isMissingDriveFileError(err)) {
             removeStaleDriveNote(fileID, 'This Drive note was deleted or is no longer available.');
             return;
         }
