@@ -1492,7 +1492,7 @@ function showToast(message) {
 }
 
 
-const MAX_HISTORY = 10;
+const MAX_HISTORY = 13;
 const SEARCH_HISTORY_STORAGE_KEY = 'mangaSearchHistory';
 
 // Converts old string history into the new object format:
