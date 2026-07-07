@@ -1492,161 +1492,272 @@ function showToast(message) {
 }
 
 
-const MAX_HISTORY = 20; 
+const MAX_HISTORY = 10;
+const SEARCH_HISTORY_STORAGE_KEY = 'mangaSearchHistory';
 
-// 1. Core Logic: Saves unique entries (only if brand new)
-function saveToSearchHistory(key) {
-    let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-    const exists = history.some(item => item.toUpperCase() === key.toUpperCase());
-    
-    if (!exists) {
-        history.unshift(key);
-        if (history.length > MAX_HISTORY) history.pop();
-        localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
-        renderSearchHistory();
-    }
+// Converts old string history into the new object format:
+// old: ["GEMI", "CLAUDE"]
+// new: [{ key: "GEMI", pinned: false }, { key: "CLAUDE", pinned: true }]
+function getSearchHistory() {
+    const raw = JSON.parse(localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY)) || [];
+    const seen = new Set();
+
+    return raw
+        .map(item => {
+            if (typeof item === 'string') {
+                return { key: item, pinned: false };
+            }
+
+            return {
+                key: item.key,
+                pinned: !!item.pinned
+            };
+        })
+        .filter(item => {
+            if (!item.key) return false;
+
+            const normalized = item.key.toUpperCase();
+            if (seen.has(normalized)) return false;
+
+            seen.add(normalized);
+            return true;
+        });
 }
 
-// 2. Individual pill deletion tracker
-function deleteSingleHistoryItem(key, event) {
-    event.stopPropagation(); 
-    let history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-    history = history.filter(item => item.toUpperCase() !== key.toUpperCase());
-    localStorage.setItem('mangaSearchHistory', JSON.stringify(history));
+function setSearchHistory(history) {
+    localStorage.setItem(SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(history));
+}
+
+function normalizePinnedHistory(history) {
+    const pinned = history.filter(item => item.pinned);
+    const unpinned = history.filter(item => !item.pinned);
+
+    const availableUnpinnedSlots = Math.max(0, MAX_HISTORY - pinned.length);
+
+    return [
+        ...pinned.slice(0, MAX_HISTORY),
+        ...unpinned.slice(0, availableUnpinnedSlots)
+    ];
+}
+
+// Saves unique entries, keeps pinned entries safe, maxes total recents at 10.
+function saveToSearchHistory(key) {
+    key = String(key || '').trim();
+    if (!key) return;
+
+    let history = getSearchHistory();
+
+    const existingIndex = history.findIndex(item => item.key.toUpperCase() === key.toUpperCase());
+
+    if (existingIndex !== -1) {
+        const existingItem = history[existingIndex];
+
+        // If pinned, do not move it.
+        if (existingItem.pinned) {
+            renderSearchHistory();
+            return;
+        }
+
+        // If unpinned, move it to top of unpinned recents.
+        history.splice(existingIndex, 1);
+    }
+
+    const pinned = history.filter(item => item.pinned);
+    let unpinned = history.filter(item => !item.pinned);
+
+    if (pinned.length >= MAX_HISTORY) {
+        showToast('All 10 recent slots are pinned. Unpin or delete one first.');
+        return;
+    }
+
+    unpinned.unshift({
+        key,
+        pinned: false
+    });
+
+    history = normalizePinnedHistory([...pinned, ...unpinned]);
+
+    setSearchHistory(history);
     renderSearchHistory();
 }
 
-// 3. Clear all items handler
+function deleteSingleHistoryItem(key, event) {
+    event.stopPropagation();
+
+    let history = getSearchHistory();
+    history = history.filter(item => item.key.toUpperCase() !== key.toUpperCase());
+
+    setSearchHistory(history);
+    renderSearchHistory();
+}
+
+function toggleSearchHistoryPin(key, event) {
+    event.stopPropagation();
+
+    let history = getSearchHistory();
+    const item = history.find(item => item.key.toUpperCase() === key.toUpperCase());
+
+    if (!item) return;
+
+    item.pinned = !item.pinned;
+
+    history = normalizePinnedHistory(history);
+
+    setSearchHistory(history);
+    renderSearchHistory();
+
+    showToast(item.pinned ? `Pinned: ${item.key}` : `Unpinned: ${item.key}`);
+}
+
 function clearAllSearchHistory() {
-    localStorage.removeItem('mangaSearchHistory');
+    localStorage.removeItem(SEARCH_HISTORY_STORAGE_KEY);
     renderSearchHistory();
     showToast("Cleared search history memory index.");
 }
 
-// 4. Global variables to track the drag states smoothly
 let draggedItemIndex = null;
 
-// 5. Upgraded UI Logic: Complete with Drag and Drop listeners
 function renderSearchHistory() {
     const container = document.getElementById('searchHistoryContainer');
     if (!container) return;
-    
-    const history = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-    
+
+    let history = normalizePinnedHistory(getSearchHistory());
+    setSearchHistory(history);
+
     if (history.length === 0) {
         container.innerHTML = "";
         return;
     }
-    
+
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
-            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS (DRAG TO REARRANGE):</span>
+            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS MAX 10 — PIN TO KEEP:</span>
             <button onclick="clearAllSearchHistory()" style="background: none; border: none; font-size: 10px; font-weight: 900; color: #cc0000; cursor: pointer; text-transform: uppercase; text-decoration: underline; padding: 0;">[ Clear All ]</button>
         </div>
     `;
-    
-    history.forEach((key, idx) => {
+
+    history.forEach((item, idx) => {
+        const key = item.key;
+
         const pillWrapper = document.createElement('div');
         const randomBg = softMangaColors[idx % softMangaColors.length] || "#fff";
-        const randomTilt = (Math.random() * 4 - 2).toFixed(2);
-        
-        // Drag and Drop configuration properties
+        const randomTilt = item.pinned ? "0" : (Math.random() * 4 - 2).toFixed(2);
+
         pillWrapper.setAttribute("draggable", "true");
         pillWrapper.setAttribute("data-index", idx);
-        
-        // Stylizing
+
         pillWrapper.style.display = "inline-flex";
         pillWrapper.style.alignItems = "center";
         pillWrapper.style.gap = "6px";
-        pillWrapper.style.background = randomBg;
-        pillWrapper.style.border = "2px solid var(--ink-black, #111)";
-        pillWrapper.style.boxShadow = "2px 2px 0px var(--ink-black, #111)";
+        pillWrapper.style.background = item.pinned ? "#fff3b0" : randomBg;
+        pillWrapper.style.border = item.pinned ? "3px solid var(--ink-black, #111)" : "2px solid var(--ink-black, #111)";
+        pillWrapper.style.boxShadow = item.pinned ? "3px 3px 0px var(--ink-black, #111)" : "2px 2px 0px var(--ink-black, #111)";
         pillWrapper.style.padding = "4px 8px";
         pillWrapper.style.fontSize = "15px";
         pillWrapper.style.fontWeight = "bold";
-        pillWrapper.style.cursor = "grab"; // Changes cursor to a hand grab symbol
+        pillWrapper.style.cursor = "grab";
         pillWrapper.style.textTransform = "uppercase";
         pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
         pillWrapper.style.transition = "transform 0.05s ease, opacity 0.1s ease";
-        
-        // --- DRAG EVENT LISTENERS ---
+
         pillWrapper.ondragstart = (e) => {
             draggedItemIndex = idx;
-            pillWrapper.style.opacity = "0.4"; // Fades the card out slightly while holding it
+            pillWrapper.style.opacity = "0.4";
             e.dataTransfer.effectAllowed = "move";
         };
-        
+
         pillWrapper.ondragend = () => {
             pillWrapper.style.opacity = "1";
             draggedItemIndex = null;
-            // Clear any lingering target borders
+
             document.querySelectorAll('#searchHistoryContainer > div').forEach(el => {
-                if(el.style.borderStyle === "dashed") el.style.borderStyle = "solid";
+                if (el.style.borderStyle === "dashed") el.style.borderStyle = "solid";
             });
         };
-        
+
         pillWrapper.ondragover = (e) => {
-            e.preventDefault(); // Required to allow drop execution!
+            e.preventDefault();
             return false;
         };
 
         pillWrapper.ondragenter = () => {
             if (idx !== draggedItemIndex) {
-                pillWrapper.style.borderStyle = "dashed"; // Give visual feedback over drag target
+                pillWrapper.style.borderStyle = "dashed";
             }
         };
 
         pillWrapper.ondragleave = () => {
             pillWrapper.style.borderStyle = "solid";
         };
-        
+
         pillWrapper.ondrop = (e) => {
             e.preventDefault();
+
             if (draggedItemIndex !== null && draggedItemIndex !== idx) {
-                let updatedHistory = JSON.parse(localStorage.getItem('mangaSearchHistory')) || [];
-                
-                // Cut the dragged item out of its original row slot
+                let updatedHistory = getSearchHistory();
+
                 const [reorderedItem] = updatedHistory.splice(draggedItemIndex, 1);
-                // Inject it directly into the new destination slot drop coordinates
                 updatedHistory.splice(idx, 0, reorderedItem);
-                
-                // Save your custom arrangement order back to browser memory
-                localStorage.setItem('mangaSearchHistory', JSON.stringify(updatedHistory));
+
+                updatedHistory = normalizePinnedHistory(updatedHistory);
+
+                setSearchHistory(updatedHistory);
                 renderSearchHistory();
             }
         };
-        
-        // --- SEARCH ENGINE TRIGGER CLICK ---
+
         pillWrapper.onclick = () => {
             const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
+
             if (match) {
                 const searchInput = document.getElementById('sheetKeySearch');
                 if (searchInput) searchInput.value = match.key;
-                
+
                 const payloadOutput = document.getElementById('sheetPayloadArea');
                 const actionsHeader = document.getElementById('searchActionsHeader');
                 const buttonGroup = document.getElementById('searchButtonGroup');
                 const suggestionsBox = document.getElementById('searchSuggestions');
-                
+
                 if (payloadOutput && actionsHeader && buttonGroup) {
                     payloadOutput.value = match.payload;
                     payloadOutput.style.display = "block";
                     actionsHeader.style.display = "flex";
                     buttonGroup.style.display = "flex";
                 }
-                
+
                 if (suggestionsBox) {
                     suggestionsBox.innerHTML = "";
                     suggestionsBox.style.setProperty('display', 'none', 'important');
                 }
             }
         };
-        
-        pillWrapper.innerHTML = `
-            <span>${key}</span>
-            <span onclick="deleteSingleHistoryItem('${key}', event)" style="margin-left: 4px; padding: 0 2px; color: #888; font-weight: 900; cursor: pointer; transition: color 0.1s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">×</span>
-        `;
-        
+
+        const pinButton = document.createElement('span');
+        pinButton.textContent = item.pinned ? '📌' : '📍';
+        pinButton.title = item.pinned ? 'Unpin recent search' : 'Pin recent search';
+        pinButton.style.cursor = "pointer";
+        pinButton.style.fontSize = "13px";
+        pinButton.onclick = (event) => toggleSearchHistoryPin(key, event);
+
+        const label = document.createElement('span');
+        label.textContent = key;
+
+        const deleteButton = document.createElement('span');
+        deleteButton.textContent = '×';
+        deleteButton.style.marginLeft = "4px";
+        deleteButton.style.padding = "0 2px";
+        deleteButton.style.color = "#888";
+        deleteButton.style.fontWeight = "900";
+        deleteButton.style.cursor = "pointer";
+        deleteButton.style.transition = "color 0.1s";
+        deleteButton.onmouseover = () => { deleteButton.style.color = "#111"; };
+        deleteButton.onmouseout = () => { deleteButton.style.color = "#888"; };
+        deleteButton.onclick = (event) => deleteSingleHistoryItem(key, event);
+
+        pillWrapper.appendChild(pinButton);
+        pillWrapper.appendChild(label);
+        pillWrapper.appendChild(deleteButton);
+
         container.appendChild(pillWrapper);
     });
 }
@@ -1776,30 +1887,20 @@ function addSystemLog(message) {
 
     console.log(formattedMessage);
 
-    const logsTab = document.getElementById('logsTab');
-    if (!logsTab) return;
+    const logsArea = document.getElementById('systemLogsArea');
+    if (!logsArea) return;
 
-    let logContainer = document.getElementById('systemLogContainer');
+    // Remove the old extra div if it exists from the previous version.
+    const oldLogContainer = document.getElementById('systemLogContainer');
+    if (oldLogContainer) oldLogContainer.remove();
 
-    if (!logContainer) {
-        logContainer = document.createElement('div');
-        logContainer.id = 'systemLogContainer';
-        logContainer.style.cssText = `
-            width: 100%;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-            overflow-y: auto;
-        `;
-        logsTab.appendChild(logContainer);
-    }
+    const currentLogs = logsArea.value.trim();
 
-    const entry = document.createElement('div');
-    entry.textContent = formattedMessage;
-    entry.style.marginBottom = '6px';
+    logsArea.value = currentLogs
+        ? `${formattedMessage}\n${currentLogs}`
+        : formattedMessage;
 
-    logContainer.prepend(entry);
+    logsArea.scrollTop = 0;
 }
 
 
