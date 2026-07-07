@@ -104,7 +104,7 @@ function openUserScriptChessLock(context, promptText) {
     resetSicilianBoardState();
     currentSicilianGridLayout = getRandomizedSicilianLayout(); // Shuffle once
     renderSicilianChessBoard();
-    document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: INITIATE MOVE 1 (SICILIAN)";
+    document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: STAGE 1 ACTIVE";
     const promptEl = document.getElementById('chessLockPrompt');
     if (promptEl) promptEl.innerText = promptText;
     document.getElementById('chessAuthModal').classList.add('open');
@@ -156,9 +156,9 @@ function handleSicilianSquareClick(clickedCoord) {
         ) {
             executeMove(selectedPieceCoord, clickedCoord);
             currentLondonStep = 1;
-            document.getElementById('chessStepIndicator').innerText =
-                "WHITE MOVE ACCEPTED: MOVE 2 — BLACK c7 → c5";
-            showToast("1.e4 accepted...");
+document.getElementById('chessStepIndicator').innerText =
+    "SEQUENCE LOCK: STAGE 2 ACTIVE";
+showToast("Stage 1 accepted...");
         }
 
         else if (
@@ -170,8 +170,8 @@ function handleSicilianSquareClick(clickedCoord) {
             executeMove(selectedPieceCoord, clickedCoord);
             currentLondonStep = 2;
             document.getElementById('chessStepIndicator').innerText =
-                "SICILIAN ACCEPTED: MOVE 3 — BLACK Nb8 → c6";
-            showToast("...c5 accepted...");
+    "SEQUENCE LOCK: STAGE 3 ACTIVE";
+showToast("Stage 2 accepted...");
         }
 
         else if (
@@ -665,12 +665,11 @@ function executeMove(fromCoord, toCoord) {
 
 function executeChessSuccess() {
     if (chessLockContext.type === 'delete') {
-    const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === chessLockContext.payload);
-    offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== chessLockContext.payload);
-    persistOfflineDatabase();
-    renderPortal();
-    showToast(`DESTRUCTION SUCCESS: Removed "${targetItem ? targetItem.title : 'Item'}"`);
-}
+        const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === chessLockContext.payload);
+        offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== chessLockContext.payload);
+        persistOfflineDatabase();
+        renderPortal();
+        showToast(`DESTRUCTION SUCCESS: Removed "${targetItem ? targetItem.title : 'Item'}"`);
     } else if (chessLockContext.type === 'devtools') {
         devToolsUnlocked = true;
         showToast("ACCESS GRANTED: Dev Tools unlocked.");
@@ -935,7 +934,7 @@ function renderPortal(options = {}) {
         bottomGrid.appendChild(card);
     });
 
-    renderPortal({ resetWorkspace: false });
+    renderUserScriptCards();
 }
 
 function viewSnippet(id) {
