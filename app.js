@@ -37,6 +37,7 @@ let devToolsRows = [];
 let chessLockContext = { type: null, payload: null };
 
 let googleSheetData = []; 
+let predictionCards = [];
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
 
@@ -224,6 +225,7 @@ async function syncGoogleSheetData() {
         showToast(`Sync finished! Loaded ${googleSheetData.length} records.`);
         
         if (isArchiveOpen) renderArchiveContainer();
+        renderPredictionCards();
     } catch (error) {
         addSystemLog(`Cloud link error: ${error.message}`);
         showToast("Error pulling cloud sheets registry.");
@@ -232,39 +234,106 @@ async function syncGoogleSheetData() {
 
 function parseCsvStrictAB(text) {
     googleSheetData = [];
+    predictionCards = [];
+
     let lines = [];
     let row = [""];
     let inQuotes = false;
 
     for (let i = 0; i < text.length; i++) {
         let c = text[i];
-        let next = text[i+1];
+        let next = text[i + 1];
 
         if (c === '"') {
-            if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
-            else { inQuotes = !inQuotes; }
+            if (inQuotes && next === '"') {
+                row[row.length - 1] += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
         } else if (c === ',' && !inQuotes) {
             row.push("");
         } else if ((c === '\r' || c === '\n') && !inQuotes) {
-            if (c === '\r' && next === '\n') { i++; }
+            if (c === '\r' && next === '\n') i++;
             lines.push(row);
             row = [""];
         } else {
             row[row.length - 1] += c;
         }
     }
-    if (row.length > 1 || row[0] !== "") lines.push(row);
 
+    if (row.length > 1 || row[0] !== "") {
+        lines.push(row);
+    }
+
+    // Search Engine: A2:B
     for (let i = 1; i < lines.length; i++) {
         let cols = lines[i];
+
         if (cols.length >= 2) {
-            let colA = cols[0].trim();
-            let colB = cols[1].trim(); 
+            let colA = (cols[0] || '').trim();
+            let colB = (cols[1] || '').trim();
+
             if (colA) {
-                googleSheetData.push({ key: colA, payload: colB });
+                googleSheetData.push({
+                    key: colA,
+                    payload: colB
+                });
             }
         }
     }
+
+    // Prediction Cards: E3:F
+    for (let i = 2; i < lines.length; i++) {
+        let cols = lines[i];
+
+        let title = (cols[4] || '').trim();
+        let content = (cols[5] || '').trim();
+
+        if (title || content) {
+            predictionCards.push({
+                id: `prediction-${i}`,
+                title: title || 'Untitled Prediction',
+                content: content || 'No prediction content provided.'
+            });
+        }
+    }
+}
+
+
+
+function renderPredictionCards() {
+    const grid = document.getElementById('predictionCardGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    if (!predictionCards.length) {
+        grid.innerHTML = `
+            <div class="prediction-empty-state">
+                No prediction cards loaded yet. Pull fresh data from the sheet.
+            </div>
+        `;
+        return;
+    }
+
+    predictionCards.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        const randomBg = softMangaColors[index % softMangaColors.length] || '#f4f3ef';
+        const randomTilt = (Math.random() * 3 - 1.5).toFixed(2);
+
+        cardEl.className = 'prediction-card';
+        cardEl.style.background = randomBg;
+        cardEl.style.transform = `rotate(${randomTilt}deg)`;
+
+        cardEl.innerHTML = `
+            <div class="prediction-card-pin">●</div>
+            <h4 class="prediction-card-title">${escapeHtml(card.title)}</h4>
+            <div class="prediction-card-content">${escapeHtml(card.content)}</div>
+        `;
+
+        grid.appendChild(cardEl);
+    });
 }
 
 function querySheetMatrix() {
@@ -1384,39 +1453,63 @@ function copyTextAreaContent() {
 function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
     const searchTab = document.getElementById('searchMenuTab');
+    const predictionTab = document.getElementById('predictionTab');
     const logsTab = document.getElementById('logsTab');
     const devTab = document.getElementById('devToolsTab');
     const navLinks = document.querySelectorAll('.nav-links a');
 
     navLinks.forEach(link => link.classList.remove('active'));
-    dashTab.style.display = 'none';
-    searchTab.style.display = 'none';
-    logsTab.style.display = 'none';
-    devTab.style.display = 'none';
 
-    document.getElementById('searchSuggestions').style.display = "none";
-    document.getElementById('sheetArchiveArea').style.display = "none";
+    if (dashTab) dashTab.style.display = 'none';
+    if (searchTab) searchTab.style.display = 'none';
+    if (predictionTab) predictionTab.style.display = 'none';
+    if (logsTab) logsTab.style.display = 'none';
+    if (devTab) devTab.style.display = 'none';
+
+    const suggestions = document.getElementById('searchSuggestions');
+    if (suggestions) suggestions.style.display = "none";
+
+    const archive = document.getElementById('sheetArchiveArea');
+    if (archive) archive.style.display = "none";
+
     isArchiveOpen = false;
 
     if (tabName === 'dashboard') {
-        dashTab.style.display = 'flex';
-        navLinks[0].classList.add('active');
+        if (dashTab) dashTab.style.display = 'flex';
+        if (navLinks[0]) navLinks[0].classList.add('active');
         showToast("Switched to Main Command Dashboard");
+
     } else if (tabName === 'searchTab') {
-        searchTab.style.display = 'flex';
-        navLinks[1].classList.add('active');
+        if (searchTab) searchTab.style.display = 'flex';
+        if (navLinks[1]) navLinks[1].classList.add('active');
+
         showToast("Switched to Sheet Search Engine");
-        document.getElementById('sheetKeySearch').value = "";
+
+        const searchInput = document.getElementById('sheetKeySearch');
+        if (searchInput) searchInput.value = "";
+
         clearAndHideSearch();
+
+    } else if (tabName === 'prediction') {
+        if (predictionTab) predictionTab.style.display = 'flex';
+        if (navLinks[2]) navLinks[2].classList.add('active');
+
+        renderPredictionCards();
+        showToast("Viewing Prediction Cards");
+
     } else if (tabName === 'logs') {
-        logsTab.style.display = 'flex';
-        navLinks[2].classList.add('active');
+        if (logsTab) logsTab.style.display = 'flex';
+        if (navLinks[3]) navLinks[3].classList.add('active');
+
         showToast("Viewing Core System Performance Records");
+
     } else if (tabName === 'devTools') {
-        devTab.style.display = 'flex';
-        navLinks[3].classList.add('active');
+        if (devTab) devTab.style.display = 'flex';
+        if (navLinks[4]) navLinks[4].classList.add('active');
+
         showToast("DEV TOOLS ACCESS GRANTED");
     }
+
     changeToRandomGif();
 }
 
@@ -1631,7 +1724,7 @@ function renderSearchHistory() {
 
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
-            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">RECENTS MAX 10 — PIN TO KEEP:</span>
+            <span style="font-size: 11px; font-weight: 900; opacity: 0.5;">TEKAN PION UNTUK PIN</span>
             <button onclick="clearAllSearchHistory()" style="background: none; border: none; font-size: 10px; font-weight: 900; color: #cc0000; cursor: pointer; text-transform: uppercase; text-decoration: underline; padding: 0;">[ Clear All ]</button>
         </div>
     `;
