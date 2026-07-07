@@ -387,9 +387,7 @@ function queryPredictionCards() {
     matches.slice(0, 10).forEach(card => {
         const item = document.createElement('div');
 
-        item.className = 'VisiblePredictionCards();
-
-    renderPredictionCardssuggestion-item';
+        item.className = 'suggestion-item';
         item.style.padding = '8px 12px';
         item.style.cursor = 'pointer';
         item.style.borderBottom = '1px solid var(--ink-black)';
@@ -409,6 +407,7 @@ function queryPredictionCards() {
         suggestionsBox.appendChild(item);
     });
 }
+
 
 function copyPredictionCardContent(cardId) {
     const card = predictionCards.find(item => item.id === cardId);
