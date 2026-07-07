@@ -358,56 +358,9 @@ function getVisiblePredictionCards() {
 }
 
 function queryPredictionCards() {
-    const input = document.getElementById('predictionSearchInput');
-    const suggestionsBox = document.getElementById('predictionSuggestions');
-    const query = input ? input.value.trim().toLowerCase() : '';
-
-    if (!suggestionsBox) return;
-
-    if (!query) {
-        suggestionsBox.innerHTML = '';
-        suggestionsBox.style.display = 'none';
-        renderPredictionCards(predictionCards);
-        return;
-    }
-
     const matches = getVisiblePredictionCards();
-
     renderPredictionCards(matches);
-
-    if (!matches.length) {
-        suggestionsBox.innerHTML = '';
-        suggestionsBox.style.display = 'none';
-        return;
-    }
-
-    suggestionsBox.innerHTML = '';
-    suggestionsBox.style.display = 'block';
-
-    matches.slice(0, 10).forEach(card => {
-        const item = document.createElement('div');
-
-        item.className = 'suggestion-item';
-        item.style.padding = '8px 12px';
-        item.style.cursor = 'pointer';
-        item.style.borderBottom = '1px solid var(--ink-black)';
-        item.style.fontSize = '13px';
-        item.style.fontWeight = 'bold';
-        item.style.background = 'var(--bg-paper)';
-
-        item.innerText = card.title;
-
-        item.onclick = () => {
-            input.value = card.title;
-            suggestionsBox.innerHTML = '';
-            suggestionsBox.style.display = 'none';
-            renderPredictionCards([card]);
-        };
-
-        suggestionsBox.appendChild(item);
-    });
 }
-
 
 function copyPredictionCardContent(cardId) {
     const card = predictionCards.find(item => item.id === cardId);
@@ -443,14 +396,8 @@ function copyVisiblePredictionCards() {
 
 function clearPredictionSearch() {
     const input = document.getElementById('predictionSearchInput');
-    const suggestionsBox = document.getElementById('predictionSuggestions');
 
     if (input) input.value = '';
-
-    if (suggestionsBox) {
-        suggestionsBox.innerHTML = '';
-        suggestionsBox.style.display = 'none';
-    }
 
     renderPredictionCards(predictionCards);
 }
