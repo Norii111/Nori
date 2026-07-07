@@ -78,11 +78,32 @@
 
 
 
-        <main class="main-content" id="predictionTab" style="display: none;">
-    <section class="manga-panel" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
+ <main class="main-content" id="predictionTab" style="display: none;">
+    <section class="manga-panel" style="height: 100%; display: flex; flex-direction: column; overflow: visible;">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <h3>Prediction Cards</h3>
-            <button class="manga-btn" style="font-size: 11px; padding: 4px 10px; background: #e3ebd9;" onclick="syncGoogleSheetData()">🔄 Pull Fresh Data</button>
+            <div style="display: flex; gap: 6px;">
+                <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="copyVisiblePredictionCards()">📋 Copy Visible</button>
+                <button class="manga-btn" style="font-size: 11px; padding: 4px 10px; background: #e3ebd9;" onclick="syncGoogleSheetData()">🔄 Pull Fresh Data</button>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px; position: relative; z-index: 999; display: flex; flex-direction: column; gap: 10px;">
+            <div style="position: relative; width: 100%;">
+                <input
+                    type="text"
+                    id="predictionSearchInput"
+                    placeholder="Filter prediction cards..."
+                    oninput="queryPredictionCards()"
+                    autocomplete="off"
+                    style="width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); padding: 12px; font-family: inherit; font-weight: bold; font-size: 14px; box-sizing: border-box;"
+                >
+
+                <div
+                    id="predictionSuggestions"
+                    style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); border-top: none; max-height: 200px; overflow-y: auto; box-sizing: border-box; box-shadow: 5px 5px 0px var(--ink-black); z-index: 9999;"
+                ></div>
+            </div>
         </div>
 
         <div id="predictionCardGrid" class="prediction-card-grid"></div>
