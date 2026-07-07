@@ -1921,6 +1921,32 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+function installCasualSourceGuard() {
+    document.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        showToast('Source access disabled.');
+    });
+
+    document.addEventListener('keydown', function (e) {
+        const key = e.key.toLowerCase();
+
+        const blocked =
+            key === 'f12' ||
+            (e.ctrlKey && key === 'u') ||
+            (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(key)) ||
+            (e.metaKey && e.altKey && ['i', 'j', 'c'].includes(key));
+
+        if (blocked) {
+            e.preventDefault();
+            showToast('Inspector shortcut blocked.');
+        }
+    });
+}
+
+installCasualSourceGuard();
+
+
+
 
 window.onload = function() {
     loadOfflineDatabaseFromStorage();
