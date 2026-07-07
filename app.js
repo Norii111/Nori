@@ -14,7 +14,11 @@ const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbyfYCRLFSQmWBH40ps
 
 let userScripts = [];
 let currentSicilianGridLayout = null; // For second chess puzzle
-let userScriptBeingEdited = null; // Track which script is being edited
+
+let userScriptBeingEdited = null; // Drive note currently unlocked for editing
+let userScriptBeingViewed = null; // Drive note currently loaded in Swap View
+let isDriveNoteEditMode = false; // false = view-only, true = editable
+
 let currentSnippetBeingEdited = null; // Track which local note is loaded in the workspace
 const OFFLINE_DATABASE_STORAGE_KEY = 'mangaOfflineDatabase';
 
@@ -700,30 +704,166 @@ async function loadUserScripts() {
     }
 }
 
+
+function ensureDriveNoteToolbar() {
+    const textarea = document.getElementById('primaryGasArea');
+    if (!textarea || !textarea.parentNode) return {};
+
+    let toolbar = document.getElementById('driveNoteToolbar');
+
+    if (!toolbar) {
+        toolbar = document.createElement('div');
+        toolbar.id = 'driveNoteToolbar';
+        toolbar.style.cssText = 'display:none; gap:8px; align-items:center; margin-bottom:8px;';
+
+        toolbar.innerHTML = `
+            <input id="driveNoteTitleInput" type="text" readonly
+                placeholder="Drive note title"
+                style="flex:1; min-width:0; padding:8px 10px; border-radius:10px; border:1px solid #bdb7a8; font-family:inherit; font-weight:bold; background:#f8f6ef;" />
+            <button id="driveNoteEditButton" class="manga-btn" type="button" onclick="enableDriveNoteEdit()">Edit</button>
+        `;
+
+        textarea.parentNode.insertBefore(toolbar, textarea);
+    }
+
+    return {
+        toolbar,
+        titleInput: document.getElementById('driveNoteTitleInput'),
+        editButton: document.getElementById('driveNoteEditButton')
+    };
+}
+
+function setDriveNoteViewMode({ title = '', editable = false } = {}) {
+    const textarea = document.getElementById('primaryGasArea');
+    const { toolbar, titleInput, editButton } = ensureDriveNoteToolbar();
+
+    if (toolbar) toolbar.style.display = userScriptBeingViewed ? 'flex' : 'none';
+
+    if (titleInput) {
+        titleInput.value = title;
+        titleInput.readOnly = !editable;
+        titleInput.style.opacity = editable ? '1' : '0.75';
+    }
+
+    if (textarea) {
+        textarea.readOnly = !editable;
+        textarea.style.opacity = editable ? '1' : '0.82';
+    }
+
+    if (editButton) {
+        editButton.disabled = editable;
+        editButton.innerText = editable ? 'Editing' : 'Edit';
+    }
+
+    isDriveNoteEditMode = editable;
+    userScriptBeingEdited = editable ? userScriptBeingViewed : null;
+}
+
+function clearDriveNoteWorkspaceState() {
+    const textarea = document.getElementById('primaryGasArea');
+    const { toolbar, titleInput, editButton } = ensureDriveNoteToolbar();
+
+    userScriptBeingViewed = null;
+    userScriptBeingEdited = null;
+    isDriveNoteEditMode = false;
+
+    if (toolbar) toolbar.style.display = 'none';
+
+    if (titleInput) {
+        titleInput.value = '';
+        titleInput.readOnly = true;
+    }
+
+    if (textarea) {
+        textarea.readOnly = false;
+        textarea.style.opacity = '1';
+    }
+
+    if (editButton) {
+        editButton.disabled = false;
+        editButton.innerText = 'Edit';
+    }
+}
+
+function enableDriveNoteEdit() {
+    if (!userScriptBeingViewed) {
+        showToast('Swap View a Drive note first.');
+        return;
+    }
+
+    const script = userScripts.find(s => s.driveFileID === userScriptBeingViewed);
+    setDriveNoteViewMode({
+        title: script ? script.title : '',
+        editable: true
+    });
+
+    showToast('Edit mode enabled. Title and content are unlocked.');
+}
+
+async function swapUserScriptView(fileID) {
+    const script = userScripts.find(s => s.driveFileID === fileID);
+
+    if (!script) {
+        showToast('Drive note not found.');
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${gasWebAppUrl}?api=userscripts&action=getContent&fileID=${encodeURIComponent(fileID)}`
+        );
+
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message);
+
+        currentSnippetBeingEdited = null;
+        userScriptBeingViewed = fileID;
+
+        const textarea = document.getElementById('primaryGasArea');
+        textarea.classList.add('page-turn');
+
+        setTimeout(() => {
+            textarea.value = result.content || '';
+            textarea.classList.remove('page-turn');
+
+            setDriveNoteViewMode({
+                title: script.title,
+                editable: false
+            });
+
+            switchTab('dashboard');
+            showToast(`Viewing Drive note: "${script.title}". Press Edit to modify it.`);
+            changeToRandomGif();
+        }, 220);
+
+    } catch (err) {
+        showToast('Error loading Drive note: ' + err.message);
+    }
+}
+
 function renderUserScriptCards() {
     const bottomGrid = document.getElementById('bottomGrid');
-    // Keep existing bottom snippets, add userscripts after
-    const existingHTML = bottomGrid.innerHTML;
-    
-    // Or if you want to replace, uncomment this:
-    // bottomGrid.innerHTML = '';
-    
+    if (!bottomGrid) return;
+
     userScripts.forEach(script => {
         const randomBg = getRandomMangaColor();
         const card = document.createElement('div');
+
         card.className = 'snippet-card';
         card.style.backgroundColor = randomBg;
+
         card.innerHTML = `
             <div style="overflow: hidden;">
                 <strong style="display:block; margin-bottom:4px; font-size:14px;">${escapeHtml(script.title)}</strong>
-                <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">📄 Drive userscript</p>
+                <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">📄 Drive note</p>
             </div>
+
             <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
-                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="openUserScriptEditChess('${script.driveFileID}')">Edit</button>
-                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="openUserScriptDeleteChess('${script.driveFileID}')">Delete</button>
-                <button class="manga-btn primary-save" style="font-size:11px; padding:3px 8px;" onclick="copyUserScript('${script.driveFileID}')">Copy</button>
+                <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick='openUserScriptDeleteChess(${JSON.stringify(script.driveFileID)})'>Delete</button>
+                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick='swapUserScriptView(${JSON.stringify(script.driveFileID)})'>Swap View</button>
             </div>
         `;
+
         bottomGrid.appendChild(card);
     });
 }
@@ -737,49 +877,62 @@ function openUserScriptDeleteChess(fileID) {
 }
 
 async function openUserScriptEditForm(fileID) {
-    const script = userScripts.find(s => s.driveFileID === fileID);
-    if (!script) { showToast("Script not found"); return; }
-    
-    userScriptBeingEdited = fileID;
-    
-    try {
-        const response = await fetch(`${gasWebAppUrl}?api=userscripts&action=getContent&fileID=${fileID}`);
-        const result = await response.json();
-        if (!result.ok) throw new Error(result.message);
-        
-        // Open modal or show edit area
-        document.getElementById('modalInput').value = script.title;
-        document.getElementById('primaryGasArea').value = result.content;
-        showToast(`Loaded: "${script.title}"`);
-        switchTab('dashboard');
-    } catch (err) {
-        showToast("Error loading script content: " + err.message);
+    await swapUserScriptView(fileID);
+
+    if (userScriptBeingViewed === fileID) {
+        enableDriveNoteEdit();
     }
 }
-
+    
 async function saveEditedUserScript() {
-    if (!userScriptBeingEdited) { showToast("No script selected"); return; }
-    
-    const title = document.getElementById('modalInput').value.trim();
+    if (!userScriptBeingEdited) {
+        showToast('Press Edit before saving this Drive note.');
+        return false;
+    }
+
+    const titleInput = document.getElementById('driveNoteTitleInput');
+    const title = titleInput ? titleInput.value.trim() : '';
     const content = document.getElementById('primaryGasArea').value;
-    
-    if (!title) { showToast("Title cannot be blank"); return; }
-    
+    const fileID = userScriptBeingEdited;
+
+    if (!title) {
+        showToast('Title cannot be blank');
+        return false;
+    }
+
     try {
         const response = await fetch(gasWebAppUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'updateUserScript', fileID: userScriptBeingEdited, title, content })
+            body: JSON.stringify({
+                action: 'updateUserScript',
+                fileID,
+                title,
+                content
+            })
         });
+
         const result = await response.json();
         if (!result.ok) throw new Error(result.message);
-        
-        showToast("Script updated!");
-        addSystemLog("Userscript updated");
-        userScriptBeingEdited = null;
-        loadUserScripts();
+
+        const localScript = userScripts.find(s => s.driveFileID === fileID);
+        if (localScript) localScript.title = title;
+
+        showToast('Drive note saved!');
+        addSystemLog('Drive note updated');
+
+        userScriptBeingViewed = fileID;
+        setDriveNoteViewMode({
+            title,
+            editable: false
+        });
+
+        await loadUserScripts();
+        return true;
+
     } catch (err) {
-        showToast("Error saving script: " + err.message);
+        showToast('Error saving Drive note: ' + err.message);
+        return false;
     }
 }
 
@@ -909,10 +1062,11 @@ function renderPortal(options = {}) {
     const bottomGrid = document.getElementById('bottomGrid');
     if (!textarea || !bottomGrid) return;
 
-    if (resetWorkspace) {
-        currentSnippetBeingEdited = null;
-        textarea.value = offlineDatabase.primaryGAS;
-    }
+if (resetWorkspace) {
+    currentSnippetBeingEdited = null;
+    clearDriveNoteWorkspaceState();
+    textarea.value = offlineDatabase.primaryGAS;
+}
 
     bottomGrid.innerHTML = '';
 
@@ -940,13 +1094,17 @@ function renderPortal(options = {}) {
 function viewSnippet(id) {
     const textarea = document.getElementById('primaryGasArea');
     const item = offlineDatabase.bottomSnippets.find(x => x.id === id);
+
     if (item) {
+        clearDriveNoteWorkspaceState();
+
         currentSnippetBeingEdited = id;
         textarea.classList.add('page-turn');
+
         setTimeout(() => {
             textarea.value = item.content;
             textarea.classList.remove('page-turn');
-            showToast(`Loaded note: "${item.title}". Press Save to update this note.`);
+            showToast(`Loaded local note: "${item.title}". Press Save to update this note.`);
             changeToRandomGif();
         }, 220);
     }
@@ -1042,26 +1200,26 @@ function submitNewNote() {
 }
 
 function launchMainGAS() { window.open(offlineDatabase.mainGasLink, '_blank'); showToast("Launching main script portal via tinyurl..."); }
-function savePrimaryGAS() {
+async function savePrimaryGAS() {
+    if (userScriptBeingViewed && !isDriveNoteEditMode) {
+        showToast('This Drive note is in view-only mode. Press Edit before saving changes.');
+        return;
+    }
+
+    if (userScriptBeingEdited) {
+        await saveEditedUserScript();
+        return;
+    }
+
     if (saveCurrentSnippet()) return;
+
+    clearDriveNoteWorkspaceState();
 
     offlineDatabase.primaryGAS = document.getElementById('primaryGasArea').value;
     persistOfflineDatabase();
+
     showToast("Changes synced to local workspace memory!");
 }
-
-function addSystemLog(text) {
-    const area = document.getElementById('systemLogsArea');
-    if (area) area.value += `\n[${new Date().toLocaleTimeString()}] ${text}`;
-}
-
-document.addEventListener('click', function(e) {
-    const box = document.getElementById('searchSuggestions');
-    const input = document.getElementById('sheetKeySearch');
-    if (box && e.target !== box && e.target !== input) {
-        box.style.display = "none";
-    }
-});
 
 function showToast(message) {
     const container = document.getElementById('toastContainer');
