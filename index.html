@@ -81,12 +81,30 @@
  <main class="main-content" id="predictionTab" style="display: none;">
     <section class="manga-panel" style="height: 100%; display: flex; flex-direction: column; overflow: visible;">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3>Prediction Cards</h3>
-            <div style="display: flex; gap: 6px;">
-                <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="copyVisiblePredictionCards()">📋 Copy Visible</button>
-                <button class="manga-btn" style="font-size: 11px; padding: 4px 10px; background: #e3ebd9;" onclick="syncGoogleSheetData()">🔄 Pull Fresh Data</button>
-            </div>
-        </div>
+    <h3>Prediction Cards</h3>
+
+    <div style="display: flex; gap: 6px;">
+        <button id="predictionSetTimeButton" class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="requestPredictionTimeAccess()">
+            ⏱ Set Time
+        </button>
+
+        <button id="predictionSaveTimeButton" class="manga-btn primary-save" style="display:none; font-size: 11px; padding: 4px 10px;" onclick="savePredictionTimeConfigToDrive()">
+            Save
+        </button>
+
+        <button id="predictionCancelTimeButton" class="manga-btn danger" style="display:none; font-size: 11px; padding: 4px 10px;" onclick="cancelPredictionTimeEdit()">
+            Cancel
+        </button>
+
+        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="copyVisiblePredictionCards()">
+            📋 Copy Visible
+        </button>
+
+        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px; background: #e3ebd9;" onclick="syncGoogleSheetData()">
+            🔄 Pull Fresh Data
+        </button>
+    </div>
+</div>
 
       <div class="prediction-filter-bar">
     <input
