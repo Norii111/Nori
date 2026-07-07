@@ -1522,6 +1522,40 @@ async function submitDevAdd() {
     }
 }
 
+
+
+function addSystemLog(message) {
+    const timestamp = new Date().toLocaleString();
+    const formattedMessage = `[${timestamp}] ${message}`;
+
+    console.log(formattedMessage);
+
+    const logsTab = document.getElementById('logsTab');
+    if (!logsTab) return;
+
+    let logContainer = document.getElementById('systemLogContainer');
+
+    if (!logContainer) {
+        logContainer = document.createElement('div');
+        logContainer.id = 'systemLogContainer';
+        logContainer.style.cssText = `
+            width: 100%;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        `;
+        logsTab.appendChild(logContainer);
+    }
+
+    const entry = document.createElement('div');
+    entry.textContent = formattedMessage;
+    entry.style.marginBottom = '6px';
+
+    logContainer.prepend(entry);
+}
+
 window.onload = function() {
     loadOfflineDatabaseFromStorage();
     renderPortal();
