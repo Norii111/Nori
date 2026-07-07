@@ -302,39 +302,160 @@ function parseCsvStrictAB(text) {
 
 
 
-function renderPredictionCards() {
+function renderPredictionCards(cardsToRender = predictionCards) {
     const grid = document.getElementById('predictionCardGrid');
     if (!grid) return;
 
     grid.innerHTML = '';
 
-    if (!predictionCards.length) {
+    if (!cardsToRender.length) {
         grid.innerHTML = `
             <div class="prediction-empty-state">
-                No prediction cards loaded yet. Pull fresh data from the sheet.
+                No prediction cards found. Pull fresh data or change your filter.
             </div>
         `;
         return;
     }
 
-    predictionCards.forEach((card, index) => {
+    cardsToRender.forEach((card, index) => {
         const cardEl = document.createElement('div');
         const randomBg = softMangaColors[index % softMangaColors.length] || '#f4f3ef';
         const randomTilt = (Math.random() * 3 - 1.5).toFixed(2);
 
         cardEl.className = 'prediction-card';
         cardEl.style.background = randomBg;
+        cardEl.style.setProperty('--card-tilt', `${randomTilt}deg`);
         cardEl.style.transform = `rotate(${randomTilt}deg)`;
 
         cardEl.innerHTML = `
             <div class="prediction-card-pin">●</div>
-            <h4 class="prediction-card-title">${escapeHtml(card.title)}</h4>
+
+            <div class="prediction-card-topline">
+                <h4 class="prediction-card-title">${escapeHtml(card.title)}</h4>
+                <button class="manga-btn prediction-copy-btn" onclick='copyPredictionCardContent(${JSON.stringify(card.id)})'>Copy</button>
+            </div>
+
             <div class="prediction-card-content">${escapeHtml(card.content)}</div>
         `;
 
         grid.appendChild(cardEl);
     });
 }
+
+
+function getVisiblePredictionCards() {
+    const input = document.getElementById('predictionSearchInput');
+    const query = input ? input.value.trim().toLowerCase() : '';
+
+    if (!query) return predictionCards;
+
+    return predictionCards.filter(card => {
+        const title = String(card.title || '').toLowerCase();
+        const content = String(card.content || '').toLowerCase();
+
+        return title.includes(query) || content.includes(query);
+    });
+}
+
+function queryPredictionCards() {
+    const input = document.getElementById('predictionSearchInput');
+    const suggestionsBox = document.getElementById('predictionSuggestions');
+    const query = input ? input.value.trim().toLowerCase() : '';
+
+    if (!suggestionsBox) return;
+
+    if (!query) {
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.style.display = 'none';
+        renderPredictionCards(predictionCards);
+        return;
+    }
+
+    const matches = getVisiblePredictionCards();
+
+    renderPredictionCards(matches);
+
+    if (!matches.length) {
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.style.display = 'none';
+        return;
+    }
+
+    suggestionsBox.innerHTML = '';
+    suggestionsBox.style.display = 'block';
+
+    matches.slice(0, 10).forEach(card => {
+        const item = document.createElement('div');
+
+        item.className = 'VisiblePredictionCards();
+
+    renderPredictionCardssuggestion-item';
+        item.style.padding = '8px 12px';
+        item.style.cursor = 'pointer';
+        item.style.borderBottom = '1px solid var(--ink-black)';
+        item.style.fontSize = '13px';
+        item.style.fontWeight = 'bold';
+        item.style.background = 'var(--bg-paper)';
+
+        item.innerText = card.title;
+
+        item.onclick = () => {
+            input.value = card.title;
+            suggestionsBox.innerHTML = '';
+            suggestionsBox.style.display = 'none';
+            renderPredictionCards([card]);
+        };
+
+        suggestionsBox.appendChild(item);
+    });
+}
+
+function copyPredictionCardContent(cardId) {
+    const card = predictionCards.find(item => item.id === cardId);
+
+    if (!card) {
+        showToast('Prediction card not found.');
+        return;
+    }
+
+    const text = `${card.title}\n\n${card.content}`;
+
+    navigator.clipboard.writeText(text)
+        .then(() => showToast(`Copied prediction: ${card.title}`))
+        .catch(() => showToast('Copy failed.'));
+}
+
+function copyVisiblePredictionCards() {
+    const visibleCards = getVisiblePredictionCards();
+
+    if (!visibleCards.length) {
+        showToast('No visible prediction cards to copy.');
+        return;
+    }
+
+    const text = visibleCards
+        .map(card => `${card.title}\n${card.content}`)
+        .join('\n\n---\n\n');
+
+    navigator.clipboard.writeText(text)
+        .then(() => showToast(`Copied ${visibleCards.length} visible prediction cards.`))
+        .catch(() => showToast('Copy failed.'));
+}
+
+function clearPredictionSearch() {
+    const input = document.getElementById('predictionSearchInput');
+    const suggestionsBox = document.getElementById('predictionSuggestions');
+
+    if (input) input.value = '';
+
+    if (suggestionsBox) {
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.style.display = 'none';
+    }
+
+    renderPredictionCards(predictionCards);
+}
+
 
 function querySheetMatrix() {
     const searchInput = document.getElementById('sheetKeySearch');
@@ -1490,14 +1611,14 @@ function switchTab(tabName) {
 
         clearAndHideSearch();
 
-    } else if (tabName === 'prediction') {
-        if (predictionTab) predictionTab.style.display = 'flex';
-        if (navLinks[2]) navLinks[2].classList.add('active');
+} else if (tabName === 'prediction') {
+    if (predictionTab) predictionTab.style.display = 'flex';
+    if (navLinks[2]) navLinks[2].classList.add('active');
 
-        renderPredictionCards();
-        showToast("Viewing Prediction Cards");
-
-    } else if (tabName === 'logs') {
+    clearPredictionSearch();
+    renderPredictionCards();
+    showToast("Viewing Prediction Cards");
+} else if (tabName === 'logs') {
         if (logsTab) logsTab.style.display = 'flex';
         if (navLinks[3]) navLinks[3].classList.add('active');
 
