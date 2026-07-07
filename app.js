@@ -67,27 +67,27 @@ function getRandomizedGridLayout() {
 }
 
 function getRandomizedSicilianLayout() {
-    // Sicilian Defense (black pieces) - mirror of London System
-    const baseLayout = [
-        { coord: 'a4', isDark: false }, { coord: 'b4', isDark: true },  { coord: 'c4', isDark: false },
-        { coord: 'a3', isDark: true },  { coord: 'b3', isDark: false }, { coord: 'c3', isDark: true },
-        { coord: 'a1', isDark: false }, { coord: 'b1', isDark: true },  { coord: 'f1', isDark: false }
+    return [
+        { coord: 'c7', isDark: true },
+        { coord: 'e7', isDark: false },
+        { coord: 'g7', isDark: true },
+
+        { coord: 'c5', isDark: false },
+        { coord: 'e5', isDark: true },
+        { coord: 'g5', isDark: false },
+
+        { coord: 'c2', isDark: true },
+        { coord: 'e2', isDark: false },
+        { coord: 'e4', isDark: true }
     ];
-    
-    // Fisher-Yates shuffle
-    for (let i = baseLayout.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [baseLayout[i], baseLayout[j]] = [baseLayout[j], baseLayout[i]];
-    }
-    
-    return baseLayout;
 }
 
 function resetSicilianBoardState() {
     chessBoardState = {
-        'a4': '',    'b4': '',    'c4': '',
-        'a3': '♟',  'b3': '',    'c3': '',    
-        'a1': '♝',  'b1': '',    'f1': '♞'    
+        'e4': '',
+        'e2': '♙',
+        'c5': '',
+        'c7': '♟'
     };
 }
 
@@ -126,31 +126,52 @@ function renderSicilianChessBoard() {
 
 function handleSicilianSquareClick(clickedCoord) {
     const clickedPiece = chessBoardState[clickedCoord];
-    if (selectedPieceCoord === clickedCoord) { selectedPieceCoord = null; renderSicilianChessBoard(); return; }
-    if (clickedPiece !== '') { selectedPieceCoord = clickedCoord; renderSicilianChessBoard(); return; }
-    
+
+    if (selectedPieceCoord === clickedCoord) {
+        selectedPieceCoord = null;
+        renderSicilianChessBoard();
+        return;
+    }
+
+    if (clickedPiece !== '') {
+        selectedPieceCoord = clickedCoord;
+        renderSicilianChessBoard();
+        return;
+    }
+
     if (selectedPieceCoord) {
         const movingPiece = chessBoardState[selectedPieceCoord];
-        if (currentLondonStep === 0 && movingPiece === '♟' && selectedPieceCoord === 'a3' && clickedCoord === 'a4') {
+
+        if (
+            currentLondonStep === 0 &&
+            movingPiece === '♙' &&
+            selectedPieceCoord === 'e2' &&
+            clickedCoord === 'e4'
+        ) {
             executeMove(selectedPieceCoord, clickedCoord);
             currentLondonStep = 1;
-            document.getElementById('chessStepIndicator').innerText = "LOCK STAGE 1 BREACHED: INITIATE MOVE 2";
-            showToast("Move 1 accepted...");
-        } 
-        else if (currentLondonStep === 1 && movingPiece === '♝' && selectedPieceCoord === 'a1' && clickedCoord === 'c4') {
-            executeMove(selectedPieceCoord, clickedCoord);
-            currentLondonStep = 2;
-            document.getElementById('chessStepIndicator').innerText = "LOCK STAGE 2 BREACHED: INITIATE MOVE 3";
-            showToast("Move 2 accepted...");
-        } 
-        else if (currentLondonStep === 2 && movingPiece === '♞' && selectedPieceCoord === 'f1' && clickedCoord === 'b1') {
+            document.getElementById('chessStepIndicator').innerText =
+                "WHITE MOVE ACCEPTED: NOW PLAY ...c5";
+            showToast("1.e4 accepted...");
+        }
+
+        else if (
+            currentLondonStep === 1 &&
+            movingPiece === '♟' &&
+            selectedPieceCoord === 'c7' &&
+            clickedCoord === 'c5'
+        ) {
             executeMove(selectedPieceCoord, clickedCoord);
             executeChessSuccess();
-        } 
+        }
+
         else {
-            currentLondonStep = 0; selectedPieceCoord = null;
-            resetSicilianBoardState(); renderSicilianChessBoard();
-            document.getElementById('chessStepIndicator').innerText = "SECURITY ALERT: MATRIX RESET";
+            currentLondonStep = 0;
+            selectedPieceCoord = null;
+            resetSicilianBoardState();
+            renderSicilianChessBoard();
+            document.getElementById('chessStepIndicator').innerText =
+                "SECURITY ALERT: SICILIAN RESET";
             showToast("BLUNDER! Access Denied.");
             changeToRandomGif();
         }
@@ -612,7 +633,15 @@ function executeMove(fromCoord, toCoord) {
     chessBoardState[toCoord] = chessBoardState[fromCoord];
     chessBoardState[fromCoord] = '';
     selectedPieceCoord = null;
-    renderChessBoard();
+
+    if (
+        chessLockContext.type === 'userScriptEdit' ||
+        chessLockContext.type === 'userScriptDelete'
+    ) {
+        renderSicilianChessBoard();
+    } else {
+        renderChessBoard();
+    }
 }
 
 function executeChessSuccess() {
