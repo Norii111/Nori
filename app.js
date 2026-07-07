@@ -13,6 +13,9 @@ const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbyfYCRLFSQmWBH40ps
 
 
 let userScripts = [];
+const driveNoteContentCache = new Map();
+let isLoadingUserScripts = false;
+let lastDriveSyncAt = 0;
 let currentSicilianGridLayout = null; // For second chess puzzle
 
 let userScriptBeingEdited = null; // Drive note currently unlocked for editing
@@ -690,17 +693,52 @@ function executeChessSuccess() {
     changeToRandomGif();
 }
 
-async function loadUserScripts() {
+async function loadUserScripts(options = {}) {
+    const { silent = true } = options;
+
+    if (isLoadingUserScripts) return;
+    isLoadingUserScripts = true;
+
     try {
-        const response = await fetch(`${gasWebAppUrl}?api=userscripts`);
+        const response = await fetch(`${gasWebAppUrl}?api=userscripts&t=${Date.now()}`, {
+            cache: 'no-store'
+        });
+
         const result = await response.json();
         if (!result.ok) throw new Error(result.message);
-        userScripts = result.scripts;
+
+        userScripts = Array.isArray(result.scripts) ? result.scripts : [];
+
+        const liveIDs = new Set(userScripts.map(s => s.driveFileID));
+
+        for (const cachedID of Array.from(driveNoteContentCache.keys())) {
+            if (!liveIDs.has(cachedID)) {
+                driveNoteContentCache.delete(cachedID);
+            }
+        }
+
+        if (userScriptBeingViewed && !liveIDs.has(userScriptBeingViewed)) {
+            clearDriveNoteWorkspaceState();
+            document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
+            showToast('The opened Drive note no longer exists.');
+        }
+
         renderPortal({ resetWorkspace: false });
+
+        if (!silent) {
+            showToast(`Synced ${userScripts.length} Drive notes.`);
+        }
+
         addSystemLog(`Loaded ${userScripts.length} userscripts.`);
+
     } catch (err) {
         addSystemLog(`Error loading userscripts: ${err.message}`);
-        showToast("Error loading userscripts");
+
+        if (!silent) {
+            showToast("Error loading Drive notes");
+        }
+    } finally {
+        isLoadingUserScripts = false;
     }
 }
 
@@ -809,43 +847,104 @@ function enableDriveNoteEdit() {
     showToast('Edit mode enabled. Title and content are unlocked.');
 }
 
+function removeStaleDriveNote(fileID, message = 'Drive note no longer exists.') {
+    userScripts = userScripts.filter(s => s.driveFileID !== fileID);
+    driveNoteContentCache.delete(fileID);
+
+    if (userScriptBeingViewed === fileID) {
+        clearDriveNoteWorkspaceState();
+        document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
+    }
+
+    renderPortal({ resetWorkspace: false });
+    showToast(message);
+    addSystemLog(message);
+}
+
+function showDriveNoteInWorkspace(script, content, showMessage = true) {
+    const textarea = document.getElementById('primaryGasArea');
+
+    currentSnippetBeingEdited = null;
+    userScriptBeingViewed = script.driveFileID;
+
+    textarea.classList.add('page-turn');
+    textarea.value = content || '';
+
+    requestAnimationFrame(() => {
+        textarea.classList.remove('page-turn');
+    });
+
+    setDriveNoteViewMode({
+        title: script.title,
+        editable: false
+    });
+
+    switchTab('dashboard');
+
+    if (showMessage) {
+        showToast(`Viewing Drive note: "${script.title}". Press Edit to modify it.`);
+    }
+
+    changeToRandomGif();
+}
+
 async function swapUserScriptView(fileID) {
     const script = userScripts.find(s => s.driveFileID === fileID);
 
     if (!script) {
-        showToast('Drive note not found.');
+        showToast('Drive note not found. Syncing Drive notes...');
+        await loadUserScripts({ silent: true });
         return;
+    }
+
+    if (driveNoteContentCache.has(fileID)) {
+        showDriveNoteInWorkspace(script, driveNoteContentCache.get(fileID), true);
+    } else {
+        const textarea = document.getElementById('primaryGasArea');
+        currentSnippetBeingEdited = null;
+        userScriptBeingViewed = fileID;
+
+        textarea.readOnly = true;
+        textarea.value = 'Loading Drive note...';
+
+        setDriveNoteViewMode({
+            title: script.title,
+            editable: false
+        });
+
+        switchTab('dashboard');
     }
 
     try {
         const response = await fetch(
-            `${gasWebAppUrl}?api=userscripts&action=getContent&fileID=${encodeURIComponent(fileID)}`
+            `${gasWebAppUrl}?api=userscripts&action=getContent&fileID=${encodeURIComponent(fileID)}&t=${Date.now()}`,
+            { cache: 'no-store' }
         );
 
         const result = await response.json();
-        if (!result.ok) throw new Error(result.message);
+        if (!result.ok) throw new Error(result.message || 'Could not load Drive note');
 
-        currentSnippetBeingEdited = null;
-        userScriptBeingViewed = fileID;
+        const hadCachedContent = driveNoteContentCache.has(fileID);
 
-        const textarea = document.getElementById('primaryGasArea');
-        textarea.classList.add('page-turn');
+const freshContent = result.content || '';
+driveNoteContentCache.set(fileID, freshContent);
 
-        setTimeout(() => {
-            textarea.value = result.content || '';
-            textarea.classList.remove('page-turn');
-
-            setDriveNoteViewMode({
-                title: script.title,
-                editable: false
-            });
-
-            switchTab('dashboard');
-            showToast(`Viewing Drive note: "${script.title}". Press Edit to modify it.`);
-            changeToRandomGif();
-        }, 220);
+showDriveNoteInWorkspace(script, freshContent, !hadCachedContent);
 
     } catch (err) {
+        const msg = String(err.message || '').toLowerCase();
+
+        if (
+            msg.includes('not found') ||
+            msg.includes('no such file') ||
+            msg.includes('deleted') ||
+            msg.includes('trashed') ||
+            msg.includes('permission')
+        ) {
+            removeStaleDriveNote(fileID, 'This Drive note was deleted or is no longer available.');
+            return;
+        }
+
         showToast('Error loading Drive note: ' + err.message);
     }
 }
@@ -932,19 +1031,23 @@ async function saveEditedUserScript() {
         if (!result.ok) throw new Error(result.message);
 
         const localScript = userScripts.find(s => s.driveFileID === fileID);
-        if (localScript) localScript.title = title;
+if (localScript) localScript.title = title;
 
-        showToast('Drive note saved!');
-        addSystemLog('Drive note updated');
+driveNoteContentCache.set(fileID, content);
 
-        userScriptBeingViewed = fileID;
-        setDriveNoteViewMode({
-            title,
-            editable: false
-        });
+showToast('Drive note saved!');
+addSystemLog('Drive note updated');
 
-        await loadUserScripts();
-        return true;
+userScriptBeingViewed = fileID;
+
+setDriveNoteViewMode({
+    title,
+    editable: false
+});
+
+renderPortal({ resetWorkspace: false });
+
+return true;
 
     } catch (err) {
         showToast('Error saving Drive note: ' + err.message);
@@ -962,9 +1065,19 @@ async function performUserScriptDeletion(fileID) {
         const result = await response.json();
         if (!result.ok) throw new Error(result.message);
         
-        showToast("Script unlinked (file kept on Drive)");
-        addSystemLog("Userscript unlinked");
-        loadUserScripts();
+        showToast("Script unlinked");
+addSystemLog("Userscript unlinked");
+
+driveNoteContentCache.delete(fileID);
+userScripts = userScripts.filter(s => s.driveFileID !== fileID);
+
+if (userScriptBeingViewed === fileID) {
+    clearDriveNoteWorkspaceState();
+    document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
+}
+
+renderPortal({ resetWorkspace: false });
+loadUserScripts({ silent: true });
     } catch (err) {
         showToast("Error deleting script: " + err.message);
     }
@@ -1571,6 +1684,26 @@ function addSystemLog(message) {
 
     logContainer.prepend(entry);
 }
+
+
+
+function maybeSyncDriveNotes() {
+    const now = Date.now();
+
+    if (now - lastDriveSyncAt < 15000) return;
+
+    lastDriveSyncAt = now;
+    loadUserScripts({ silent: true });
+}
+
+window.addEventListener('focus', maybeSyncDriveNotes);
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        maybeSyncDriveNotes();
+    }
+});
+
 
 window.onload = function() {
     loadOfflineDatabaseFromStorage();
