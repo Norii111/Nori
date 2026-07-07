@@ -733,10 +733,10 @@ textarea.page-turn {
     gap: 18px;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 14px 10px 80px 10px;
+    padding: 22px 10px 100px 10px;
     box-sizing: border-box;
     position: relative;
-    z-index: 20;
+    z-index: 2;
 }
 
 .prediction-card {
@@ -749,18 +749,18 @@ textarea.page-turn {
     box-sizing: border-box;
     overflow: hidden;
     transition:
-        transform 0.12s ease,
         box-shadow 0.12s ease,
-        min-height 0.12s ease;
+        height 0.12s ease;
     z-index: 1;
+    transform-origin: top center;
 }
 
 .prediction-card:hover {
     height: auto;
     min-height: 190px;
     overflow: visible;
-    z-index: 99999;
-    transform: rotate(0deg) scale(1.02) !important;
+    z-index: 999;
+    transform: rotate(0deg) !important;
     box-shadow: 10px 10px 0px var(--ink-black);
 }
 
