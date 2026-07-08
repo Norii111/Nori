@@ -46,6 +46,12 @@ const PREDICTION_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
 
+function launchImgNotePage() {
+    window.open(
+        "https://script.google.com/macros/s/AKfycbzsPGwL-uDIwOQ84ytcHVOm2wMZjR5fj_51EVsjKNn7lvyM_Z0KNK4rKigPs58CAqmPkA/exec",
+        "_blank"
+    );
+}
 let offlineDatabase = {
     mainGasLink: "https://tinyurl.com/Noro11",
     primaryGAS: "",
