@@ -158,25 +158,38 @@ body {
 
 
 
-.nav-links {
-
-    margin-top: 20px;
-
-    z-index: 2;
-
-}
-
-
 /* ================================
    COMMAND CENTER NAV MANGA LABELS
 ================================ */
 
+.nav-links {
+    margin-top: 20px;
+    z-index: 2;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 .nav-links a {
+    display: block;
     position: relative;
     overflow: hidden;
     isolation: isolate;
+
+    color: var(--ink-black);
+    text-decoration: none;
+    font-weight: 900;
+    font-size: 15px;
+    line-height: 1.1;
+
+    padding: 12px 32px 12px 12px;
+    border: 3px solid var(--ink-black);
+    box-sizing: border-box;
+
     background:
-        linear-gradient(135deg, rgba(255,255,255,0.82), rgba(226,216,190,0.78)),
+        radial-gradient(circle at 18% 30%, rgba(0,0,0,0.14) 1px, transparent 2px),
+        linear-gradient(135deg, rgba(255,255,255,0.86), rgba(226,216,190,0.82)),
         repeating-linear-gradient(
             135deg,
             rgba(0,0,0,0.10) 0px,
@@ -184,11 +197,19 @@ body {
             transparent 2px,
             transparent 10px
         );
+
+    background-size:
+        7px 7px,
+        100% 100%,
+        100% 100%;
+
     box-shadow:
         4px 4px 0 var(--ink-black),
         inset 0 0 0 2px rgba(255,255,255,0.35);
+
     transform: rotate(-0.6deg);
     clip-path: polygon(0 0, 96% 0, 100% 18%, 100% 100%, 4% 100%, 0 82%);
+
     transition:
         transform 0.16s cubic-bezier(.2, 1.8, .4, 1),
         box-shadow 0.16s ease,
@@ -199,12 +220,16 @@ body {
 .nav-links a::before {
     content: "";
     position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(circle at 18% 30%, rgba(0,0,0,0.15) 1px, transparent 2px);
-    background-size: 7px 7px;
-    opacity: 0.35;
-    z-index: -1;
+    left: -18px;
+    top: 50%;
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--ink-black);
+    background: #fff3b0;
+    transform: translateY(-50%) rotate(45deg);
+    opacity: 0;
+    transition: opacity 0.14s ease, left 0.14s ease;
+    z-index: 0;
 }
 
 .nav-links a::after {
@@ -217,10 +242,13 @@ body {
     font-size: 13px;
     font-weight: 900;
     transition: all 0.14s ease;
+    z-index: 2;
 }
 
 .nav-links a:hover {
+    color: var(--ink-black);
     background:
+        radial-gradient(circle at 18% 30%, rgba(0,0,0,0.18) 1px, transparent 2px),
         linear-gradient(135deg, #fff3b0, #ebdccb),
         repeating-linear-gradient(
             135deg,
@@ -229,8 +257,14 @@ body {
             transparent 2px,
             transparent 9px
         );
+
     transform: translate(-3px, -3px) rotate(1.2deg);
     box-shadow: 8px 8px 0 var(--ink-black);
+}
+
+.nav-links a:hover::before {
+    opacity: 1;
+    left: -12px;
 }
 
 .nav-links a:hover::after {
@@ -239,24 +273,29 @@ body {
 }
 
 .nav-links a.active {
-    background: var(--ink-black);
+    background:
+        radial-gradient(circle at 18% 30%, rgba(255,255,255,0.22) 1px, transparent 2px),
+        repeating-linear-gradient(
+            -20deg,
+            rgba(255,255,255,0.20) 0px,
+            rgba(255,255,255,0.20) 2px,
+            transparent 2px,
+            transparent 9px
+        ),
+        var(--ink-black);
+
     color: var(--bg-paper);
     transform: translateX(8px) rotate(1deg);
+
     box-shadow:
         7px 7px 0 #b91c1c,
         10px 10px 0 var(--ink-black);
 }
 
 .nav-links a.active::before {
-    background:
-        repeating-linear-gradient(
-            -20deg,
-            rgba(255,255,255,0.22) 0px,
-            rgba(255,255,255,0.22) 2px,
-            transparent 2px,
-            transparent 9px
-        );
-    opacity: 0.75;
+    opacity: 1;
+    left: -10px;
+    background: #b91c1c;
 }
 
 .nav-links a.active::after {
