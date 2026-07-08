@@ -1173,11 +1173,6 @@ textarea::placeholder {
     background: #fff3b0 !important;
 }
 
-.search-history-pill.is-pinned::after {
-    content: "PIN";
-}
-
-
 .manga-panel {
     transition:
         transform 0.18s ease,
@@ -1442,4 +1437,26 @@ textarea::placeholder {
     padding: 20px;
     border: 4px dashed var(--ink-black);
     background: #fff8df;
+}
+
+.wallpaper-strength-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff8df;
+    border: 3px solid var(--ink-black);
+    box-shadow: 3px 3px 0 var(--ink-black);
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.wallpaper-strength-control input {
+    width: 120px;
+    accent-color: #111;
+}
+
+.wallpaper-strength-control strong {
+    min-width: 34px;
+    text-align: right;
 }
