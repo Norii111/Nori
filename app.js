@@ -88,6 +88,31 @@ let activeDeleteTargetId = null;
 let currentLondonStep = 0; 
 let selectedPieceCoord = null; 
 let chessBoardState = {};
+let stickyNoteAutosaveTimer = null;
+
+function getActiveStickyNote() {
+    if (!currentSnippetBeingEdited || userScriptBeingViewed) return null;
+
+    return offlineDatabase.bottomSnippets.find(item =>
+        String(item.id) === String(currentSnippetBeingEdited) &&
+        (item.isSticky || item.id === "local-sticky-note")
+    );
+}
+
+function handleStickyNoteAutosave() {
+    const textarea = document.getElementById('primaryGasArea');
+    const stickyNote = getActiveStickyNote();
+
+    if (!textarea || !stickyNote) return;
+
+    stickyNote.content = textarea.value;
+
+    clearTimeout(stickyNoteAutosaveTimer);
+
+    stickyNoteAutosaveTimer = setTimeout(() => {
+        persistOfflineDatabase();
+    }, 250);
+}
 
 function resetChessBoardState() {
     chessBoardState = {
@@ -1662,7 +1687,9 @@ function renderPortal(options = {}) {
 
 function viewSnippet(id) {
     const textarea = document.getElementById('primaryGasArea');
-    const item = offlineDatabase.bottomSnippets.find(x => x.id === id);
+    const item = offlineDatabase.bottomSnippets.find(x =>
+    String(x.id) === String(id)
+);
 
     if (item) {
         clearDriveNoteWorkspaceState();
@@ -2638,4 +2665,16 @@ window.onload = function() {
         });
     }
     setInterval(triggerGifFlip, 12000); 
+
+    const mainTextarea = document.getElementById('primaryGasArea');
+
+if (mainTextarea) {
+    mainTextarea.addEventListener('input', handleStickyNoteAutosave);
+
+    mainTextarea.addEventListener('blur', () => {
+        if (getActiveStickyNote()) {
+            renderPortal({ resetWorkspace: false });
+        }
+    });
+}
 };
