@@ -19,6 +19,7 @@ const driveNoteFetchedAt = new Map();
 let isLoadingUserScripts = false;
 let isPreloadingDriveNotes = false;
 let lastDriveSyncAt = 0;
+let wallpaperDraftStrength = 0.45;
 
 const DRIVE_NOTE_PRELOAD_CONCURRENCY = 5;
 
@@ -2737,6 +2738,21 @@ function loadSavedWallpaper() {
     }
 }
 
+function handleWallpaperStrengthInput(value) {
+    wallpaperDraftStrength = Math.max(0.08, Math.min(0.75, Number(value) || 0.32));
+
+    const label = document.getElementById('wallpaperStrengthValue');
+    if (label) {
+        label.innerText = `${Math.round(wallpaperDraftStrength * 100)}%`;
+    }
+
+    const activeUrl = wallpaperDraftUrl || getSavedWallpaperUrl();
+
+    if (activeUrl) {
+        setDashboardWallpaper(activeUrl, wallpaperDraftStrength);
+    }
+}
+
 function getWallpaperSheetRow() {
     return googleSheetData.find(row =>
         String(row.key || '').trim().toUpperCase() === WALLPAPER_SHEET_KEY
@@ -2838,6 +2854,13 @@ async function openWallpaperGallery() {
 
     wallpaperDraftUrl = getSavedWallpaperUrl();
     wallpaperDraftTitle = '';
+    wallpaperDraftStrength = getSavedWallpaperStrength();
+
+const strengthSlider = document.getElementById('wallpaperStrengthSlider');
+const strengthLabel = document.getElementById('wallpaperStrengthValue');
+
+if (strengthSlider) strengthSlider.value = wallpaperDraftStrength;
+if (strengthLabel) strengthLabel.innerText = `${Math.round(wallpaperDraftStrength * 100)}%`;
 
     modal.classList.add('open');
 
