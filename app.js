@@ -124,7 +124,7 @@ function openUserScriptChessLock(context, promptText) {
     resetSicilianBoardState();
     currentSicilianGridLayout = getRandomizedSicilianLayout(); // Shuffle once
     renderSicilianChessBoard();
-    document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: STAGE 1 ACTIVE";
+    document.getElementById('chessStepIndicator').innerText = "MOVE 1";
     const promptEl = document.getElementById('chessLockPrompt');
     if (promptEl) promptEl.innerText = promptText;
     document.getElementById('chessAuthModal').classList.add('open');
@@ -867,7 +867,7 @@ function openChessLock(context, promptText) {
     resetChessBoardState();
     currentChessGridLayout = getRandomizedGridLayout(); // SHUFFLE ONCE HERE
     renderChessBoard();
-    document.getElementById('chessStepIndicator').innerText = "SEQUENCE LOCK: INITIATE MOVE 1";
+    document.getElementById('chessStepIndicator').innerText = "MOVE 1";
     const promptEl = document.getElementById('chessLockPrompt');
     if (promptEl) promptEl.innerText = promptText;
     document.getElementById('chessAuthModal').classList.add('open');
@@ -1360,7 +1360,7 @@ function renderUserScriptCards() {
 }
 
 function openUserScriptEditChess(fileID) {
-    openUserScriptChessLock({ type: 'userScriptEdit', payload: fileID }, "Execute Sicilian Defense to Authorize Edit");
+    openUserScriptChessLock({ type: 'userScriptEdit', payload: fileID }, "");
 }
 
 function openUserScriptDeleteChess(fileID) {
