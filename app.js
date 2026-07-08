@@ -45,6 +45,13 @@ let predictionTimeEditMode = false;
 const PREDICTION_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
+let noteImgMode = 'image';
+
+let noteImgBoard = {
+    items: []
+};
+
+let draggedNoteImgId = null;
 
 let offlineDatabase = {
     mainGasLink: "https://tinyurl.com/Noro11",
@@ -1737,6 +1744,7 @@ function switchTab(tabName) {
     const dashTab = document.getElementById('dashboardTab');
     const searchTab = document.getElementById('searchMenuTab');
     const predictionTab = document.getElementById('predictionTab');
+    const noteImgTab = document.getElementById('noteImgTab');
     const logsTab = document.getElementById('logsTab');
     const devTab = document.getElementById('devToolsTab');
     const navLinks = document.querySelectorAll('.nav-links a');
@@ -1746,6 +1754,7 @@ function switchTab(tabName) {
     if (dashTab) dashTab.style.display = 'none';
     if (searchTab) searchTab.style.display = 'none';
     if (predictionTab) predictionTab.style.display = 'none';
+    if (noteImgTab) noteImgTab.style.display = 'none';
     if (logsTab) logsTab.style.display = 'none';
     if (devTab) devTab.style.display = 'none';
 
@@ -1781,15 +1790,23 @@ function switchTab(tabName) {
         renderPredictionCards();
         showToast("Viewing Prediction Cards");
 
+    } else if (tabName === 'noteImg') {
+        if (noteImgTab) noteImgTab.style.display = 'flex';
+        if (navLinks[3]) navLinks[3].classList.add('active');
+
+        setNoteImgMode(noteImgMode);
+        renderNoteImgBoard();
+        showToast("Viewing Note / IMG Archive");
+
     } else if (tabName === 'logs') {
         if (logsTab) logsTab.style.display = 'flex';
-        if (navLinks[3]) navLinks[3].classList.add('active');
+        if (navLinks[4]) navLinks[4].classList.add('active');
 
         showToast("Viewing Core System Performance Records");
 
     } else if (tabName === 'devTools') {
         if (devTab) devTab.style.display = 'flex';
-        if (navLinks[4]) navLinks[4].classList.add('active');
+        if (navLinks[5]) navLinks[5].classList.add('active');
 
         showToast("DEV TOOLS ACCESS GRANTED");
     }
@@ -2649,32 +2666,341 @@ function installHorizontalNoteScroll() {
 
 window.addEventListener('load', installHorizontalNoteScroll);
 
+
+function normalizeImageUrl(url) {
+    const raw = String(url || '').trim();
+
+    if (!raw) return '';
+
+    const fileMatch = raw.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    if (fileMatch && fileMatch[1]) {
+        return `https://drive.google.com/uc?export=view&id=${fileMatch[1]}`;
+    }
+
+    const openMatch = raw.match(/[?&]id=([^&]+)/);
+    if (raw.includes('drive.google.com') && openMatch && openMatch[1]) {
+        return `https://drive.google.com/uc?export=view&id=${openMatch[1]}`;
+    }
+
+    return raw;
+}
+
+function createNoteImgId() {
+    return `noteimg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getVisibleNoteImgItems() {
+    return [...(noteImgBoard.items || [])]
+        .filter(item => item.type === noteImgMode)
+        .sort((a, b) => {
+            const orderA = Number.isFinite(Number(a.order)) ? Number(a.order) : 999999;
+            const orderB = Number.isFinite(Number(b.order)) ? Number(b.order) : 999999;
+            return orderA - orderB;
+        });
+}
+
+function setNoteImgMode(mode) {
+    noteImgMode = mode === 'note' ? 'note' : 'image';
+
+    const imageBtn = document.getElementById('noteImgImageModeButton');
+    const noteBtn = document.getElementById('noteImgNoteModeButton');
+    const imageInput = document.getElementById('noteImgImageUrlInput');
+    const noteArea = document.getElementById('noteImgNoteTextArea');
+    const status = document.getElementById('noteImgStatusLabel');
+
+    if (imageBtn) imageBtn.classList.toggle('note-img-mode-active', noteImgMode === 'image');
+    if (noteBtn) noteBtn.classList.toggle('note-img-mode-active', noteImgMode === 'note');
+
+    if (imageInput) imageInput.style.display = noteImgMode === 'image' ? 'block' : 'none';
+    if (noteArea) noteArea.style.display = noteImgMode === 'note' ? 'block' : 'none';
+
+    if (status) {
+        status.innerText = noteImgMode === 'image'
+            ? 'IMG MODE · Drag images to rearrange'
+            : 'NOTE MODE · Drag sticky notes to rearrange';
+    }
+
+    renderNoteImgBoard();
+}
+
+function clearNoteImgComposer() {
+    const titleInput = document.getElementById('noteImgTitleInput');
+    const imageInput = document.getElementById('noteImgImageUrlInput');
+    const noteArea = document.getElementById('noteImgNoteTextArea');
+
+    if (titleInput) titleInput.value = '';
+    if (imageInput) imageInput.value = '';
+    if (noteArea) noteArea.value = '';
+}
+
+function submitNoteImgItem() {
+    const titleInput = document.getElementById('noteImgTitleInput');
+    const imageInput = document.getElementById('noteImgImageUrlInput');
+    const noteArea = document.getElementById('noteImgNoteTextArea');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    const imageUrl = imageInput ? normalizeImageUrl(imageInput.value) : '';
+    const content = noteArea ? noteArea.value.trim() : '';
+
+    if (!title) {
+        showToast('Title required.');
+        return;
+    }
+
+    if (noteImgMode === 'image' && !imageUrl) {
+        showToast('Image link required.');
+        return;
+    }
+
+    if (noteImgMode === 'note' && !content) {
+        showToast('Note content required.');
+        return;
+    }
+
+    const sameTypeItems = noteImgBoard.items.filter(item => item.type === noteImgMode);
+    const nextOrder = sameTypeItems.length
+        ? Math.max(...sameTypeItems.map(item => Number(item.order) || 0)) + 1
+        : 0;
+
+    noteImgBoard.items.push({
+        id: createNoteImgId(),
+        type: noteImgMode,
+        title,
+        imageUrl: noteImgMode === 'image' ? imageUrl : '',
+        content: noteImgMode === 'note' ? content : '',
+        order: nextOrder,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    });
+
+    clearNoteImgComposer();
+    renderNoteImgBoard();
+    saveNoteImgBoardToDrive();
+
+    showToast(noteImgMode === 'image' ? 'Image card saved.' : 'Note saved.');
+}
+
+function renderNoteImgBoard() {
+    const grid = document.getElementById('noteImgMasonryGrid');
+    if (!grid) return;
+
+    const items = getVisibleNoteImgItems();
+
+    grid.innerHTML = '';
+
+    if (!items.length) {
+        grid.innerHTML = `
+            <div class="note-img-empty">
+                No ${noteImgMode === 'image' ? 'images' : 'notes'} yet. Add one above.
+            </div>
+        `;
+        return;
+    }
+
+    items.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'note-img-card';
+        card.draggable = true;
+        card.dataset.id = item.id;
+        card.style.transform = `rotate(${(Math.random() * 2 - 1).toFixed(2)}deg)`;
+
+        card.ondragstart = () => {
+            draggedNoteImgId = item.id;
+            card.classList.add('dragging');
+        };
+
+        card.ondragend = () => {
+            draggedNoteImgId = null;
+            card.classList.remove('dragging');
+            document.querySelectorAll('.note-img-card.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+        };
+
+        card.ondragover = (event) => {
+            event.preventDefault();
+            if (draggedNoteImgId && draggedNoteImgId !== item.id) {
+                card.classList.add('drag-over');
+            }
+        };
+
+        card.ondragleave = () => {
+            card.classList.remove('drag-over');
+        };
+
+        card.ondrop = (event) => {
+            event.preventDefault();
+            card.classList.remove('drag-over');
+
+            if (!draggedNoteImgId || draggedNoteImgId === item.id) return;
+
+            moveNoteImgItem(draggedNoteImgId, item.id);
+        };
+
+        const bodyHtml = item.type === 'image'
+            ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}" loading="lazy">`
+            : `<div class="note-img-note-body">${escapeHtml(item.content)}</div>`;
+
+        card.innerHTML = `
+            <h4 class="note-img-card-title">${escapeHtml(item.title)}</h4>
+
+            ${bodyHtml}
+
+            <div class="note-img-card-actions">
+                <button
+                    class="manga-btn note-img-delete-btn"
+                    style="font-size:11px; padding:3px 8px;"
+                    onclick='deleteNoteImgItem(${JSON.stringify(item.id)})'
+                >
+                    Delete
+                </button>
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+}
+
+function moveNoteImgItem(draggedId, targetId) {
+    const visibleItems = getVisibleNoteImgItems();
+
+    const fromIndex = visibleItems.findIndex(item => item.id === draggedId);
+    const toIndex = visibleItems.findIndex(item => item.id === targetId);
+
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const [moved] = visibleItems.splice(fromIndex, 1);
+    visibleItems.splice(toIndex, 0, moved);
+
+    visibleItems.forEach((item, index) => {
+        const realItem = noteImgBoard.items.find(boardItem => boardItem.id === item.id);
+        if (realItem) {
+            realItem.order = index;
+            realItem.updatedAt = new Date().toISOString();
+        }
+    });
+
+    renderNoteImgBoard();
+    saveNoteImgBoardToDrive();
+    showToast('Layout order saved.');
+}
+
+function deleteNoteImgItem(id) {
+    noteImgBoard.items = noteImgBoard.items.filter(item => item.id !== id);
+
+    const sameModeItems = noteImgBoard.items
+        .filter(item => item.type === noteImgMode)
+        .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+
+    sameModeItems.forEach((item, index) => {
+        item.order = index;
+    });
+
+    renderNoteImgBoard();
+    saveNoteImgBoardToDrive();
+    showToast('Item deleted.');
+}
+
+async function loadNoteImgBoardFromDrive() {
+    try {
+        const response = await fetch(`${gasWebAppUrl}?api=noteImgBoard&t=${Date.now()}`, {
+            cache: 'no-store'
+        });
+
+        const result = await response.json();
+
+        if (!result.ok) {
+            throw new Error(result.message || 'Could not load Note / IMG board.');
+        }
+
+        noteImgBoard = result.board && typeof result.board === 'object'
+            ? result.board
+            : { items: [] };
+
+        if (!Array.isArray(noteImgBoard.items)) {
+            noteImgBoard.items = [];
+        }
+
+        renderNoteImgBoard();
+        showToast('Note / IMG board loaded.');
+
+    } catch (err) {
+        noteImgBoard = { items: [] };
+        renderNoteImgBoard();
+        showToast('Could not load Note / IMG board.');
+        addSystemLog(`Note / IMG load error: ${err.message}`);
+    }
+}
+
+async function saveNoteImgBoardToDrive() {
+    try {
+        if (!noteImgBoard || typeof noteImgBoard !== 'object') {
+            noteImgBoard = { items: [] };
+        }
+
+        if (!Array.isArray(noteImgBoard.items)) {
+            noteImgBoard.items = [];
+        }
+
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'saveNoteImgBoard',
+                board: noteImgBoard
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.ok) {
+            throw new Error(result.message || 'Could not save Note / IMG board.');
+        }
+
+        showToast('Note / IMG board saved.');
+        addSystemLog('Note / IMG board saved to Drive.');
+
+    } catch (err) {
+        showToast('Note / IMG save failed.');
+        addSystemLog(`Note / IMG save error: ${err.message}`);
+    }
+}
+
 window.onload = function() {
     loadPredictionTimeConfig();
+
     loadOfflineDatabaseFromStorage();
-    renderPortal();
     ensureLocalStickyNote();
+    renderPortal();
+
+    loadNoteImgBoardFromDrive();
+    setNoteImgMode('image');
+
     changeToRandomGif();
     renderSearchHistory();
     syncGoogleSheetData();
     loadUserScripts();
+
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
         gifFrame.addEventListener('click', () => {
-            changeToRandomGif(); triggerGifFlip(); showToast("Shifting avatar transmission matrix...");
+            changeToRandomGif();
+            triggerGifFlip();
+            showToast("Shifting avatar transmission matrix...");
         });
     }
-    setInterval(triggerGifFlip, 12000); 
+
+    setInterval(triggerGifFlip, 12000);
 
     const mainTextarea = document.getElementById('primaryGasArea');
 
-if (mainTextarea) {
-    mainTextarea.addEventListener('input', handleStickyNoteAutosave);
+    if (mainTextarea) {
+        mainTextarea.addEventListener('input', handleStickyNoteAutosave);
 
-    mainTextarea.addEventListener('blur', () => {
-        if (getActiveStickyNote()) {
-            renderPortal({ resetWorkspace: false });
-        }
-    });
-}
+        mainTextarea.addEventListener('blur', () => {
+            if (getActiveStickyNote()) {
+                renderPortal({ resetWorkspace: false });
+            }
+        });
+    }
 };
