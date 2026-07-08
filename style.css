@@ -1330,7 +1330,7 @@ textarea::placeholder {
 
 .wallpaper-panel {
     width: min(1100px, 96vw);
-    height: 390px;
+    height: 430px;
     background: var(--bg-paper);
     border: 5px solid var(--ink-black);
     box-shadow: 12px 12px 0 var(--ink-black);
@@ -1364,7 +1364,7 @@ textarea::placeholder {
 }
 
 .wallpaper-gallery-strip {
-    flex: 0 0 290px;
+    flex: 0 0 300px;
     display: flex;
     gap: 18px;
     overflow-x: auto;
