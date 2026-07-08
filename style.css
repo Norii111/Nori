@@ -396,11 +396,9 @@ textarea {
 /* PAPER SWIPE & SHIFT ROTATION TRANSFORMS */
 
 textarea.page-turn {
-
-    transform: translateY(-15px) rotate(2deg);
-
-    opacity: 0.1;
-
+    transform: translateY(-18px) translateX(12px) rotate(3deg) scale(0.98);
+    opacity: 0.08;
+    filter: blur(0.5px);
 }
 
 
