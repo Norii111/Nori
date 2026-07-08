@@ -1221,3 +1221,76 @@ textarea::placeholder {
     clip-path: polygon(0 0, 94% 0, 100% 35%, 100% 100%, 6% 100%, 0 70%);
     box-shadow: 4px 4px 0 #b91c1c;
 }
+
+/* ================================
+   ACTIVE COMMAND CENTER CARD
+================================ */
+
+.snippet-card {
+    position: relative;
+    transition:
+        transform 0.16s cubic-bezier(.2, 1.8, .4, 1),
+        box-shadow 0.16s ease,
+        background 0.16s ease,
+        filter 0.16s ease;
+}
+
+.snippet-card.active-card {
+    background:
+        radial-gradient(circle at 18% 28%, rgba(0,0,0,0.16) 1px, transparent 2px),
+        linear-gradient(135deg, #fff3b0, #ebdccb) !important;
+
+    border: 4px solid var(--ink-black);
+    box-shadow:
+        7px 7px 0 #b91c1c,
+        11px 11px 0 var(--ink-black) !important;
+
+    transform: translate(-4px, -4px) rotate(0deg) scale(1.03) !important;
+    z-index: 30;
+    filter: contrast(1.08);
+}
+
+.snippet-card.active-card::before {
+    content: "NOW VIEWING";
+    position: absolute;
+    top: -13px;
+    left: 10px;
+
+    background: #b91c1c;
+    color: #fff3b0;
+    border: 3px solid var(--ink-black);
+
+    padding: 2px 7px;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+
+    box-shadow: 3px 3px 0 var(--ink-black);
+    transform: rotate(-3deg);
+    z-index: 5;
+}
+
+.snippet-card.active-card::after {
+    content: "✦";
+    position: absolute;
+    right: 8px;
+    top: 6px;
+
+    font-size: 18px;
+    font-weight: 900;
+    color: #b91c1c;
+
+    text-shadow: 2px 2px 0 var(--ink-black);
+    z-index: 5;
+}
+
+.snippet-card.editing-card::before {
+    content: "EDITING";
+    background: var(--ink-black);
+    color: var(--bg-paper);
+}
+
+.snippet-card:hover {
+    transform: translate(-2px, -2px) rotate(1deg);
+    box-shadow: 7px 7px 0 var(--ink-black);
+}
