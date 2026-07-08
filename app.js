@@ -2807,15 +2807,29 @@ function ensureWallpaperModal() {
             <div class="wallpaper-header">
                 <h3>WALLPAPER GALLERY</h3>
 
-                <div class="wallpaper-actions">
-                    <button class="manga-btn primary-save" style="font-size: 11px; padding: 4px 10px;" onclick="saveWallpaperSelection()">
-                        Save
-                    </button>
+ <div class="wallpaper-actions">
+    <div class="wallpaper-strength-control">
+        <span>BG POWER</span>
+        <input
+            id="wallpaperStrengthSlider"
+            type="range"
+            min="0.08"
+            max="0.75"
+            step="0.01"
+            value="0.32"
+            oninput="handleWallpaperStrengthInput(this.value)"
+        >
+        <strong id="wallpaperStrengthValue">32%</strong>
+    </div>
 
-                    <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="cancelWallpaperSelection()">
-                        Cancel
-                    </button>
-                </div>
+    <button class="manga-btn primary-save" style="font-size: 11px; padding: 4px 10px;" onclick="saveWallpaperSelection()">
+        Save
+    </button>
+
+    <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="cancelWallpaperSelection()">
+        Cancel
+    </button>
+</div>
             </div>
 
             <div id="wallpaperGalleryStrip" class="wallpaper-gallery-strip"></div>
