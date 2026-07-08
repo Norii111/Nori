@@ -1481,3 +1481,28 @@ textarea::placeholder {
     background: var(--ink-black);
     border: 4px solid var(--bg-paper);
 }
+
+.wallpaper-card img,
+.wallpaper-card video {
+    width: 100%;
+    height: 175px;
+    object-fit: cover;
+    border: 3px solid var(--ink-black);
+    background: #ddd;
+    box-sizing: border-box;
+}
+
+.wallpaper-card video {
+    pointer-events: none;
+}
+
+.wallpaper-media-tag {
+    display: inline-block;
+    margin-left: 6px;
+    background: var(--ink-black);
+    color: var(--bg-paper);
+    border: 2px solid var(--ink-black);
+    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: 900;
+}
