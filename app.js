@@ -2766,6 +2766,18 @@ function getWallpaperSheetRow() {
     );
 }
 
+function isVideoWallpaperUrl(url) {
+    return /\.(mp4|webm|mov)(\?.*)?$/i.test(String(url || '').trim());
+}
+
+function isImageWallpaperUrl(url) {
+    return /\.(jpg|jpeg|png|webp|gif|avif|svg)(\?.*)?$/i.test(String(url || '').trim());
+}
+
+function getWallpaperMediaType(url) {
+    return isVideoWallpaperUrl(url) ? 'video' : 'image';
+}
+
 function parseWallpaperPayload(payload) {
     const text = String(payload || '').replace(/\r\n/g, '\n').trim();
 
@@ -2777,11 +2789,13 @@ function parseWallpaperPayload(payload) {
         .filter(Boolean);
 
     return blocks.map((block, index) => {
-        const imageUrlMatch = block.match(/https?:\/\/\S+\.(?:jpg|jpeg|png|webp|gif|avif|svg)(?:\?\S*)?/i);
+        const mediaMatch = block.match(
+            /https?:\/\/\S+\.(?:jpg|jpeg|png|webp|gif|avif|svg|mp4|webm|mov)(?:\?\S*)?/i
+        );
 
-        if (!imageUrlMatch) return null;
+        if (!mediaMatch) return null;
 
-        const url = imageUrlMatch[0].trim();
+        const url = mediaMatch[0].trim();
 
         const title = block
             .replace(url, '')
@@ -2795,7 +2809,8 @@ function parseWallpaperPayload(payload) {
         return {
             id: `wallpaper-${index}`,
             title: title || `Wallpaper ${index + 1}`,
-            url
+            url,
+            type: getWallpaperMediaType(url)
         };
     }).filter(Boolean);
 }
@@ -2910,27 +2925,43 @@ function renderWallpaperGallery(wallpapers) {
 
     wallpapers.forEach((wallpaper, index) => {
         const isActive = wallpaper.url === activeUrl;
+        const isVideo = wallpaper.type === 'video' || isVideoWallpaperUrl(wallpaper.url);
 
         const card = document.createElement('div');
         card.className = `wallpaper-card ${isActive ? 'is-active' : ''}`;
         card.style.transform = `rotate(${((index % 5) - 2) * 0.7}deg)`;
-        card.dataset.url = wallpaper.url;
-        card.dataset.title = wallpaper.title;
 
         card.innerHTML = `
-            <img
-                src="${escapeWallpaperHtml(wallpaper.url)}"
-                alt="${escapeWallpaperHtml(wallpaper.title)}"
-                loading="lazy"
-            >
+            ${
+                isVideo
+                    ? `<video src="${escapeWallpaperHtml(wallpaper.url)}" muted loop playsinline preload="metadata"></video>`
+                    : `<img src="${escapeWallpaperHtml(wallpaper.url)}" alt="${escapeWallpaperHtml(wallpaper.title)}" loading="lazy">`
+            }
+
             <div class="wallpaper-card-title">
                 ${escapeWallpaperHtml(wallpaper.title)}
+                ${isVideo ? '<span class="wallpaper-media-tag">MP4</span>' : ''}
             </div>
         `;
 
         card.addEventListener('click', () => {
             previewWallpaper(wallpaper.url, wallpaper.title);
         });
+
+        if (isVideo) {
+            const video = card.querySelector('video');
+
+            card.addEventListener('mouseenter', () => {
+                if (video) video.play().catch(() => {});
+            });
+
+            card.addEventListener('mouseleave', () => {
+                if (video) {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            });
+        }
 
         strip.appendChild(card);
     });
