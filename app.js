@@ -46,7 +46,7 @@ const PREDICTION_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
 
-function launchImgNotePage() {
+function launchImgNoteGAS() {
     window.open(
         "https://script.google.com/macros/s/AKfycbzsPGwL-uDIwOQ84ytcHVOm2wMZjR5fj_51EVsjKNn7lvyM_Z0KNK4rKigPs58CAqmPkA/exec",
         "_blank"
@@ -2660,6 +2660,7 @@ const WALLPAPER_SHEET_KEY = 'ALL IN ONE';
 
 let wallpaperDraftUrl = null;
 let wallpaperDraftTitle = '';
+let wallpaperGalleryCache = [];
 
 function escapeWallpaperHtml(value) {
     return String(value || '')
@@ -2691,12 +2692,17 @@ function setDashboardWallpaper(url) {
     styleTag.textContent = `
         body {
             background-image:
-                linear-gradient(rgba(244, 236, 216, 0.72), rgba(244, 236, 216, 0.72)),
+                radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8) 100%),
                 url("${url}") !important;
             background-size: cover !important;
             background-position: center !important;
             background-attachment: fixed !important;
             background-repeat: no-repeat !important;
+        }
+
+        .sidebar-panel::before,
+        .manga-panel::before {
+            background-image: url("${url}") !important;
         }
     `;
 }
@@ -2801,6 +2807,7 @@ async function openWallpaperGallery() {
     }
 
     const wallpapers = parseWallpaperPayload(row.payload);
+    wallpaperGalleryCache = wallpapers;
 
     const modal = ensureWallpaperModal();
     const strip = document.getElementById('wallpaperGalleryStrip');
@@ -2831,44 +2838,61 @@ function renderWallpaperGallery(wallpapers) {
 
     const activeUrl = wallpaperDraftUrl || getSavedWallpaperUrl();
 
-    strip.innerHTML = wallpapers.map((wallpaper, index) => {
+    strip.innerHTML = '';
+
+    wallpapers.forEach((wallpaper, index) => {
         const isActive = wallpaper.url === activeUrl;
 
-        return `
-            <div
-                class="wallpaper-card ${isActive ? 'is-active' : ''}"
-                onclick="previewWallpaper(${JSON.stringify(wallpaper.url)}, ${JSON.stringify(wallpaper.title)})"
-                style="transform: rotate(${((index % 5) - 2) * 0.7}deg);"
+        const card = document.createElement('div');
+        card.className = `wallpaper-card ${isActive ? 'is-active' : ''}`;
+        card.style.transform = `rotate(${((index % 5) - 2) * 0.7}deg)`;
+        card.dataset.url = wallpaper.url;
+        card.dataset.title = wallpaper.title;
+
+        card.innerHTML = `
+            <img
+                src="${escapeWallpaperHtml(wallpaper.url)}"
+                alt="${escapeWallpaperHtml(wallpaper.title)}"
+                loading="lazy"
             >
-                <img src="${escapeWallpaperHtml(wallpaper.url)}" alt="${escapeWallpaperHtml(wallpaper.title)}" loading="lazy">
-                <div class="wallpaper-card-title">${escapeWallpaperHtml(wallpaper.title)}</div>
+            <div class="wallpaper-card-title">
+                ${escapeWallpaperHtml(wallpaper.title)}
             </div>
         `;
-    }).join('');
+
+        card.addEventListener('click', () => {
+            previewWallpaper(wallpaper.url, wallpaper.title);
+        });
+
+        strip.appendChild(card);
+    });
 }
 
 function previewWallpaper(url, title) {
-    wallpaperDraftUrl = url;
-    wallpaperDraftTitle = title || '';
+    wallpaperDraftUrl = String(url || '').trim();
+    wallpaperDraftTitle = String(title || '').trim();
 
-    setDashboardWallpaper(url);
+    if (!wallpaperDraftUrl) {
+        showToast('Wallpaper URL missing.');
+        return;
+    }
 
-    const row = getWallpaperSheetRow();
-    const wallpapers = row ? parseWallpaperPayload(row.payload) : [];
+    setDashboardWallpaper(wallpaperDraftUrl);
+    renderWallpaperGallery(wallpaperGalleryCache);
 
-    renderWallpaperGallery(wallpapers);
-
-    showToast(`Previewing wallpaper: ${title}`);
+    showToast(`Previewing wallpaper: ${wallpaperDraftTitle || 'Untitled'}`);
 }
 
 function saveWallpaperSelection() {
-    if (!wallpaperDraftUrl) {
+    const selectedUrl = String(wallpaperDraftUrl || '').trim();
+
+    if (!selectedUrl) {
         showToast('No wallpaper selected.');
         return;
     }
 
-    localStorage.setItem(WALLPAPER_STORAGE_KEY, wallpaperDraftUrl);
-    setDashboardWallpaper(wallpaperDraftUrl);
+    localStorage.setItem(WALLPAPER_STORAGE_KEY, selectedUrl);
+    setDashboardWallpaper(selectedUrl);
 
     const modal = document.getElementById('wallpaperModal');
     if (modal) modal.classList.remove('open');
@@ -2899,8 +2923,8 @@ window.onload = function() {
     loadPredictionTimeConfig();
     loadSavedWallpaper();
     loadOfflineDatabaseFromStorage();
-    renderPortal();
     ensureLocalStickyNote();
+    renderPortal();
     changeToRandomGif();
     renderSearchHistory();
     syncGoogleSheetData();
