@@ -2376,6 +2376,7 @@ function setPredictionTimerValue(cardTitle, field, value) {
 
     if (field === 'start' || field === 'end') {
         timer[field] = normalizeTimeString(value);
+        renderPredictionCards(getVisiblePredictionCards());
     }
 }
 
@@ -2446,7 +2447,7 @@ function renderPredictionTimerEditor(card) {
                     <input
                         type="time"
                         value="${escapeHtml(timer.start || '')}"
-                        oninput='setPredictionTimerValue(${titleKey}, "start", this.value)'
+                        onchange='setPredictionTimerValue(${titleKey}, "start", this.value)'
                     >
                 </label>
 
@@ -2455,7 +2456,7 @@ function renderPredictionTimerEditor(card) {
                     <input
                         type="time"
                         value="${escapeHtml(timer.end || '')}"
-                        oninput='setPredictionTimerValue(${titleKey}, "end", this.value)'
+                        onchange='setPredictionTimerValue(${titleKey}, "end", this.value)'
                     >
                 </label>
             </div>
@@ -2507,12 +2508,18 @@ function sortPredictionCardsByTime(cards) {
         const startA = timerA ? timeStringToMinutes(timerA.start) : null;
         const startB = timerB ? timeStringToMinutes(timerB.start) : null;
 
-        // No timer goes last
-        if (startA === null && startB === null) return 0;
-        if (startA === null) return 1;
-        if (startB === null) return -1;
+        const endA = timerA ? timeStringToMinutes(timerA.end) : null;
+        const endB = timerB ? timeStringToMinutes(timerB.end) : null;
 
-        return startA - startB;
+        // Prefer start time. If no start, fall back to end time.
+        const timeA = startA !== null ? startA : endA;
+        const timeB = startB !== null ? startB : endB;
+
+        if (timeA === null && timeB === null) return 0;
+        if (timeA === null) return 1;
+        if (timeB === null) return -1;
+
+        return timeA - timeB;
     });
 }
 
