@@ -1688,14 +1688,15 @@ function switchTab(tabName) {
 
         clearAndHideSearch();
 
-} else if (tabName === 'prediction') {
-    if (predictionTab) predictionTab.style.display = 'flex';
-    if (navLinks[2]) navLinks[2].classList.add('active');
+    } else if (tabName === 'prediction') {
+        if (predictionTab) predictionTab.style.display = 'flex';
+        if (navLinks[2]) navLinks[2].classList.add('active');
 
-    clearPredictionSearch();
-    renderPredictionCards();
-    showToast("Viewing Prediction Cards");
-} else if (tabName === 'logs') {
+        clearPredictionSearch();
+        renderPredictionCards();
+        showToast("Viewing Prediction Cards");
+
+    } else if (tabName === 'logs') {
         if (logsTab) logsTab.style.display = 'flex';
         if (navLinks[3]) navLinks[3].classList.add('active');
 
