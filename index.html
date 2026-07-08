@@ -13,8 +13,8 @@
             <h1 class="manga-logo">夢 <br>幻 </h1>
             <nav class="nav-links">
                 <a href="#" class="active" onclick="switchTab('dashboard')">COMMAND CENTER</a>
-                <a href="#" onclick="switchTab('searchTab')">SEARCH ENGINE</a>
-                    <a href="#" onclick="switchTab('prediction')">PREDICTION CARDS</a>
+                <a href="#" onclick="switchTab('searchTab')">検索機関</a>
+                    <a href="#" onclick="switchTab('prediction')">予言札</a>
                 <a href="#" onclick="switchTab('logs')">SYSTEM LOGS</a>
                 <a href="#" onclick="handleDevToolsClick()">DEV TOOLS</a>
             </nav>
@@ -24,12 +24,17 @@
         <main class="main-content" id="dashboardTab">
             <section class="manga-panel primary-gas-panel" style="height: 66%;">
                 <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h3>Workspace Centralizer</h3>
-                    <div class="button-group" style="display: flex; gap: 6px;">
-                        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="launchMainGAS()">Launch Script</button>
-                        <button class="manga-btn primary-save" style="font-size: 11px; padding: 4px 10px;" onclick="savePrimaryGAS()">Save Changes</button>
-                        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="copyTextAreaContent()">Copy Paper</button>
-                    </div>
+                    <h3>何かを探していますか？</h3>
+              <div class="button-group" style="display: flex; gap: 6px;">
+    <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="launchMainGAS()">Mc♠</button>
+
+    <button class="manga-btn" style="font-size: 11px; padding: 4px 10px; background:#fff3b0;" onclick="launchImgNotePage()">
+       Mc ♱.
+    </button>
+
+    <button class="manga-btn primary-save" style="font-size: 11px; padding: 4px 10px;" onclick="savePrimaryGAS()">Save Changes</button>
+    <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="copyTextAreaContent()">Copy Paper</button>
+</div>
                 </div>
                 <textarea id="primaryGasArea" placeholder="Loading script content..."></textarea>
             </section>
