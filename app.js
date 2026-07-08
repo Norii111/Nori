@@ -1947,6 +1947,8 @@ function renderSearchHistory() {
 
         pillWrapper.setAttribute("draggable", "true");
         pillWrapper.setAttribute("data-index", idx);
+        pillWrapper.className = `search-history-pill ${item.pinned ? 'is-pinned' : ''}`;
+pillWrapper.style.setProperty('--pill-tilt', `${randomTilt}deg`);
 
         pillWrapper.style.display = "inline-flex";
         pillWrapper.style.alignItems = "center";
@@ -1959,8 +1961,8 @@ function renderSearchHistory() {
         pillWrapper.style.fontWeight = "bold";
         pillWrapper.style.cursor = "grab";
         pillWrapper.style.textTransform = "uppercase";
-        pillWrapper.style.transform = `rotate(${randomTilt}deg)`;
-        pillWrapper.style.transition = "transform 0.05s ease, opacity 0.1s ease";
+        pillWrapper.style.transform = "";
+        pillWrapper.style.transition = "";
 
         pillWrapper.ondragstart = (e) => {
             draggedItemIndex = idx;
