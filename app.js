@@ -997,8 +997,9 @@ async function loadUserScripts(options = {}) {
             showToast('The opened Drive note no longer exists.');
         }
 
-        renderPortal({ resetWorkspace: false });
-        preloadDriveNoteContents({ silent: true });
+renderPortal({ resetWorkspace: false });
+// Do not preload every Drive note for every visitor.
+// Each note content will load only when the user clicks "Swap View".
 
         if (!silent) {
             showToast(`Synced ${userScripts.length} Drive notes.`);
@@ -2205,23 +2206,7 @@ function addSystemLog(message) {
 }
 
 
-
-function maybeSyncDriveNotes() {
-    const now = Date.now();
-
-    if (now - lastDriveSyncAt < 15000) return;
-
-    lastDriveSyncAt = now;
-    loadUserScripts({ silent: true });
-}
-
-window.addEventListener('focus', maybeSyncDriveNotes);
-
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        maybeSyncDriveNotes();
-    }
-});
+ 
 
 
 function getPredictionTimerSource() {
@@ -2540,18 +2525,15 @@ function installHorizontalNoteScroll() {
 window.addEventListener('load', installHorizontalNoteScroll);
 
 window.onload = function() {
-    loadPredictionTimeConfig();
-    loadOfflineDatabaseFromStorage();
+    initMatrixRain();
+    setRandomAvatar();
+    loadData();
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+    loadLocalNotes();
+    initializePredictionTimers();
     renderPortal();
-    changeToRandomGif();
-    renderSearchHistory();
-    syncGoogleSheetData();
+    renderHistory();
+
     loadUserScripts();
-    const gifFrame = document.querySelector('.blank-character-frame');
-    if (gifFrame) {
-        gifFrame.addEventListener('click', () => {
-            changeToRandomGif(); triggerGifFlip(); showToast("Shifting avatar transmission matrix...");
-        });
-    }
-    setInterval(triggerGifFlip, 12000); 
 };
