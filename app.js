@@ -1350,12 +1350,11 @@ function renderUserScriptCards() {
         const randomBg = getRandomMangaColor();
         const card = document.createElement('div');
 
-        const isActiveLocalCard =
-    currentSnippetBeingEdited === item.id &&
-    !userScriptBeingViewed;
+        const isActiveDriveCard =
+            userScriptBeingViewed === script.driveFileID;
 
-card.className = `snippet-card ${isActiveLocalCard ? 'active-card editing-card' : ''}`;
-card.style.backgroundColor = randomBg;
+        card.className = `snippet-card ${isActiveDriveCard ? 'active-card' : ''} ${isActiveDriveCard && isDriveNoteEditMode ? 'editing-card' : ''}`;
+        card.style.backgroundColor = randomBg;
 
         card.innerHTML = `
             <div style="overflow: hidden;">
