@@ -1319,3 +1319,24 @@ textarea::placeholder {
     box-shadow: 3px 3px 0 var(--ink-black);
     transform: rotate(4deg);
 }
+
+.bottom-overflow-panel {
+    overflow: visible !important;
+}
+
+.bottom-item-grid {
+    overflow-y: visible !important;
+    padding-top: 28px;
+}
+
+.snippet-card {
+    overflow: visible !important;
+}
+
+.snippet-card.active-card {
+    z-index: 99999 !important;
+}
+
+.snippet-card.active-card::before {
+    z-index: 100000 !important;
+}
