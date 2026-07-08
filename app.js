@@ -632,8 +632,14 @@ function copySearchPayload() {
         showToast("Error: No valid content loaded to copy.");
         return;
     }
+
+    // Manga page-swipe animation
+    payloadOutput.classList.remove('page-turn');
+    void payloadOutput.offsetWidth; // restart animation even if clicked repeatedly
+    payloadOutput.classList.add('page-turn');
     
     payloadOutput.select();
+
     navigator.clipboard.writeText(payloadOutput.value)
         .then(() => {
             showToast("Copied content! Resetting workspace matrix...");
@@ -642,11 +648,15 @@ function copySearchPayload() {
             showToast("Clipboard fallback executed.");
         })
         .finally(() => {
-            // 🌟 Executing in finally guarantees the box is cleared no matter what!
-            if (searchInput) {
-                searchInput.value = "";
-            }
-            clearAndHideSearch();
+            setTimeout(() => {
+                payloadOutput.classList.remove('page-turn');
+
+                if (searchInput) {
+                    searchInput.value = "";
+                }
+
+                clearAndHideSearch();
+            }, 220);
         });
 }
 
