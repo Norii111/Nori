@@ -855,7 +855,7 @@ function requestDevToolsAccess() {
 }
 
 function deleteSnippet(id) {
-    openChessLock({ type: 'delete', payload: id }, "");
+    openChessLock({ type: 'delete', payload: id }, "Execute London Line to Authorize Deletion");
 }
 
 let currentChessGridLayout = null; // Add this as a global variable near the top with other chess vars
@@ -1364,7 +1364,7 @@ function openUserScriptEditChess(fileID) {
 }
 
 function openUserScriptDeleteChess(fileID) {
-    openUserScriptChessLock({ type: 'userScriptDelete', payload: fileID }, "");
+    openUserScriptChessLock({ type: 'userScriptDelete', payload: fileID }, "Execute Sicilian Defense to Authorize Deletion");
 }
 
 async function openUserScriptEditForm(fileID) {
