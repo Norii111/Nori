@@ -2732,14 +2732,21 @@ function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
 
 function loadSavedWallpaper() {
     const savedUrl = getSavedWallpaperUrl();
+    const savedStrength = getSavedWallpaperStrength();
+
+    wallpaperDraftUrl = savedUrl;
+    wallpaperDraftStrength = savedStrength;
 
     if (savedUrl) {
-        setDashboardWallpaper(savedUrl);
+        setDashboardWallpaper(savedUrl, savedStrength);
     }
 }
 
 function handleWallpaperStrengthInput(value) {
-    wallpaperDraftStrength = Math.max(0.08, Math.min(0.75, Number(value) || 0.32));
+    wallpaperDraftStrength = Math.max(
+        0.08,
+        Math.min(0.75, Number(value) || 0.32)
+    );
 
     const label = document.getElementById('wallpaperStrengthValue');
     if (label) {
@@ -2938,7 +2945,7 @@ function previewWallpaper(url, title) {
         return;
     }
 
-    setDashboardWallpaper(wallpaperDraftUrl);
+    setDashboardWallpaper(wallpaperDraftUrl, wallpaperDraftStrength);
     renderWallpaperGallery(wallpaperGalleryCache);
 
     showToast(`Previewing wallpaper: ${wallpaperDraftTitle || 'Untitled'}`);
@@ -2946,6 +2953,10 @@ function previewWallpaper(url, title) {
 
 function saveWallpaperSelection() {
     const selectedUrl = String(wallpaperDraftUrl || '').trim();
+    const selectedStrength = Math.max(
+        0.08,
+        Math.min(0.75, Number(wallpaperDraftStrength) || 0.32)
+    );
 
     if (!selectedUrl) {
         showToast('No wallpaper selected.');
@@ -2953,27 +2964,30 @@ function saveWallpaperSelection() {
     }
 
     localStorage.setItem(WALLPAPER_STORAGE_KEY, selectedUrl);
-    localStorage.setItem(WALLPAPER_STRENGTH_STORAGE_KEY, getSavedWallpaperStrength());
+    localStorage.setItem(WALLPAPER_STRENGTH_STORAGE_KEY, String(selectedStrength));
 
-    setDashboardWallpaper(selectedUrl);
+    wallpaperDraftStrength = selectedStrength;
+    setDashboardWallpaper(selectedUrl, selectedStrength);
 
     const modal = document.getElementById('wallpaperModal');
     if (modal) modal.classList.remove('open');
 
-    showToast('Wallpaper saved locally.');
+    showToast(`Wallpaper saved locally · BG ${Math.round(selectedStrength * 100)}%`);
 }
 
 function cancelWallpaperSelection() {
     const savedUrl = getSavedWallpaperUrl();
-
-    if (savedUrl) {
-        setDashboardWallpaper(savedUrl);
-    } else {
-        setDashboardWallpaper('');
-    }
+    const savedStrength = getSavedWallpaperStrength();
 
     wallpaperDraftUrl = savedUrl;
     wallpaperDraftTitle = '';
+    wallpaperDraftStrength = savedStrength;
+
+    if (savedUrl) {
+        setDashboardWallpaper(savedUrl, savedStrength);
+    } else {
+        setDashboardWallpaper('');
+    }
 
     const modal = document.getElementById('wallpaperModal');
     if (modal) modal.classList.remove('open');
