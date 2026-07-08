@@ -17,6 +17,8 @@ const driveNoteContentCache = new Map();
 const driveNoteFetchedAt = new Map();
 
 let isLoadingUserScripts = false;
+let hasLoadedUserScriptsThisPage = false;
+let userScriptLoadPromise = null;
 let isPreloadingDriveNotes = false;
 let lastDriveSyncAt = 0;
 let wallpaperDraftStrength = 0.45;
@@ -1040,53 +1042,68 @@ function executeChessSuccess() {
 }
 
 async function loadUserScripts(options = {}) {
-    const { silent = true } = options;
+    const { silent = true, force = false } = options;
 
-    if (isLoadingUserScripts) return;
+    // Pull once per page load.
+    // Browser refresh resets this variable, so refresh still pulls again.
+    if (hasLoadedUserScriptsThisPage && !force) {
+        addSystemLog('Skipped userscript pull; already loaded this page.');
+        return userScriptLoadPromise || Promise.resolve();
+    }
+
+    if (isLoadingUserScripts) {
+        return userScriptLoadPromise || Promise.resolve();
+    }
+
     isLoadingUserScripts = true;
 
-    try {
-        const response = await fetch(`${gasWebAppUrl}?api=userscripts&t=${Date.now()}`, {
-            cache: 'no-store'
-        });
+    userScriptLoadPromise = (async () => {
+        try {
+            const response = await fetch(`${gasWebAppUrl}?api=userscripts&t=${Date.now()}`, {
+                cache: 'no-store'
+            });
 
-        const result = await response.json();
-        if (!result.ok) throw new Error(result.message);
+            const result = await response.json();
+            if (!result.ok) throw new Error(result.message);
 
-        userScripts = Array.isArray(result.scripts) ? result.scripts : [];
+            userScripts = Array.isArray(result.scripts) ? result.scripts : [];
 
-        const liveIDs = new Set(userScripts.map(s => s.driveFileID));
+            const liveIDs = new Set(userScripts.map(s => s.driveFileID));
 
-        for (const cachedID of Array.from(driveNoteContentCache.keys())) {
-            if (!liveIDs.has(cachedID)) {
-                driveNoteContentCache.delete(cachedID);
+            for (const cachedID of Array.from(driveNoteContentCache.keys())) {
+                if (!liveIDs.has(cachedID)) {
+                    driveNoteContentCache.delete(cachedID);
+                }
             }
+
+            if (userScriptBeingViewed && !liveIDs.has(userScriptBeingViewed)) {
+                clearDriveNoteWorkspaceState();
+                document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
+                showToast('The opened Drive note no longer exists.');
+            }
+
+            renderPortal({ resetWorkspace: false });
+            preloadDriveNoteContents({ silent: true });
+
+            if (!silent) {
+                showToast(`Synced ${userScripts.length} Drive notes.`);
+            }
+
+            addSystemLog(`Loaded ${userScripts.length} userscripts.`);
+        } catch (err) {
+            addSystemLog(`Error loading userscripts: ${err.message}`);
+
+            if (!silent) {
+                showToast("Error loading Drive notes");
+            }
+        } finally {
+            hasLoadedUserScriptsThisPage = true;
+            isLoadingUserScripts = false;
+            userScriptLoadPromise = null;
         }
+    })();
 
-        if (userScriptBeingViewed && !liveIDs.has(userScriptBeingViewed)) {
-            clearDriveNoteWorkspaceState();
-            document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
-            showToast('The opened Drive note no longer exists.');
-        }
-
-        renderPortal({ resetWorkspace: false });
-        preloadDriveNoteContents({ silent: true });
-
-        if (!silent) {
-            showToast(`Synced ${userScripts.length} Drive notes.`);
-        }
-
-        addSystemLog(`Loaded ${userScripts.length} userscripts.`);
-
-    } catch (err) {
-        addSystemLog(`Error loading userscripts: ${err.message}`);
-
-        if (!silent) {
-            showToast("Error loading Drive notes");
-        }
-    } finally {
-        isLoadingUserScripts = false;
-    }
+    return userScriptLoadPromise;
 }
 
 
@@ -1360,7 +1377,7 @@ async function swapUserScriptView(fileID) {
 
     if (!script) {
         showToast('Drive note not found. Syncing Drive notes...');
-        await loadUserScripts({ silent: true });
+        await loadUserScripts({ silent: true, force: true });
         return;
     }
 
@@ -1537,7 +1554,7 @@ if (userScriptBeingViewed === fileID) {
 }
 
 renderPortal({ resetWorkspace: false });
-loadUserScripts({ silent: true });
+loadUserScripts({ silent: true, force: true });
     } catch (err) {
         showToast("Error deleting script: " + err.message);
     }
@@ -1577,7 +1594,7 @@ async function submitNewUserScript() {
         addSystemLog("New userscript created");
         document.getElementById('modalInput').value = '';
         document.getElementById('primaryGasArea').value = offlineDatabase.primaryGAS;
-        loadUserScripts();
+        loadUserScripts({ force: true, silent: false });
     } catch (err) {
         showToast("Error adding script: " + err.message);
     }
@@ -2302,21 +2319,11 @@ function addSystemLog(message) {
 
 
 function maybeSyncDriveNotes() {
-    const now = Date.now();
-
-    if (now - lastDriveSyncAt < 15000) return;
-
-    lastDriveSyncAt = now;
-    loadUserScripts({ silent: true });
+    // Manual-only refresh helper.
+    // Do not auto-pull on focus or visibility change.
+    lastDriveSyncAt = Date.now();
+    return loadUserScripts({ silent: true, force: true });
 }
-
-window.addEventListener('focus', maybeSyncDriveNotes);
-
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        maybeSyncDriveNotes();
-    }
-});
 
 
 function getPredictionTimerSource() {
@@ -2662,6 +2669,7 @@ const WALLPAPER_SHEET_KEY = 'ALL IN ONE';
 let wallpaperDraftUrl = null;
 let wallpaperDraftTitle = '';
 let wallpaperGalleryCache = [];
+const wallpaperVideoWarmCache = new Map();
 
 function escapeWallpaperHtml(value) {
     return String(value || '')
@@ -2686,11 +2694,124 @@ function escapeCssUrl(value) {
     return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
+function getWallpaperVideoErrorMessage(video) {
+    const code = video && video.error ? video.error.code : 0;
+
+    const messages = {
+        1: 'MP4 loading aborted.',
+        2: 'MP4 network error.',
+        3: 'MP4 decode error. The file may be corrupted or unsupported.',
+        4: 'MP4 source not supported or URL is broken.'
+    };
+
+    return messages[code] || 'MP4 failed to load.';
+}
+
+function setWallpaperCardStatus(card, text, state = 'loading') {
+    if (!card) return;
+
+    let status = card.querySelector('.wallpaper-card-status');
+
+    if (!status) {
+        status = document.createElement('div');
+        status.className = 'wallpaper-card-status';
+        card.appendChild(status);
+    }
+
+    status.className = `wallpaper-card-status ${state}`;
+    status.textContent = text;
+}
+
+function attachWallpaperVideoDiagnostics(video, card, url) {
+    if (!video) return;
+
+    let slowTimer = null;
+
+    const clearSlowTimer = () => {
+        if (slowTimer) {
+            clearTimeout(slowTimer);
+            slowTimer = null;
+        }
+    };
+
+    const markLoading = () => {
+        setWallpaperCardStatus(card, 'MP4 loading…', 'loading');
+
+        clearSlowTimer();
+        slowTimer = setTimeout(() => {
+            if (video.readyState < 2) {
+                setWallpaperCardStatus(card, 'Slow MP4 / still loading', 'slow');
+                addSystemLog(`Slow wallpaper MP4: ${url}`);
+            }
+        }, 5000);
+    };
+
+    video.addEventListener('loadstart', markLoading);
+
+    video.addEventListener('loadedmetadata', () => {
+        setWallpaperCardStatus(card, 'MP4 source OK', 'ok');
+    });
+
+    video.addEventListener('canplay', () => {
+        clearSlowTimer();
+        setWallpaperCardStatus(card, 'Ready', 'ok');
+    });
+
+    video.addEventListener('error', () => {
+        clearSlowTimer();
+        setWallpaperCardStatus(card, 'Broken / unsupported MP4', 'error');
+        addSystemLog(`${getWallpaperVideoErrorMessage(video)} URL: ${url}`);
+    });
+
+    video.addEventListener('stalled', () => {
+        setWallpaperCardStatus(card, 'MP4 stalled', 'slow');
+    });
+
+    video.addEventListener('waiting', () => {
+        setWallpaperCardStatus(card, 'Buffering…', 'slow');
+    });
+}
+
+function warmWallpaperVideo(url) {
+    url = String(url || '').trim();
+
+    if (!url || !isVideoWallpaperUrl(url) || wallpaperVideoWarmCache.has(url)) {
+        return;
+    }
+
+    const video = document.createElement('video');
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.src = url;
+
+    video.addEventListener('canplay', () => {
+        addSystemLog(`Warmed wallpaper MP4: ${url}`);
+    }, { once: true });
+
+    video.addEventListener('error', () => {
+        addSystemLog(`${getWallpaperVideoErrorMessage(video)} URL: ${url}`);
+    }, { once: true });
+
+    wallpaperVideoWarmCache.set(url, video);
+    video.load();
+}
+
+function warmWallpaperPreviewVideos(wallpapers, limit = 6) {
+    (wallpapers || [])
+        .filter(item => item && (item.type === 'video' || isVideoWallpaperUrl(item.url)))
+        .slice(0, limit)
+        .forEach(item => warmWallpaperVideo(item.url));
+}
+
 function removeDynamicWallpaperVideo() {
     const existingVideo = document.getElementById('dynamicWallpaperVideo');
 
     if (existingVideo) {
         existingVideo.pause();
+        existingVideo.removeAttribute('src');
+        existingVideo.load();
         existingVideo.remove();
     }
 }
@@ -2705,6 +2826,7 @@ function ensureDynamicWallpaperVideo(url) {
         video.loop = true;
         video.autoplay = true;
         video.playsInline = true;
+        video.preload = 'auto';
         video.setAttribute('playsinline', '');
         video.setAttribute('muted', '');
 
@@ -2712,11 +2834,47 @@ function ensureDynamicWallpaperVideo(url) {
     }
 
     if (video.dataset.src !== url) {
+        if (video._wallpaperSlowTimer) clearTimeout(video._wallpaperSlowTimer);
+
         video.dataset.src = url;
+        video.dataset.state = 'loading';
+        video.preload = 'auto';
+
+        video.onloadstart = () => {
+            video.dataset.state = 'loading';
+            addSystemLog(`Loading MP4 wallpaper: ${url}`);
+        };
+
+        video.oncanplay = () => {
+            if (video._wallpaperSlowTimer) clearTimeout(video._wallpaperSlowTimer);
+            video.dataset.state = 'ready';
+            showToast('MP4 wallpaper ready.');
+        };
+
+        video.onerror = () => {
+            if (video._wallpaperSlowTimer) clearTimeout(video._wallpaperSlowTimer);
+            video.dataset.state = 'error';
+            showToast(getWallpaperVideoErrorMessage(video));
+            addSystemLog(`${getWallpaperVideoErrorMessage(video)} URL: ${url}`);
+        };
+
+        video.onstalled = video.onwaiting = () => {
+            video.dataset.state = 'slow';
+        };
+
         video.src = url;
         video.load();
+
+        video._wallpaperSlowTimer = setTimeout(() => {
+            if (video.dataset.state === 'loading' && video.readyState < 2) {
+                video.dataset.state = 'slow';
+                showToast('MP4 is still loading. Source may be slow, not broken yet.');
+                addSystemLog(`Slow MP4 wallpaper: ${url}`);
+            }
+        }, 6000);
     }
 
+    warmWallpaperVideo(url);
     video.play().catch(() => {});
 }
 
@@ -2988,8 +3146,9 @@ if (strengthLabel) strengthLabel.innerText = `${Math.round(wallpaperDraftStrengt
         return;
     }
 
-    renderWallpaperGallery(wallpapers);
-    showToast('Wallpaper gallery opened.');
+renderWallpaperGallery(wallpapers);
+warmWallpaperPreviewVideos(wallpapers);
+showToast('Wallpaper gallery opened.');
 }
 
 function renderWallpaperGallery(wallpapers) {
@@ -3011,7 +3170,7 @@ function renderWallpaperGallery(wallpapers) {
         card.innerHTML = `
             ${
                 isVideo
-                    ? `<video src="${escapeWallpaperHtml(wallpaper.url)}" muted loop playsinline preload="metadata"></video>`
+                    ? `<video src="${escapeWallpaperHtml(wallpaper.url)}" muted loop playsinline preload="auto"></video>`
                     : `<img src="${escapeWallpaperHtml(wallpaper.url)}" alt="${escapeWallpaperHtml(wallpaper.title)}" loading="lazy">`
             }
 
@@ -3026,18 +3185,26 @@ function renderWallpaperGallery(wallpapers) {
         });
 
         if (isVideo) {
-            const video = card.querySelector('video');
+const video = card.querySelector('video');
 
-            card.addEventListener('mouseenter', () => {
-                if (video) video.play().catch(() => {});
-            });
+if (video) {
+    attachWallpaperVideoDiagnostics(video, card, wallpaper.url);
+    warmWallpaperVideo(wallpaper.url);
+}
 
-            card.addEventListener('mouseleave', () => {
-                if (video) {
-                    video.pause();
-                    video.currentTime = 0;
-                }
-            });
+card.addEventListener('mouseenter', () => {
+    if (video) {
+        video.preload = 'auto';
+        video.play().catch(() => {});
+    }
+});
+
+card.addEventListener('mouseleave', () => {
+    if (video) {
+        video.pause();
+        video.currentTime = 0;
+    }
+});
         }
 
         strip.appendChild(card);
@@ -3113,7 +3280,7 @@ window.onload = function() {
     changeToRandomGif();
     renderSearchHistory();
     syncGoogleSheetData();
-    loadUserScripts();
+    loadUserScripts({ silent: true });
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
         gifFrame.addEventListener('click', () => {
