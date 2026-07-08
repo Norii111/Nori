@@ -1250,11 +1250,12 @@ function showDriveNoteInWorkspace(script, content, showMessage = true) {
     const textarea = document.getElementById('primaryGasArea');
 
     currentSnippetBeingEdited = null;
-    userScriptBeingViewed = script.driveFileID;
+userScriptBeingViewed = script.driveFileID;
 
-    switchTab('dashboard');
+switchTab('dashboard');
+renderPortal({ resetWorkspace: false });
 
-    textarea.value = content || '';
+textarea.value = content || '';
 
     setDriveNoteViewMode({
         title: script.title,
@@ -1349,8 +1350,12 @@ function renderUserScriptCards() {
         const randomBg = getRandomMangaColor();
         const card = document.createElement('div');
 
-        card.className = 'snippet-card';
-        card.style.backgroundColor = randomBg;
+        const isActiveLocalCard =
+    currentSnippetBeingEdited === item.id &&
+    !userScriptBeingViewed;
+
+card.className = `snippet-card ${isActiveLocalCard ? 'active-card editing-card' : ''}`;
+card.style.backgroundColor = randomBg;
 
         card.innerHTML = `
             <div style="overflow: hidden;">
@@ -1596,8 +1601,12 @@ if (resetWorkspace) {
     offlineDatabase.bottomSnippets.forEach(item => {
         const randomBg = getRandomMangaColor();
         const card = document.createElement('div');
-        card.className = 'snippet-card';
-        card.style.backgroundColor = randomBg;
+const isActiveLocalCard =
+    currentSnippetBeingEdited === item.id &&
+    !userScriptBeingViewed;
+
+card.className = `snippet-card ${isActiveLocalCard ? 'active-card editing-card' : ''}`;
+card.style.backgroundColor = randomBg;
         card.innerHTML = `
             <div style="overflow: hidden;">
                 <strong style="display:block; margin-bottom:4px; font-size:14px;">${escapeHtml(item.title)}</strong>
@@ -1621,8 +1630,10 @@ function viewSnippet(id) {
     if (item) {
         clearDriveNoteWorkspaceState();
 
-        currentSnippetBeingEdited = id;
-        textarea.classList.add('page-turn');
+currentSnippetBeingEdited = id;
+renderPortal({ resetWorkspace: false });
+
+textarea.classList.add('page-turn');
 
         setTimeout(() => {
             textarea.value = item.content;
