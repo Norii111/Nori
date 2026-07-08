@@ -1399,21 +1399,26 @@ textarea::placeholder {
 }
 
 .note-img-masonry-grid {
-    column-width: 260px;
-    column-gap: 18px;
+    flex-grow: 1;
+    min-height: 0;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    align-items: start;
+    gap: 18px;
+
     overflow-y: auto;
     overflow-x: hidden;
+
     padding: 18px 12px 120px 12px;
     box-sizing: border-box;
-    flex-grow: 1;
     position: relative;
     z-index: 3;
 }
 
 .note-img-card {
-    display: inline-block;
     width: 100%;
-    break-inside: avoid;
+    align-self: start;
     margin: 0 0 18px 0;
 
     background:
@@ -1526,4 +1531,28 @@ textarea::placeholder {
     text-align: center;
 }
 
+.note-img-composer textarea,
+#noteImgNoteTextArea {
+    flex-grow: 0 !important;
+    min-height: 90px;
+    max-height: 150px;
+    height: 90px;
+    margin-top: 0 !important;
+    resize: vertical;
+}
 
+.note-img-composer {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 4;
+}
+
+.note-img-composer input,
+.note-img-composer textarea {
+    flex-grow: 0 !important;
+}
