@@ -48,12 +48,37 @@ let isArchiveOpen = false;
 
 let offlineDatabase = {
     mainGasLink: "https://tinyurl.com/Noro11",
-    primaryGAS: "// Your centerpiece code environment connected to your tinyurl script structure\nfunction coreAutomation() {\n  console.log('Running seamlessly from your custom dashboard centerpiece.');\n}",
+    primaryGAS: "",
     bottomSnippets: [
-        { id: 1, title: "Tampermonkey Macro", content: "// userscript configurations..." },
-        { id: 2, title: "Discord Webhook Text", content: "Random notation blocks saved locally." }
+        {
+            id: "local-sticky-note",
+            title: "LOCAL STICKY NOTE",
+            content: "",
+            isSticky: true
+        }
     ]
 };
+
+function ensureLocalStickyNote() {
+    if (!offlineDatabase.bottomSnippets) {
+        offlineDatabase.bottomSnippets = [];
+    }
+
+    const exists = offlineDatabase.bottomSnippets.some(
+        item => item.id === "local-sticky-note"
+    );
+
+    if (!exists) {
+        offlineDatabase.bottomSnippets.unshift({
+            id: "local-sticky-note",
+            title: "LOCAL STICKY NOTE",
+            content: "",
+            isSticky: true
+        });
+
+        persistOfflineDatabase();
+    }
+}
 
 const softMangaColors = [
     '#f4f3ef', '#e3ebd9', '#e5e1d5', '#ebdccb', '#d6e2e6', '#ebd8da'
@@ -865,6 +890,11 @@ function requestDevToolsAccess() {
 }
 
 function deleteSnippet(id) {
+    if (id === "local-sticky-note") {
+        showToast("Local sticky note cannot be deleted.");
+        return;
+    }
+
     openChessLock({ type: 'delete', payload: id }, "Execute London Line to Authorize Deletion");
 }
 
@@ -1587,35 +1617,43 @@ function renderPortal(options = {}) {
     const { resetWorkspace = true } = options;
     const textarea = document.getElementById('primaryGasArea');
     const bottomGrid = document.getElementById('bottomGrid');
+
     if (!textarea || !bottomGrid) return;
 
-if (resetWorkspace) {
-    currentSnippetBeingEdited = null;
-    clearDriveNoteWorkspaceState();
-    textarea.value = offlineDatabase.primaryGAS;
-}
+    if (resetWorkspace) {
+        currentSnippetBeingEdited = null;
+        clearDriveNoteWorkspaceState();
+        textarea.value = offlineDatabase.primaryGAS;
+    }
 
     bottomGrid.innerHTML = '';
 
     offlineDatabase.bottomSnippets.forEach(item => {
         const randomBg = getRandomMangaColor();
         const card = document.createElement('div');
-const isActiveLocalCard =
-    currentSnippetBeingEdited === item.id &&
-    !userScriptBeingViewed;
 
-card.className = `snippet-card ${isActiveLocalCard ? 'active-card editing-card' : ''}`;
-card.style.backgroundColor = randomBg;
+        const isActiveLocalCard =
+            currentSnippetBeingEdited === item.id &&
+            !userScriptBeingViewed;
+
+        const isStickyCard =
+            item.isSticky || item.id === "local-sticky-note";
+
+        card.className = `snippet-card ${isActiveLocalCard ? 'active-card editing-card' : ''} ${isStickyCard ? 'sticky-note-card' : ''}`;
+        card.style.backgroundColor = randomBg;
+
         card.innerHTML = `
             <div style="overflow: hidden;">
                 <strong style="display:block; margin-bottom:4px; font-size:14px;">${escapeHtml(item.title)}</strong>
                 <p style="font-size:11px; color:#55555d; margin:0; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${escapeHtml(item.content)}</p>
             </div>
+
             <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px;">
-                <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick="deleteSnippet(${Number(item.id)})">Delete</button>
-                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick="viewSnippet(${Number(item.id)})">Swap View</button>
+                <button class="manga-btn danger" style="font-size:11px; padding:3px 8px;" onclick='deleteSnippet(${JSON.stringify(item.id)})'>Delete</button>
+                <button class="manga-btn" style="font-size:11px; padding:3px 8px;" onclick='viewSnippet(${JSON.stringify(item.id)})'>Swap View</button>
             </div>
         `;
+
         bottomGrid.appendChild(card);
     });
 
@@ -2501,7 +2539,7 @@ function renderPredictionTimerEditor(card) {
 function installCasualSourceGuard() {
     document.addEventListener('contextmenu', function (e) {
         e.preventDefault();
-        showToast('Source access disabled.');
+        showToast('ちょっと何やってるの、バカ！');
     });
 
     document.addEventListener('keydown', function (e) {
@@ -2515,7 +2553,7 @@ function installCasualSourceGuard() {
 
         if (blocked) {
             e.preventDefault();
-            showToast('Inspector shortcut blocked.');
+            showToast('ちょっと何やってるの、バカ！');
         }
     });
 }
@@ -2588,6 +2626,7 @@ window.onload = function() {
     loadPredictionTimeConfig();
     loadOfflineDatabaseFromStorage();
     renderPortal();
+    ensureLocalStickyNote();
     changeToRandomGif();
     renderSearchHistory();
     syncGoogleSheetData();
