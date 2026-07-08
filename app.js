@@ -2511,15 +2511,30 @@ function sortPredictionCardsByTime(cards) {
         const endA = timerA ? timeStringToMinutes(timerA.end) : null;
         const endB = timerB ? timeStringToMinutes(timerB.end) : null;
 
-        // Prefer start time. If no start, fall back to end time.
-        const timeA = startA !== null ? startA : endA;
-        const timeB = startB !== null ? startB : endB;
+        const activeA = isPredictionCardActive(a);
+        const activeB = isPredictionCardActive(b);
 
-        if (timeA === null && timeB === null) return 0;
-        if (timeA === null) return 1;
-        if (timeB === null) return -1;
+        // 1. LIVE cards first, BURNT OUT cards later
+        if (activeA !== activeB) {
+            return activeA ? -1 : 1;
+        }
 
-        return timeA - timeB;
+        // 2. Cards with no valid timer go last
+        if (startA === null && startB === null) return 0;
+        if (startA === null) return 1;
+        if (startB === null) return -1;
+
+        // 3. Sort by start time
+        if (startA !== startB) {
+            return startA - startB;
+        }
+
+        // 4. If same start time, sort by end time
+        if (endA === null && endB === null) return 0;
+        if (endA === null) return 1;
+        if (endB === null) return -1;
+
+        return endA - endB;
     });
 }
 
