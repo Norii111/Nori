@@ -11,14 +11,13 @@
     <div class="portal-container">
         <aside class="sidebar-panel">
             <h1 class="manga-logo">夢 <br>幻 </h1>
-<nav class="nav-links">
-    <a href="#" class="active" onclick="switchTab('dashboard'); return false;">COMMAND CENTER</a>
-    <a href="#" onclick="switchTab('searchTab'); return false;">SEARCH ENGINE</a>
-    <a href="#" onclick="switchTab('prediction'); return false;">PREDICTION CARDS</a>
-    <a href="#" onclick="switchTab('noteImg'); return false;">NOTE / IMG</a>
-    <a href="#" onclick="switchTab('logs'); return false;">SYSTEM LOGS</a>
-    <a href="#" onclick="handleDevToolsClick(); return false;">DEV TOOLS</a>
-</nav>
+            <nav class="nav-links">
+                <a href="#" class="active" onclick="switchTab('dashboard')">COMMAND CENTER</a>
+                <a href="#" onclick="switchTab('searchTab')">SEARCH ENGINE</a>
+                    <a href="#" onclick="switchTab('prediction')">PREDICTION CARDS</a>
+                <a href="#" onclick="switchTab('logs')">SYSTEM LOGS</a>
+                <a href="#" onclick="handleDevToolsClick()">DEV TOOLS</a>
+            </nav>
             <div class="blank-character-frame sidebar-art"></div>
         </aside>
 
@@ -49,7 +48,7 @@
                 <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h3>何かを探していますか？</h3>
                     <div style="display: flex; gap: 6px;">
-                        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px; background: #e3ebd9;" onclick="syncGoogleSheetData()">🔄REFRESH</button>
+                        <button class="manga-btn" style="font-size: 11px; padding: 4px 10px; background: #e3ebd9;" onclick="syncGoogleSheetData()">🔄 Pull Fresh Data</button>
                         <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="toggleArchiveView()">👁️ Archive Overview</button>
                     </div>
                 </div>
@@ -153,68 +152,8 @@
         </div>
     </section>
 </main>
-         <main class="main-content" id="noteImgTab" style="display: none;">
-    <section class="manga-panel note-img-panel" style="height: 100%; display: flex; flex-direction: column; overflow: visible;">
-        <div class="panel-header note-img-header">
-            <h3>NOTE / IMG ARCHIVE</h3>
-
-            <div class="note-img-toolbar">
-                <button id="noteImgImageModeButton" class="manga-btn note-img-mode-active" onclick="setNoteImgMode('image')">
-                    IMG MODE
-                </button>
-
-                <button id="noteImgNoteModeButton" class="manga-btn" onclick="setNoteImgMode('note')">
-                    NOTE MODE
-                </button>
-
-                <button class="manga-btn primary-save" onclick="submitNoteImgItem()">
-                    Save New
-                </button>
-
-                <button class="manga-btn" onclick="saveNoteImgBoardToDrive()">
-                    Save Layout
-                </button>
-
-                <button class="manga-btn" style="background:#e3ebd9;" onclick="loadNoteImgBoardFromDrive()">
-                    🔄 Refresh
-                </button>
-            </div>
-        </div>
-
-        <div class="note-img-composer">
-            <input
-                id="noteImgTitleInput"
-                type="text"
-                placeholder="Title..."
-                autocomplete="off"
-            >
-
-            <input
-                id="noteImgImageUrlInput"
-                type="text"
-                placeholder="Image link..."
-                autocomplete="off"
-            >
-
-            <textarea
-                id="noteImgNoteTextArea"
-                placeholder="Write note..."
-            ></textarea>
-        </div>
-
-        <div id="noteImgStatusLabel" class="note-img-status-label">
-            IMG MODE · Drag cards to rearrange
-        </div>
-
-        <div id="noteImgMasonryGrid" class="note-img-masonry-grid"></div>
-    </section>
-</main>
-
     </div>
 
-
-   
-    
     <div id="mangaModal" class="modal-overlay">
         <div class="modal-panel">
             <h3>[ NEW CREATION ENTRY ]</h3>
