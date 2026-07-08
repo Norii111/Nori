@@ -2686,11 +2686,48 @@ function escapeCssUrl(value) {
     return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
+function removeDynamicWallpaperVideo() {
+    const existingVideo = document.getElementById('dynamicWallpaperVideo');
+
+    if (existingVideo) {
+        existingVideo.pause();
+        existingVideo.remove();
+    }
+}
+
+function ensureDynamicWallpaperVideo(url) {
+    let video = document.getElementById('dynamicWallpaperVideo');
+
+    if (!video) {
+        video = document.createElement('video');
+        video.id = 'dynamicWallpaperVideo';
+        video.muted = true;
+        video.loop = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('muted', '');
+
+        document.body.prepend(video);
+    }
+
+    if (video.dataset.src !== url) {
+        video.dataset.src = url;
+        video.src = url;
+        video.load();
+    }
+
+    video.play().catch(() => {});
+}
+
 function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
     let styleTag = document.getElementById('dynamicWallpaperStyle');
 
     if (!url) {
+        removeDynamicWallpaperVideo();
+
         if (styleTag) styleTag.remove();
+
         return;
     }
 
@@ -2701,9 +2738,45 @@ function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
     }
 
     const safeUrl = escapeCssUrl(url);
-
     const imageStrength = Math.max(0.08, Math.min(0.75, Number(strength) || 0.32));
     const paperWash = Math.max(0.20, Math.min(0.92, 1 - imageStrength));
+
+    if (isVideoWallpaperUrl(url)) {
+        ensureDynamicWallpaperVideo(url);
+
+        styleTag.textContent = `
+            #dynamicWallpaperVideo {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                height: 100vh;
+                object-fit: cover;
+                z-index: 0;
+                pointer-events: none;
+                background: #000;
+            }
+
+            .portal-container {
+                position: relative;
+                z-index: 1;
+                background-color: rgba(244, 243, 239, 0.18) !important;
+            }
+
+            .sidebar-panel,
+            .manga-panel {
+                background: rgba(244, 243, 239, ${paperWash}) !important;
+            }
+
+            .sidebar-panel::before,
+            .manga-panel::before {
+                background-image: none !important;
+            }
+        `;
+
+        return;
+    }
+
+    removeDynamicWallpaperVideo();
 
     styleTag.textContent = `
         body {
@@ -2714,6 +2787,10 @@ function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
             background-position: center !important;
             background-attachment: fixed !important;
             background-repeat: no-repeat !important;
+        }
+
+        .portal-container {
+            background-color: rgba(244, 243, 239, 0.18) !important;
         }
 
         .sidebar-panel,
