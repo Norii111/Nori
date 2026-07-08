@@ -2675,7 +2675,17 @@ function getSavedWallpaperUrl() {
     return localStorage.getItem(WALLPAPER_STORAGE_KEY) || '';
 }
 
-function setDashboardWallpaper(url) {
+const WALLPAPER_STRENGTH_STORAGE_KEY = 'mangaDashboardWallpaperStrength';
+
+function getSavedWallpaperStrength() {
+    return Number(localStorage.getItem(WALLPAPER_STRENGTH_STORAGE_KEY) || 0.32);
+}
+
+function escapeCssUrl(value) {
+    return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
     let styleTag = document.getElementById('dynamicWallpaperStyle');
 
     if (!url) {
@@ -2689,20 +2699,32 @@ function setDashboardWallpaper(url) {
         document.head.appendChild(styleTag);
     }
 
+    const safeUrl = escapeCssUrl(url);
+
+    const imageStrength = Math.max(0.08, Math.min(0.75, Number(strength) || 0.32));
+    const paperWash = Math.max(0.20, Math.min(0.92, 1 - imageStrength));
+
     styleTag.textContent = `
         body {
             background-image:
-                radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8) 100%),
-                url("${url}") !important;
+                radial-gradient(circle, transparent 40%, rgba(0,0,0,0.82) 100%),
+                url("${safeUrl}") !important;
             background-size: cover !important;
             background-position: center !important;
             background-attachment: fixed !important;
             background-repeat: no-repeat !important;
         }
 
+        .sidebar-panel,
+        .manga-panel {
+            background:
+                linear-gradient(rgba(244,243,239,${paperWash}), rgba(244,243,239,${paperWash})),
+                url("${safeUrl}") center / cover no-repeat !important;
+        }
+
         .sidebar-panel::before,
         .manga-panel::before {
-            background-image: url("${url}") !important;
+            background-image: none !important;
         }
     `;
 }
@@ -2732,18 +2754,20 @@ function parseWallpaperPayload(payload) {
         .filter(Boolean);
 
     return blocks.map((block, index) => {
-        const lines = block
+        const imageUrlMatch = block.match(/https?:\/\/\S+\.(?:jpg|jpeg|png|webp|gif|avif|svg)(?:\?\S*)?/i);
+
+        if (!imageUrlMatch) return null;
+
+        const url = imageUrlMatch[0].trim();
+
+        const title = block
+            .replace(url, '')
+            .replace(/^-+$/gm, '')
             .split('\n')
             .map(line => line.trim())
-            .filter(Boolean);
-
-        const url = lines.find(line => /^https?:\/\//i.test(line)) || '';
-        const title = lines
-            .filter(line => line !== url && !/^https?:\/\//i.test(line))
+            .filter(Boolean)
             .join(' ')
             .trim();
-
-        if (!url) return null;
 
         return {
             id: `wallpaper-${index}`,
@@ -2892,6 +2916,8 @@ function saveWallpaperSelection() {
     }
 
     localStorage.setItem(WALLPAPER_STORAGE_KEY, selectedUrl);
+    localStorage.setItem(WALLPAPER_STRENGTH_STORAGE_KEY, getSavedWallpaperStrength());
+
     setDashboardWallpaper(selectedUrl);
 
     const modal = document.getElementById('wallpaperModal');
