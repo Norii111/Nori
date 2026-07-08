@@ -1330,7 +1330,7 @@ textarea::placeholder {
 
 .wallpaper-panel {
     width: min(1100px, 96vw);
-    height: 430px;
+    height: 470px;
     background: var(--bg-paper);
     border: 5px solid var(--ink-black);
     box-shadow: 12px 12px 0 var(--ink-black);
@@ -1364,12 +1364,14 @@ textarea::placeholder {
 }
 
 .wallpaper-gallery-strip {
-    flex: 0 0 300px;
+    flex: 0 0 330px;
     display: flex;
     gap: 18px;
+
     overflow-x: auto;
-    overflow-y: hidden;
-    padding: 18px 10px 16px 10px;
+    overflow-y: visible;
+
+    padding: 28px 18px 42px 18px;
     align-items: flex-start;
     box-sizing: border-box;
 }
@@ -1460,4 +1462,17 @@ textarea::placeholder {
 .wallpaper-strength-control strong {
     min-width: 34px;
     text-align: right;
+}
+
+.wallpaper-gallery-strip::-webkit-scrollbar {
+    height: 14px;
+}
+
+.wallpaper-gallery-strip::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.wallpaper-gallery-strip::-webkit-scrollbar-thumb {
+    background: var(--ink-black);
+    border: 4px solid var(--bg-paper);
 }
