@@ -1330,7 +1330,7 @@ textarea::placeholder {
 
 .wallpaper-panel {
     width: min(1100px, 96vw);
-    height: min(680px, 88vh);
+    height: min(440px, 82vh);
     background: var(--bg-paper);
     border: 5px solid var(--ink-black);
     box-shadow: 12px 12px 0 var(--ink-black);
