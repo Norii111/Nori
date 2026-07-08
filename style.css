@@ -1506,3 +1506,33 @@ textarea::placeholder {
     font-size: 9px;
     font-weight: 900;
 }
+
+
+.wallpaper-card-status {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 12;
+    padding: 3px 7px;
+    border: 2px solid var(--ink-black);
+    background: var(--bg-paper);
+    color: var(--ink-black);
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    box-shadow: 3px 3px 0 var(--ink-black);
+    pointer-events: none;
+}
+
+.wallpaper-card-status.ok {
+    opacity: 0.86;
+}
+
+.wallpaper-card-status.slow {
+    background: #fff3b0;
+}
+
+.wallpaper-card-status.error {
+    background: #b91c1c;
+    color: #fff3b0;
+}
