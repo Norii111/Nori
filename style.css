@@ -1124,70 +1124,47 @@ textarea::placeholder {
 /* ================================
    RECENT SEARCH PILLS — ALIVE HOVER
 ================================ */
+/* Stable hover zone for recent search pills */
+#searchHistoryContainer {
+    overflow: visible !important;
+    padding: 10px 6px 16px 6px;
+}
 
 .search-history-pill {
     position: relative;
     isolation: isolate;
-    overflow: hidden;
+    overflow: visible !important;
     transform: rotate(var(--pill-tilt, 0deg));
     transition:
         transform 0.16s cubic-bezier(.2, 1.8, .4, 1),
         box-shadow 0.16s ease,
-        filter 0.16s ease,
-        background 0.16s ease;
+        filter 0.16s ease;
 }
 
+/* invisible hover cushion so the mouse does not fall off */
 .search-history-pill::before {
     content: "";
     position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(circle, rgba(0,0,0,0.18) 1px, transparent 1.8px);
-    background-size: 6px 6px;
-    opacity: 0.18;
-    pointer-events: none;
+    inset: -12px;
+    background: transparent;
+    pointer-events: auto;
     z-index: -1;
-}
-
-.search-history-pill::after {
-    content: "ZAP";
-    position: absolute;
-    right: -22px;
-    top: -10px;
-    background: #fff3b0;
-    border: 2px solid var(--ink-black);
-    padding: 1px 5px;
-    font-size: 9px;
-    font-weight: 900;
-    transform: rotate(15deg) scale(0.6);
-    opacity: 0;
-    box-shadow: 2px 2px 0 var(--ink-black);
-    pointer-events: none;
-    transition: all 0.14s ease;
 }
 
 .search-history-pill:hover {
     transform:
         rotate(var(--pill-tilt, 0deg))
-        translate(-3px, -4px)
-        scale(1.07);
+        translateY(-3px)
+        scale(1.05);
     box-shadow: 7px 7px 0 var(--ink-black) !important;
     filter: contrast(1.08) saturate(1.08);
-    z-index: 50;
-}
-
-.search-history-pill:hover::after {
-    right: -8px;
-    top: -15px;
-    opacity: 1;
-    transform: rotate(15deg) scale(1);
+    z-index: 9999;
 }
 
 .search-history-pill:active {
-    cursor: grabbing;
     transform:
         rotate(var(--pill-tilt, 0deg))
-        translate(1px, 1px)
+        translateY(1px)
         scale(0.98);
     box-shadow: 2px 2px 0 var(--ink-black) !important;
 }
