@@ -167,43 +167,105 @@ body {
 }
 
 
+/* ================================
+   COMMAND CENTER NAV MANGA LABELS
+================================ */
 
 .nav-links a {
-
-    display: block;
-
-    color: var(--ink-black);
-
-    text-decoration: none;
-
-    font-weight: 900;
-
-    font-size: 15px;
-
-    padding: 12px;
-
-    border: 3px solid var(--ink-black);
-
-    margin-bottom: 10px;
-
-    background: var(--bg-paper); 
-
-    transition: all 0.1s ease;
-
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.82), rgba(226,216,190,0.78)),
+        repeating-linear-gradient(
+            135deg,
+            rgba(0,0,0,0.10) 0px,
+            rgba(0,0,0,0.10) 2px,
+            transparent 2px,
+            transparent 10px
+        );
+    box-shadow:
+        4px 4px 0 var(--ink-black),
+        inset 0 0 0 2px rgba(255,255,255,0.35);
+    transform: rotate(-0.6deg);
+    clip-path: polygon(0 0, 96% 0, 100% 18%, 100% 100%, 4% 100%, 0 82%);
+    transition:
+        transform 0.16s cubic-bezier(.2, 1.8, .4, 1),
+        box-shadow 0.16s ease,
+        background 0.16s ease,
+        color 0.16s ease;
 }
 
+.nav-links a::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 18% 30%, rgba(0,0,0,0.15) 1px, transparent 2px);
+    background-size: 7px 7px;
+    opacity: 0.35;
+    z-index: -1;
+}
 
+.nav-links a::after {
+    content: "▶";
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    transform: translateY(-50%) translateX(14px);
+    opacity: 0;
+    font-size: 13px;
+    font-weight: 900;
+    transition: all 0.14s ease;
+}
+
+.nav-links a:hover {
+    background:
+        linear-gradient(135deg, #fff3b0, #ebdccb),
+        repeating-linear-gradient(
+            135deg,
+            rgba(0,0,0,0.12) 0px,
+            rgba(0,0,0,0.12) 2px,
+            transparent 2px,
+            transparent 9px
+        );
+    transform: translate(-3px, -3px) rotate(1.2deg);
+    box-shadow: 8px 8px 0 var(--ink-black);
+}
+
+.nav-links a:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
 
 .nav-links a.active {
-
     background: var(--ink-black);
-
     color: var(--bg-paper);
-
-    transform: translateX(5px);
-
+    transform: translateX(8px) rotate(1deg);
+    box-shadow:
+        7px 7px 0 #b91c1c,
+        10px 10px 0 var(--ink-black);
 }
 
+.nav-links a.active::before {
+    background:
+        repeating-linear-gradient(
+            -20deg,
+            rgba(255,255,255,0.22) 0px,
+            rgba(255,255,255,0.22) 2px,
+            transparent 2px,
+            transparent 9px
+        );
+    opacity: 0.75;
+}
+
+.nav-links a.active::after {
+    content: "!!";
+    opacity: 1;
+    right: 10px;
+    color: #fff3b0;
+    transform: translateY(-50%);
+}
 
 
 /* CORE FRAMES DESIGNED LIKE COMIC BOOK PANELS */
@@ -973,4 +1035,51 @@ textarea.page-turn {
 .prediction-card-expired:not(.prediction-card-editing):hover .prediction-card-content {
     text-decoration: line-through;
     opacity: 0.75;
+}
+
+/* ================================
+   MANGA TEXT AREA UPGRADE
+================================ */
+
+textarea,
+#sheetArchiveArea,
+#searchSuggestions {
+    background-color: #f8f3df;
+    background-image:
+        radial-gradient(circle at 18% 24%, rgba(0,0,0,0.13) 1px, transparent 1.8px),
+        radial-gradient(circle at 78% 18%, rgba(0,0,0,0.08) 1px, transparent 2px),
+        repeating-linear-gradient(
+            -8deg,
+            rgba(17,17,17,0.035) 0px,
+            rgba(17,17,17,0.035) 2px,
+            transparent 2px,
+            transparent 13px
+        ),
+        linear-gradient(135deg, rgba(255,255,255,0.55), rgba(222,211,184,0.35));
+    background-size:
+        11px 11px,
+        17px 17px,
+        100% 100%,
+        100% 100%;
+    box-shadow:
+        inset 5px 5px 0 rgba(0,0,0,0.06),
+        inset -4px -4px 0 rgba(255,255,255,0.45),
+        5px 5px 0 var(--ink-black);
+    outline: 2px solid rgba(17,17,17,0.12);
+    outline-offset: -8px;
+}
+
+textarea:focus {
+    background-color: #fff3cc;
+    transform: translate(-2px, -2px) rotate(0.35deg);
+    box-shadow:
+        inset 5px 5px 0 rgba(0,0,0,0.07),
+        inset -4px -4px 0 rgba(255,255,255,0.55),
+        8px 8px 0 var(--ink-black);
+}
+
+textarea::placeholder {
+    color: rgba(17,17,17,0.52);
+    font-weight: 900;
+    letter-spacing: 0.5px;
 }
