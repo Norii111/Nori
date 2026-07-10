@@ -1452,7 +1452,7 @@ function renderUserScriptCards() {
 }
 
 function openUserScriptEditChess(fileID) {
-    openUserScriptChessLock({ type: 'userScriptEdit', payload: fileID }, "Execute Sicilian Defense to Authorize Edit");
+    openUserScriptChessLock({ type: 'userScriptEdit', payload: fileID }, "INITIATE MOVE 1");
 }
 
 function openUserScriptDeleteChess(fileID) {
