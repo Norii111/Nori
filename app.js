@@ -1341,18 +1341,62 @@ async function preloadDriveNoteContents(options = {}) {
 function triggerWorkspaceFlip(textarea) {
     if (!textarea) return;
 
-    textarea.classList.remove('workspace-swap');
-
-    // Restart the animation when switching notes rapidly.
-    void textarea.offsetWidth;
-
-    textarea.classList.add('workspace-swap');
-
     clearTimeout(textarea._workspaceSwapTimer);
 
-    textarea._workspaceSwapTimer = setTimeout(() => {
-        textarea.classList.remove('workspace-swap');
-    }, 420);
+    if (textarea._workspaceSwapEndHandler) {
+        textarea.removeEventListener(
+            'animationend',
+            textarea._workspaceSwapEndHandler
+        );
+    }
+
+    textarea.classList.remove(
+        'page-turn',
+        'workspace-swap'
+    );
+
+    // Restart the animation reliably.
+    void textarea.offsetWidth;
+
+    let finished = false;
+
+    const finishSwap = () => {
+        if (finished) return;
+
+        finished = true;
+
+        textarea.classList.remove(
+            'page-turn',
+            'workspace-swap'
+        );
+
+        textarea.style.removeProperty('filter');
+
+        if (textarea._workspaceSwapEndHandler) {
+            textarea.removeEventListener(
+                'animationend',
+                textarea._workspaceSwapEndHandler
+            );
+
+            textarea._workspaceSwapEndHandler = null;
+        }
+    };
+
+    textarea._workspaceSwapEndHandler =
+        finishSwap;
+
+    textarea.addEventListener(
+        'animationend',
+        finishSwap
+    );
+
+    textarea.classList.add(
+        'workspace-swap'
+    );
+
+    // Safety fallback: it can never remain stuck.
+    textarea._workspaceSwapTimer =
+        setTimeout(finishSwap, 500);
 }
 
 function removeStaleDriveNote(fileID, message = 'Drive note no longer exists.') {
@@ -1755,26 +1799,56 @@ function renderPortal(options = {}) {
 }
 
 function viewSnippet(id) {
-    const textarea = document.getElementById('primaryGasArea');
-    const item = offlineDatabase.bottomSnippets.find(x =>
-    String(x.id) === String(id)
-);
+    const textarea =
+        document.getElementById('primaryGasArea');
 
-    if (item) {
-        clearDriveNoteWorkspaceState();
+    const item =
+        offlineDatabase.bottomSnippets.find(
+            entry =>
+                String(entry.id) === String(id)
+        );
 
-currentSnippetBeingEdited = id;
-renderPortal({ resetWorkspace: false });
+    if (!textarea || !item) return;
 
-textarea.classList.add('page-turn');
+    clearDriveNoteWorkspaceState();
 
+    currentSnippetBeingEdited = id;
+
+    renderPortal({
+        resetWorkspace: false
+    });
+
+    textarea.value = item.content || '';
+
+    triggerWorkspaceFlip(textarea);
+
+    clearTimeout(textarea._localCaretTimer);
+
+    textarea._localCaretTimer =
         setTimeout(() => {
-            textarea.value = item.content;
-            textarea.classList.remove('page-turn');
-            showToast(`Loaded local note: "${item.title}". Press Save to update this note.`);
-            changeToRandomGif();
-        }, 220);
-    }
+            textarea.classList.remove(
+                'page-turn',
+                'workspace-swap'
+            );
+
+            textarea.focus({
+                preventScroll: true
+            });
+
+            const caretPosition =
+                textarea.value.length;
+
+            textarea.setSelectionRange(
+                caretPosition,
+                caretPosition
+            );
+        }, 440);
+
+    showToast(
+        `Loaded local note: "${item.title}". Press Save to update this note.`
+    );
+
+    changeToRandomGif();
 }
 
 function saveCurrentSnippet() {
