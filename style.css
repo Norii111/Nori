@@ -1536,3 +1536,44 @@ textarea::placeholder {
     background: #b91c1c;
     color: #fff3b0;
 }
+
+
+.wallpaper-add-row {
+    display: grid;
+    grid-template-columns:
+        minmax(150px, 0.7fr)
+        minmax(260px, 1.5fr)
+        auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 2;
+}
+
+.wallpaper-add-row input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    border: 3px solid var(--ink-black);
+    background: #fff8df;
+    color: var(--ink-black);
+    padding: 9px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    outline: none;
+    box-shadow: 3px 3px 0 var(--ink-black);
+}
+
+.wallpaper-add-row input:focus {
+    background: #fff3b0;
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--ink-black);
+}
+
+.wallpaper-add-row .manga-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+    transform: none;
+}
