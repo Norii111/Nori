@@ -1987,39 +1987,229 @@ async function savePrimaryGAS() {
     showToast("Changes synced to local workspace memory!");
 }
 
+/* =================================
+   JRPG CHARACTER TOAST SYSTEM
+================================= */
+
+const jrpgToastQueue = [];
+
+let jrpgToastIsTyping = false;
+let jrpgToastIsVisible = false;
+
+let jrpgToastHideTimer = null;
+let jrpgToastClearTimer = null;
+
+/*
+  All existing showToast("message") calls
+  continue working.
+*/
 function showToast(message) {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
+  const cleanMessage = String(message || "")
+    .replace(/\s+/g, " ")
+    .trim();
 
-    container.style.pointerEvents = 'none';
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast-banner';
+  if (!cleanMessage) return;
 
-    toast.style.background = 'var(--ink-black, #111)';
-    toast.style.color = 'var(--bg-paper, #fff)';
-    toast.style.border = '2px solid var(--ink-black)';
-    toast.style.padding = '8px 12px';
-    toast.style.marginBottom = '8px';
-    toast.style.fontWeight = 'bold';
-    toast.style.fontSize = '11px';
-    toast.style.lineHeight = '1.25';
-    toast.style.boxShadow = '4px 4px 0px var(--ink-black)';
-    toast.style.maxWidth = '260px';
-    toast.style.width = 'fit-content';
-    toast.style.marginLeft = 'auto';
-    toast.style.whiteSpace = 'normal';
-    toast.style.overflowWrap = 'anywhere';
-    toast.style.pointerEvents = 'none';
+  const layer =
+    document.getElementById("toastContainer");
 
-    toast.innerText = message;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 2200);
+  const lines =
+    document.getElementById("jrpgNotificationLines");
+
+  if (!layer || !lines) return;
+
+  jrpgToastQueue.push(cleanMessage);
+
+  clearTimeout(jrpgToastHideTimer);
+  clearTimeout(jrpgToastClearTimer);
+
+  /*
+    Beginning a completely new appearance:
+    clear messages from the previous visit.
+  */
+  if (!jrpgToastIsVisible) {
+    jrpgToastIsVisible = true;
+
+    lines.replaceChildren();
+
+    layer.classList.add("is-visible");
+  }
+
+  processJrpgToastQueue();
+}
+
+async function processJrpgToastQueue() {
+  if (jrpgToastIsTyping) return;
+
+  jrpgToastIsTyping = true;
+
+  while (jrpgToastQueue.length > 0) {
+    const message =
+      jrpgToastQueue.shift();
+
+    const lines =
+      document.getElementById(
+        "jrpgNotificationLines"
+      );
+
+    /*
+      Bounce only when a previous message
+      already exists in the bubble.
+    */
+    if (lines?.children.length) {
+      bounceJrpgToastCharacter();
+    }
+
+    await typeJrpgNotificationLine(message);
+
+    /*
+      Keep the newest six messages while
+      the character remains on screen.
+    */
+    while (lines?.children.length > 6) {
+      lines.firstElementChild?.remove();
+    }
+
+    await waitForJrpgToast(140);
+  }
+
+  jrpgToastIsTyping = false;
+
+  scheduleJrpgToastExit();
+}
+
+function typeJrpgNotificationLine(message) {
+  return new Promise((resolve) => {
+    const lines =
+      document.getElementById(
+        "jrpgNotificationLines"
+      );
+
+    if (!lines) {
+      resolve();
+      return;
+    }
+
+    const line =
+      document.createElement("div");
+
+    line.className =
+      "jrpg-notification-line is-typing";
+
+    line.textContent = "「";
+
+    lines.appendChild(line);
+
+    const characters =
+      Array.from(message);
+
+    let characterIndex = 0;
+
+    function typeNextCharacter() {
+      if (characterIndex >= characters.length) {
+        line.textContent += "」";
+
+        line.classList.remove("is-typing");
+
+        scrollJrpgToastToBottom();
+
+        setTimeout(resolve, 180);
+        return;
+      }
+
+      const character =
+        characters[characterIndex];
+
+      line.textContent += character;
+
+      characterIndex += 1;
+
+      scrollJrpgToastToBottom();
+
+      const typingDelay =
+        /[.,!?。！？:;]/.test(character)
+          ? 95
+          : 24;
+
+      setTimeout(
+        typeNextCharacter,
+        typingDelay
+      );
+    }
+
+    typeNextCharacter();
+  });
+}
+
+function bounceJrpgToastCharacter() {
+  const character =
+    document.getElementById(
+      "jrpgToastCharacter"
+    );
+
+  if (!character) return;
+
+  character.classList.remove(
+    "notification-bounce"
+  );
+
+  void character.offsetWidth;
+
+  character.classList.add(
+    "notification-bounce"
+  );
+}
+
+function scrollJrpgToastToBottom() {
+  const lines =
+    document.getElementById(
+      "jrpgNotificationLines"
+    );
+
+  if (!lines) return;
+
+  lines.scrollTop =
+    lines.scrollHeight;
+}
+
+function scheduleJrpgToastExit() {
+  clearTimeout(jrpgToastHideTimer);
+
+  /*
+    Character stays visible for four seconds
+    after the final message finishes typing.
+  */
+  jrpgToastHideTimer = setTimeout(() => {
+    const layer =
+      document.getElementById(
+        "toastContainer"
+      );
+
+    if (!layer) return;
+
+    jrpgToastIsVisible = false;
+
+    layer.classList.remove("is-visible");
+
+    /*
+      Clear after the slide-out animation,
+      not while the user can still see it.
+    */
+    jrpgToastClearTimer = setTimeout(() => {
+      const lines =
+        document.getElementById(
+          "jrpgNotificationLines"
+        );
+
+      lines?.replaceChildren();
+    }, 500);
+  }, 4000);
+}
+
+function waitForJrpgToast(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }
 
 
