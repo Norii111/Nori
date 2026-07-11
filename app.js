@@ -1311,17 +1311,18 @@ async function preloadDriveNoteContents(options = {}) {
 function triggerWorkspaceFlip(textarea) {
     if (!textarea) return;
 
-    textarea.classList.remove('page-turn');
+    textarea.classList.remove('workspace-swap');
 
-    // Force browser to restart the animation even if the class was just used.
+    // Restart the animation when switching notes rapidly.
     void textarea.offsetWidth;
 
-    textarea.classList.add('page-turn');
+    textarea.classList.add('workspace-swap');
 
-    clearTimeout(textarea._pageTurnTimer);
-    textarea._pageTurnTimer = setTimeout(() => {
-        textarea.classList.remove('page-turn');
-    }, 280);
+    clearTimeout(textarea._workspaceSwapTimer);
+
+    textarea._workspaceSwapTimer = setTimeout(() => {
+        textarea.classList.remove('workspace-swap');
+    }, 420);
 }
 
 function removeStaleDriveNote(fileID, message = 'Drive note no longer exists.') {
