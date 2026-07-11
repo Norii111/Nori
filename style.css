@@ -2222,23 +2222,4 @@ textarea::placeholder {
     }
 }
 
-::selection {
-    background: #b91c1c;
-    color: #fff3b0;
-    text-shadow: 1px 0 #00e5ff;
-}
 
-.sidebar-panel,
-.manga-panel {
-    box-shadow:
-        2px 2px 0 rgba(0, 229, 255, 0.22),
-        7px 7px 0 #b91c1c,
-        10px 10px 0 var(--ink-black);
-}
-
-#searchMenuTab .manga-panel,
-#predictionTab .manga-panel {
-    box-shadow:
-        1px 1px 0 rgba(0, 229, 255, 0.18),
-        5px 5px 0 var(--ink-black);
-}
