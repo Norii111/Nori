@@ -2711,6 +2711,7 @@ window.addEventListener('load', installHorizontalNoteScroll);
 const WALLPAPER_STORAGE_KEY = 'mangaDashboardWallpaperUrl';
 const WALLPAPER_SHEET_KEY = 'ALL IN ONE';
 const WALLPAPER_ENTRY_SEPARATOR = '------------------------------------------------';
+const LAST_RANDOM_WALLPAPER_KEY = 'mangaLastRandomWallpaperUrl';
 
 let wallpaperDraftUrl = null;
 let wallpaperDraftTitle = '';
@@ -3021,6 +3022,55 @@ function loadSavedWallpaper() {
     if (savedUrl) {
         setDashboardWallpaper(savedUrl, savedStrength);
     }
+}
+
+function loadRandomWallpaper() {
+    const wallpaperRow = getWallpaperSheetRow();
+
+    if (!wallpaperRow) {
+        loadSavedWallpaper();
+        return;
+    }
+
+    const wallpapers = parseWallpaperPayload(wallpaperRow.payload);
+
+    if (!wallpapers.length) {
+        loadSavedWallpaper();
+        return;
+    }
+
+    const previousRandomUrl =
+        localStorage.getItem(LAST_RANDOM_WALLPAPER_KEY) || '';
+
+    // Avoid selecting the same wallpaper twice in a row.
+    const availableWallpapers = wallpapers.length > 1
+        ? wallpapers.filter(item => item.url !== previousRandomUrl)
+        : wallpapers;
+
+    const randomIndex = Math.floor(
+        Math.random() * availableWallpapers.length
+    );
+
+    const selectedWallpaper = availableWallpapers[randomIndex];
+
+    wallpaperGalleryCache = wallpapers;
+    wallpaperDraftUrl = selectedWallpaper.url;
+    wallpaperDraftTitle = selectedWallpaper.title;
+    wallpaperDraftStrength = getSavedWallpaperStrength();
+
+    setDashboardWallpaper(
+        selectedWallpaper.url,
+        wallpaperDraftStrength
+    );
+
+    localStorage.setItem(
+        LAST_RANDOM_WALLPAPER_KEY,
+        selectedWallpaper.url
+    );
+
+    addSystemLog(
+        `Random wallpaper loaded: ${selectedWallpaper.title}`
+    );
 }
 
 function handleWallpaperStrengthInput(value) {
@@ -3530,7 +3580,9 @@ window.onload = function() {
     renderPortal();
     changeToRandomGif();
     renderSearchHistory();
-    syncGoogleSheetData();
+    syncGoogleSheetData().then(() => {
+    loadRandomWallpaper();
+});
     loadUserScripts({ silent: true });
     const gifFrame = document.querySelector('.blank-character-frame');
     if (gifFrame) {
