@@ -626,7 +626,12 @@ body {
 
 }
 
-
+.panel-header h3 {
+    position: relative;
+    text-shadow:
+        -1px 0 rgba(255, 23, 68, 0.45),
+        1px 0 rgba(0, 229, 255, 0.35);
+}
 
 /* THE CODE WORKSPACE PRINT ENGINE */
 
