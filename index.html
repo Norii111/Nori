@@ -24,7 +24,7 @@
         <main class="main-content" id="dashboardTab">
             <section class="manga-panel primary-gas-panel" style="height: 66%;">
                 <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h3>何かを探していますか？</h3>
+                    <h3 class="font-glitch">何かを探していますか？</h3>
               <div class="button-group" style="display: flex; gap: 6px;">
    <button
     class="manga-btn font-glitch glitch-delay-one"
@@ -63,7 +63,7 @@
         <main class="main-content" id="searchMenuTab" style="display: none;">
             <section class="manga-panel" style="grid-row: span 2; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
                 <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h3>何かを探していますか？</h3>
+                    <h3 class="font-glitch glitch-delay-one">何かを探していますか？</h3>
                     <div style="display: flex; gap: 6px;">
                         <button class="manga-btn" style="font-size: 11px; padding: 4px 10px; background: #e3ebd9;" onclick="syncGoogleSheetData()">🔄 REFRESH</button>
                         <button class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="toggleArchiveView()">👁️ ARCHIVE </button>
@@ -98,7 +98,7 @@
  <main class="main-content" id="predictionTab" style="display: none;">
     <section class="manga-panel" style="height: 100%; display: flex; flex-direction: column; overflow: visible;">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-    <h3>Prediction Cards</h3>
+    <h3 class="font-glitch glitch-delay-two">Prediction Cards</h3>
 
     <div style="display: flex; gap: 6px;">
         <button id="predictionSetTimeButton" class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="requestPredictionTimeAccess()">
@@ -140,7 +140,11 @@
 
         <main class="main-content" id="logsTab" style="display: none;">
            <section class="manga-panel" style="height: 100%; display: flex; flex-direction: column;">
-                <h3>SYSTEM LOGS</h3>
+                <div class="panel-header">
+  <h3 class="font-glitch glitch-delay-three">
+    SYSTEM LOGS
+  </h3>
+</div>
                 <textarea readonly id="systemLogsArea">座って待ちます</textarea>
             </section>
         </main>
