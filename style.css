@@ -1675,3 +1675,31 @@ textarea::placeholder {
     box-shadow: 5px 5px 0 var(--ink-black);
 }
 
+
+
+/* SEARCH PANEL — KEEP SCROLLING INSIDE THE TEXTAREA ONLY */
+
+#searchMenuTab {
+    overflow: hidden;
+    min-height: 0;
+}
+
+#searchMenuTab > .manga-panel {
+    overflow: hidden !important;
+    min-height: 0;
+}
+
+#sheetPayloadArea {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    /* Reserve scrollbar space so text does not shift */
+    scrollbar-gutter: stable;
+}
+
+/* Prevent the copy animation from enlarging the page's scroll area */
+#sheetPayloadArea.search-copy-disappear {
+    contain: paint;
+    will-change: transform, opacity, clip-path;
+}
