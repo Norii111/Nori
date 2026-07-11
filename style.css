@@ -937,8 +937,10 @@ textarea.workspace-swap {
     min-height: 190px;
     overflow: visible;
     z-index: 999;
-    transform: rotate(0deg) !important;
-    box-shadow: 10px 10px 0px var(--ink-black);
+
+    /* Keep the original card angle */
+    transform: rotate(var(--card-tilt)) !important;
+    box-shadow: 6px 6px 0 var(--ink-black);
 }
 
 .prediction-card::before {
@@ -1657,3 +1659,19 @@ textarea::placeholder {
     cursor: wait;
     transform: none;
 }
+
+
+/* KEEP SEARCH + PREDICTION PANELS COMPLETELY STABLE */
+
+#searchMenuTab .manga-panel,
+#predictionTab .manga-panel {
+    transition: none;
+}
+
+#searchMenuTab .manga-panel:hover,
+#predictionTab .manga-panel:hover {
+    transform: none;
+    filter: none;
+    box-shadow: 5px 5px 0 var(--ink-black);
+}
+
