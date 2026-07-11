@@ -3073,7 +3073,7 @@ display: none;
 /* Small manga corner mark */
 
 .jrpg-toast-bubble::before {
-  content: "SYSTEM";
+  content: "EREN YAEGER";
 
   position: absolute;
   left: 10px;
