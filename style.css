@@ -954,8 +954,6 @@ textarea.workspace-swap {
             transparent 2px,
             transparent 10px
         );
-
-    animation: prediction-card-ink-flow 700ms linear infinite;
 }
 
 /* PREDICTION CARD LIFE — INTERNAL EFFECTS ONLY */
@@ -1807,4 +1805,64 @@ textarea::placeholder {
 #sheetPayloadArea.search-copy-disappear {
     contain: paint;
     will-change: transform, opacity, clip-path;
+}
+
+
+/* KEEP PREDICTION TEXT CRISP */
+
+.prediction-card:hover {
+    animation: none !important;
+}
+
+/* Do not transform text labels on hover */
+.prediction-card:hover .prediction-card-timer {
+    transform: none !important;
+}
+
+/* Animate only the paper texture—not the card or its text */
+.prediction-card::before {
+    background-image:
+        repeating-linear-gradient(
+            -35deg,
+            rgba(0, 0, 0, 0.035) 0,
+            rgba(0, 0, 0, 0.035) 2px,
+            transparent 2px,
+            transparent 10px
+        );
+
+    background-size: 18px 18px;
+    opacity: 0;
+    transition: opacity 180ms ease;
+    z-index: 0;
+}
+
+.prediction-card:hover::before {
+    opacity: 1;
+    animation: prediction-paper-flow 700ms linear infinite;
+}
+
+@keyframes prediction-paper-flow {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 18px 0;
+    }
+}
+
+/* WORKSPACE TEXT CARET */
+
+#primaryGasArea {
+    caret-color: #b91c1c;
+}
+
+#primaryGasArea:focus {
+    caret-color: #b91c1c;
+}
+
+/* Guarantee the textarea returns to its normal visual state */
+#primaryGasArea:not(.workspace-swap):not(.page-turn) {
+    opacity: 1;
+    filter: none;
 }
