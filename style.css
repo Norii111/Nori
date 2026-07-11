@@ -936,11 +936,116 @@ textarea.workspace-swap {
     height: auto;
     min-height: 190px;
     overflow: visible;
-    z-index: 999;
+    z-index: 20;
 
-    /* Keep the original card angle */
+    /* Never move, scale, or straighten the card */
     transform: rotate(var(--card-tilt)) !important;
-    box-shadow: 6px 6px 0 var(--ink-black);
+
+    /* Visual impact without changing layout */
+    box-shadow:
+        6px 6px 0 var(--ink-black),
+        inset 0 0 0 3px rgba(255, 255, 255, 0.7);
+
+    background-image:
+        repeating-linear-gradient(
+            -35deg,
+            rgba(0, 0, 0, 0.035) 0,
+            rgba(0, 0, 0, 0.035) 2px,
+            transparent 2px,
+            transparent 10px
+        );
+
+    animation: prediction-card-ink-flow 700ms linear infinite;
+}
+
+/* PREDICTION CARD LIFE — INTERNAL EFFECTS ONLY */
+
+.prediction-card {
+    isolation: isolate;
+}
+
+@keyframes prediction-card-ink-flow {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 18px 0;
+    }
+}
+
+/* Pin jumps without moving the card */
+.prediction-card:hover .prediction-card-pin {
+    animation: prediction-pin-pop 480ms
+        cubic-bezier(0.2, 1.7, 0.4, 1);
+}
+
+@keyframes prediction-pin-pop {
+    0% {
+        transform: translateX(-50%) scale(1);
+    }
+
+    45% {
+        transform: translateX(-50%) scale(1.4) rotate(-12deg);
+    }
+
+    70% {
+        transform: translateX(-50%) scale(0.9) rotate(5deg);
+    }
+
+    100% {
+        transform: translateX(-50%) scale(1) rotate(0);
+    }
+}
+
+/* Title receives a manga emphasis line */
+.prediction-card-title {
+    position: relative;
+}
+
+.prediction-card-title::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 0;
+    height: 3px;
+    background: var(--ink-black);
+    transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.prediction-card:hover .prediction-card-title::after {
+    width: 100%;
+}
+
+/* Timer label reacts */
+.prediction-card-timer {
+    transition:
+        letter-spacing 180ms ease,
+        transform 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.prediction-card:hover .prediction-card-timer {
+    letter-spacing: 1px;
+    transform: rotate(-1deg);
+    box-shadow: 3px 3px 0 var(--ink-black);
+}
+
+/* Copy button gets a small comic pulse */
+.prediction-card:hover .prediction-copy-btn:not(:disabled) {
+    animation: prediction-copy-pulse 850ms ease-in-out infinite;
+}
+
+@keyframes prediction-copy-pulse {
+    0%,
+    100% {
+        box-shadow: 3px 3px 0 var(--ink-black);
+    }
+
+    50% {
+        box-shadow: 5px 5px 0 var(--ink-black);
+    }
 }
 
 .prediction-card::before {
