@@ -876,14 +876,28 @@ function renderArchiveContainer() {
 
 // --- ARROW KEY, ENTER & ALT+C KEYBIND MATRIX LISTENERS ---
 document.addEventListener('keydown', function(e) {
-    if (e.altKey && (e.key === 'c' || e.key === 'C')) {
-        e.preventDefault();
-        const searchTabVisible = document.getElementById('searchMenuTab').style.display !== 'none';
-        if (searchTabVisible) {
-            copySearchPayload();
-        }
-        return;
+if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+    e.preventDefault();
+
+    const dashboardTab = document.getElementById('dashboardTab');
+    const searchTab = document.getElementById('searchMenuTab');
+
+    const dashboardVisible =
+        dashboardTab &&
+        window.getComputedStyle(dashboardTab).display !== 'none';
+
+    const searchVisible =
+        searchTab &&
+        window.getComputedStyle(searchTab).display !== 'none';
+
+    if (dashboardVisible) {
+        copyTextAreaContent();
+    } else if (searchVisible) {
+        copySearchPayload();
     }
+
+    return;
+}
 
     const suggestionsBox = document.getElementById('searchSuggestions');
     if (!suggestionsBox || suggestionsBox.style.display === "none") return;
