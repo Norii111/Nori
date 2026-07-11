@@ -2665,6 +2665,7 @@ window.addEventListener('load', installHorizontalNoteScroll);
 
 const WALLPAPER_STORAGE_KEY = 'mangaDashboardWallpaperUrl';
 const WALLPAPER_SHEET_KEY = 'ALL IN ONE';
+const WALLPAPER_ENTRY_SEPARATOR = '------------------------------------------------';
 
 let wallpaperDraftUrl = null;
 let wallpaperDraftTitle = '';
@@ -3088,12 +3089,48 @@ function ensureWallpaperModal() {
     </button>
 </div>
             </div>
+<div class="wallpaper-add-row">
+    <input
+        id="wallpaperAddTitle"
+        type="text"
+        placeholder="Wallpaper title"
+        autocomplete="off"
+    >
 
+    <input
+        id="wallpaperAddUrl"
+        type="url"
+        placeholder="Image / MP4 URL"
+        autocomplete="off"
+    >
+
+    <button
+        id="wallpaperAddButton"
+        class="manga-btn"
+        type="button"
+        onclick="addWallpaperToSheet()"
+    >
+        + Add
+    </button>
+</div>
             <div id="wallpaperGalleryStrip" class="wallpaper-gallery-strip"></div>
         </div>
     `;
 
     document.body.appendChild(modal);
+    const addTitleInput = modal.querySelector('#wallpaperAddTitle');
+const addUrlInput = modal.querySelector('#wallpaperAddUrl');
+
+[addTitleInput, addUrlInput].forEach(input => {
+    if (!input) return;
+
+    input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addWallpaperToSheet();
+        }
+    });
+});
 
     modal.addEventListener('click', event => {
         if (event.target === modal) {
@@ -3126,6 +3163,11 @@ async function openWallpaperGallery() {
     wallpaperDraftUrl = getSavedWallpaperUrl();
     wallpaperDraftTitle = '';
     wallpaperDraftStrength = getSavedWallpaperStrength();
+    const addTitleInput = document.getElementById('wallpaperAddTitle');
+const addUrlInput = document.getElementById('wallpaperAddUrl');
+
+if (addTitleInput) addTitleInput.value = '';
+if (addUrlInput) addUrlInput.value = '';
 
 const strengthSlider = document.getElementById('wallpaperStrengthSlider');
 const strengthLabel = document.getElementById('wallpaperStrengthValue');
@@ -3209,6 +3251,170 @@ card.addEventListener('mouseleave', () => {
 
         strip.appendChild(card);
     });
+}
+
+
+function buildWallpaperSheetPayload(existingPayload, title, url) {
+    const cleanedExisting = String(existingPayload || '')
+        .replace(/\r\n/g, '\n')
+        .trim()
+        .replace(/\n?\s*-{3,}\s*$/, '')
+        .trim();
+
+    const newBlock = `${title}\n${url}`;
+
+    if (!cleanedExisting) {
+        return `${newBlock}\n${WALLPAPER_ENTRY_SEPARATOR}`;
+    }
+
+    return `${cleanedExisting}\n${WALLPAPER_ENTRY_SEPARATOR}\n${newBlock}\n${WALLPAPER_ENTRY_SEPARATOR}`;
+}
+
+async function getEditableWallpaperSheetRow() {
+    const response = await fetch(
+        `${gasWebAppUrl}?api=devtools&t=${Date.now()}`,
+        {
+            cache: 'no-store'
+        }
+    );
+
+    const result = await response.json();
+
+    if (!result.ok) {
+        throw new Error(
+            result.message || 'Could not load the editable wallpaper row.'
+        );
+    }
+
+    const rows = Array.isArray(result.rows) ? result.rows : [];
+
+    const wallpaperRow = rows.find(row =>
+        String(row.key || '').trim().toUpperCase() === WALLPAPER_SHEET_KEY
+    );
+
+    if (!wallpaperRow || !wallpaperRow._row) {
+        throw new Error(`Sheet row not found: ${WALLPAPER_SHEET_KEY}`);
+    }
+
+    return wallpaperRow;
+}
+
+async function addWallpaperToSheet() {
+    const titleInput = document.getElementById('wallpaperAddTitle');
+    const urlInput = document.getElementById('wallpaperAddUrl');
+    const addButton = document.getElementById('wallpaperAddButton');
+
+    const title = String(titleInput?.value || '').trim();
+    const url = String(urlInput?.value || '').trim();
+
+    if (!title) {
+        showToast('Enter a wallpaper title.');
+        titleInput?.focus();
+        return;
+    }
+
+    if (!/^https?:\/\//i.test(url)) {
+        showToast('Enter a valid http(s) wallpaper URL.');
+        urlInput?.focus();
+        return;
+    }
+
+    if (!isImageWallpaperUrl(url) && !isVideoWallpaperUrl(url)) {
+        showToast('URL must be a supported image or MP4 URL.');
+        urlInput?.focus();
+        return;
+    }
+
+    if (wallpaperGalleryCache.some(item => item.url === url)) {
+        showToast('That wallpaper URL is already in the gallery.');
+        return;
+    }
+
+    const originalButtonText = addButton?.textContent || '+ Add';
+
+    if (addButton) {
+        addButton.disabled = true;
+        addButton.textContent = 'Adding...';
+    }
+
+    try {
+        const editableRow = await getEditableWallpaperSheetRow();
+
+        const currentPayload = String(editableRow.description || '');
+
+        const updatedPayload = buildWallpaperSheetPayload(
+            currentPayload,
+            title,
+            url
+        );
+
+        const response = await fetch(gasWebAppUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify({
+                action: 'edit',
+                row: editableRow._row,
+                key: editableRow.key || WALLPAPER_SHEET_KEY,
+                description: updatedPayload
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.ok) {
+            throw new Error(
+                result.message || 'Wallpaper could not be added.'
+            );
+        }
+
+        const publicRow = getWallpaperSheetRow();
+
+        if (publicRow) {
+            publicRow.payload = updatedPayload;
+        }
+
+        const cachedDevRow = Array.isArray(devToolsRows)
+            ? devToolsRows.find(
+                row => Number(row._row) === Number(editableRow._row)
+            )
+            : null;
+
+        if (cachedDevRow) {
+            cachedDevRow.description = updatedPayload;
+        }
+
+        wallpaperGalleryCache = parseWallpaperPayload(updatedPayload);
+
+        renderWallpaperGallery(wallpaperGalleryCache);
+        warmWallpaperPreviewVideos(wallpaperGalleryCache);
+
+        if (titleInput) titleInput.value = '';
+        if (urlInput) urlInput.value = '';
+
+        const strip = document.getElementById('wallpaperGalleryStrip');
+
+        if (strip) {
+            requestAnimationFrame(() => {
+                strip.scrollTo({
+                    left: strip.scrollWidth,
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        showToast(`Added wallpaper: ${title}`);
+        addSystemLog(`Wallpaper added to ${WALLPAPER_SHEET_KEY}: ${title}`);
+    } catch (error) {
+        showToast(`Wallpaper add failed: ${error.message}`);
+        addSystemLog(`Wallpaper add error: ${error.message}`);
+    } finally {
+        if (addButton) {
+            addButton.disabled = false;
+            addButton.textContent = originalButtonText;
+        }
+    }
 }
 
 function previewWallpaper(url, title) {
