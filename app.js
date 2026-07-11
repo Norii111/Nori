@@ -2712,12 +2712,35 @@ const WALLPAPER_STORAGE_KEY = 'mangaDashboardWallpaperUrl';
 const WALLPAPER_SHEET_KEY = 'ALL IN ONE';
 const WALLPAPER_ENTRY_SEPARATOR = '------------------------------------------------';
 const LAST_RANDOM_WALLPAPER_KEY = 'mangaLastRandomWallpaperUrl';
+const WALLPAPER_MODE_STORAGE_KEY = 'mangaDashboardWallpaperMode';
 
 let wallpaperDraftUrl = null;
 let wallpaperDraftTitle = '';
 let wallpaperGalleryCache = [];
 const wallpaperVideoWarmCache = new Map();
 
+function loadRandomWallpaper() {
+    const wallpaperMode =
+        localStorage.getItem(WALLPAPER_MODE_STORAGE_KEY) || 'random';
+
+    const manuallySavedUrl = getSavedWallpaperUrl();
+
+    // A manually saved wallpaper always wins.
+    if (wallpaperMode === 'manual' && manuallySavedUrl) {
+        loadSavedWallpaper();
+        addSystemLog('Manual wallpaper preserved.');
+        return;
+    }
+
+    const wallpaperRow = getWallpaperSheetRow();
+
+    if (!wallpaperRow) {
+        loadSavedWallpaper();
+        return;
+    }
+
+    // Keep the remainder of your randomizer here...
+    
 function escapeWallpaperHtml(value) {
     return String(value || '')
         .replace(/&/g, '&amp;')
@@ -3541,6 +3564,10 @@ function saveWallpaperSelection() {
 
     localStorage.setItem(WALLPAPER_STORAGE_KEY, selectedUrl);
     localStorage.setItem(WALLPAPER_STRENGTH_STORAGE_KEY, String(selectedStrength));
+    localStorage.setItem(
+    WALLPAPER_MODE_STORAGE_KEY,
+    'manual'
+);
 
     wallpaperDraftStrength = selectedStrength;
     setDashboardWallpaper(selectedUrl, selectedStrength);
