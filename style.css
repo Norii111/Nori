@@ -2795,6 +2795,9 @@ textarea::placeholder {
   --glitch-delay: -3.1s;
 }
 
+.glitch-delay-three {
+  --glitch-delay: -4.2s;
+}
 /* Stronger and more frequent while hovering buttons */
 
 .manga-btn.font-glitch:hover {
