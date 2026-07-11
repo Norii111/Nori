@@ -2718,28 +2718,6 @@ let wallpaperDraftUrl = null;
 let wallpaperDraftTitle = '';
 let wallpaperGalleryCache = [];
 const wallpaperVideoWarmCache = new Map();
-
-function loadRandomWallpaper() {
-    const wallpaperMode =
-        localStorage.getItem(WALLPAPER_MODE_STORAGE_KEY) || 'random';
-
-    const manuallySavedUrl = getSavedWallpaperUrl();
-
-    // A manually saved wallpaper always wins.
-    if (wallpaperMode === 'manual' && manuallySavedUrl) {
-        loadSavedWallpaper();
-        addSystemLog('Manual wallpaper preserved.');
-        return;
-    }
-
-    const wallpaperRow = getWallpaperSheetRow();
-
-    if (!wallpaperRow) {
-        loadSavedWallpaper();
-        return;
-    }
-
-    // Keep the remainder of your randomizer here...
     
 function escapeWallpaperHtml(value) {
     return String(value || '')
@@ -3048,6 +3026,18 @@ function loadSavedWallpaper() {
 }
 
 function loadRandomWallpaper() {
+    const wallpaperMode =
+        localStorage.getItem(WALLPAPER_MODE_STORAGE_KEY) || 'random';
+
+    const manuallySavedUrl = getSavedWallpaperUrl();
+
+    // A manually selected and saved wallpaper always wins.
+    if (wallpaperMode === 'manual' && manuallySavedUrl) {
+        loadSavedWallpaper();
+        addSystemLog('Manual wallpaper preserved.');
+        return;
+    }
+
     const wallpaperRow = getWallpaperSheetRow();
 
     if (!wallpaperRow) {
@@ -3065,16 +3055,18 @@ function loadRandomWallpaper() {
     const previousRandomUrl =
         localStorage.getItem(LAST_RANDOM_WALLPAPER_KEY) || '';
 
-    // Avoid selecting the same wallpaper twice in a row.
     const availableWallpapers = wallpapers.length > 1
-        ? wallpapers.filter(item => item.url !== previousRandomUrl)
+        ? wallpapers.filter(
+            wallpaper => wallpaper.url !== previousRandomUrl
+        )
         : wallpapers;
 
     const randomIndex = Math.floor(
         Math.random() * availableWallpapers.length
     );
 
-    const selectedWallpaper = availableWallpapers[randomIndex];
+    const selectedWallpaper =
+        availableWallpapers[randomIndex];
 
     wallpaperGalleryCache = wallpapers;
     wallpaperDraftUrl = selectedWallpaper.url;
