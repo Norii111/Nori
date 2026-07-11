@@ -11,17 +11,26 @@
 
  
 body {
-
     margin: 0;
 
-    font-family: 'Courier New', Courier, monospace;
+    font-family:
+        ui-monospace,
+        "SFMono-Regular",
+        Menlo,
+        Monaco,
+        Consolas,
+        "Liberation Mono",
+        monospace;
 
-    background-color: #1a1a1e; /* Dark table background behind the book */
-
-    background-image: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8) 100%);
+    background-color: #1a1a1e;
+    background-image:
+        radial-gradient(
+            circle,
+            transparent 40%,
+            rgba(0, 0, 0, 0.8) 100%
+        );
 
     color: var(--ink-black);
-
 }
 
 
@@ -640,7 +649,14 @@ textarea {
 
     padding: 12px;
 
-    font-family: monospace;
+    font-family:
+    ui-monospace,
+    "SFMono-Regular",
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    monospace;
 
     font-size: 14px;
 
@@ -676,6 +692,18 @@ textarea.page-turn {
     transform: translateY(-18px) translateX(12px) rotate(3deg) scale(0.98);
     opacity: 0.08;
     filter: blur(0.5px);
+}
+
+textarea,
+input {
+    font-family:
+        ui-monospace,
+        "SFMono-Regular",
+        Menlo,
+        Monaco,
+        Consolas,
+        "Liberation Mono",
+        monospace;
 }
 
 /* SWAP VIEW — MANGA PANEL SNAP */
@@ -871,14 +899,38 @@ textarea.workspace-swap {
     cursor: pointer;
 
     box-shadow: 3px 3px 0px var(--ink-black);
-
-    font-family: inherit;
+font-family:
+    "Arial Black",
+    "Yu Gothic",
+    "Hiragino Kaku Gothic ProN",
+    Meiryo,
+    sans-serif;
 
     text-transform: uppercase;
 
 }
 
+.manga-logo {
+    font-family:
+        "Yu Mincho",
+        "Hiragino Mincho ProN",
+        "Noto Serif JP",
+        serif;
 
+    font-weight: 900;
+}
+.nav-links a,
+.panel-header h3,
+.manga-btn {
+    font-family:
+        "Arial Black",
+        "Yu Gothic",
+        "Hiragino Kaku Gothic ProN",
+        Meiryo,
+        sans-serif;
+
+    font-weight: 900;
+}
 
 .manga-btn:hover {
 
@@ -2223,3 +2275,16 @@ textarea::placeholder {
 }
 
 
+
+
+::selection {
+    background: var(--ink-black);
+    color: var(--bg-paper);
+    text-shadow: none;
+}
+
+::-moz-selection {
+    background: var(--ink-black);
+    color: var(--bg-paper);
+    text-shadow: none;
+}
