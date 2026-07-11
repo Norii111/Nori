@@ -2147,3 +2147,79 @@ textarea::placeholder {
     opacity: 1;
     filter: none;
 }
+
+/* =================================
+   REUSABLE CYBER FONT GLITCH
+================================= */
+
+.font-glitch {
+    animation:
+        cyber-font-glitch
+        4.8s
+        var(--glitch-delay, 0s)
+        steps(1, end)
+        infinite;
+}
+
+/* Different timing so everything does not glitch together */
+
+.glitch-delay-one {
+    --glitch-delay: -1.6s;
+}
+
+.glitch-delay-two {
+    --glitch-delay: -3.1s;
+}
+
+/* Stronger and more frequent while hovering buttons */
+
+.manga-btn.font-glitch:hover {
+    animation-duration: 2.4s;
+}
+
+@keyframes cyber-font-glitch {
+    0%,
+    82%,
+    100% {
+        text-shadow: none;
+    }
+
+    83% {
+        text-shadow:
+            -2px 0 #ff1744,
+            2px 0 #00e5ff;
+    }
+
+    85% {
+        text-shadow:
+            2px 0 #ff1744,
+            -2px 0 #00e5ff;
+    }
+
+    87% {
+        text-shadow:
+            -1px 0 #fff3b0,
+            2px 0 #b91c1c,
+            -2px 1px #00e5ff;
+    }
+
+    89% {
+        text-shadow:
+            3px 0 #ff1744,
+            -1px 0 #00e5ff;
+    }
+
+    91% {
+        text-shadow: none;
+    }
+
+    94% {
+        text-shadow:
+            -1px 0 #ff1744,
+            1px 0 #00e5ff;
+    }
+
+    95% {
+        text-shadow: none;
+    }
+}
