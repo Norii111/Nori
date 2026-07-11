@@ -3209,3 +3209,32 @@ display: none;
     font-size: 10px;
   }
 }
+
+/* JRPG notification final positioning */
+
+.jrpg-toast-stage {
+  right: 0;
+}
+
+/* Dialogue box moves farther right and behind character */
+.jrpg-toast-bubble {
+  margin-right: -70px;
+  z-index: 1;
+
+  /* Keeps text away from the part covered by the image */
+  padding-right: 72px;
+}
+
+/* Character stays in front of the dialogue box */
+.jrpg-character-wrap {
+  position: relative;
+  z-index: 2;
+
+  /* Removes the remaining edge gap */
+  margin-right: -12px;
+}
+
+/* No speech-bubble arrow */
+.jrpg-toast-bubble::after {
+  display: none;
+}
