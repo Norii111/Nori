@@ -686,37 +686,67 @@ function clearAndHideSearch() {
 function copySearchPayload() {
     const payloadOutput = document.getElementById('sheetPayloadArea');
     const searchInput = document.getElementById('sheetKeySearch');
-    
-    if (!payloadOutput || !payloadOutput.value || payloadOutput.value.startsWith("❌")) {
-        showToast("Error: No valid content loaded to copy.");
+
+    if (
+        !payloadOutput ||
+        !payloadOutput.value ||
+        payloadOutput.value.startsWith('❌')
+    ) {
+        showToast('Error: No valid content loaded to copy.');
         return;
     }
 
-    // Manga page-swipe animation
-    payloadOutput.classList.remove('page-turn');
-    void payloadOutput.offsetWidth; // restart animation even if clicked repeatedly
-    payloadOutput.classList.add('page-turn');
-    
-    payloadOutput.select();
+    const textToCopy = payloadOutput.value;
 
-    navigator.clipboard.writeText(payloadOutput.value)
+    navigator.clipboard.writeText(textToCopy)
         .then(() => {
-            showToast("Copied content! Resetting workspace matrix...");
+            showToast('Copied content!');
+            playSearchCopyDisappear(payloadOutput, searchInput);
         })
         .catch(() => {
-            showToast("Clipboard fallback executed.");
-        })
-        .finally(() => {
-            setTimeout(() => {
-                payloadOutput.classList.remove('page-turn');
-
-                if (searchInput) {
-                    searchInput.value = "";
-                }
-
-                clearAndHideSearch();
-            }, 220);
+            showToast('Copy failed.');
         });
+}
+
+function playSearchCopyDisappear(payloadOutput, searchInput) {
+    if (!payloadOutput) return;
+
+    payloadOutput.classList.remove('search-copy-disappear');
+
+    clearTimeout(payloadOutput._searchCopyFallbackTimer);
+
+    // Force the browser to restart the animation.
+    void payloadOutput.offsetWidth;
+
+    let hasFinished = false;
+
+    const finishAnimation = () => {
+        if (hasFinished) return;
+
+        hasFinished = true;
+
+        payloadOutput.classList.remove('search-copy-disappear');
+
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        clearAndHideSearch();
+    };
+
+    payloadOutput.addEventListener(
+        'animationend',
+        finishAnimation,
+        { once: true }
+    );
+
+    payloadOutput.classList.add('search-copy-disappear');
+
+    // Safety fallback in case animationend does not fire.
+    payloadOutput._searchCopyFallbackTimer = setTimeout(
+        finishAnimation,
+        600
+    );
 }
 
 function injectPayloadToWorkspace() {
