@@ -401,6 +401,44 @@ textarea.page-turn {
     filter: blur(0.5px);
 }
 
+/* SWAP VIEW — MANGA PANEL SNAP */
+
+textarea.workspace-swap {
+    animation: workspace-panel-snap 420ms
+        cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes workspace-panel-snap {
+    0% {
+        opacity: 0.25;
+        transform:
+            translateX(28px)
+            translateY(-4px)
+            rotate(1deg)
+            scale(0.985);
+        box-shadow: 1px 1px 0 var(--ink-black);
+    }
+
+    55% {
+        opacity: 1;
+        transform:
+            translateX(-5px)
+            translateY(2px)
+            rotate(-0.3deg)
+            scale(1.005);
+        box-shadow: 8px 8px 0 var(--ink-black);
+    }
+
+    100% {
+        opacity: 1;
+        transform:
+            translateX(0)
+            translateY(0)
+            rotate(0)
+            scale(1);
+        box-shadow: none;
+    }
+}
 
 
 /* OVERFLOW SNIPPETS PAGES GRID */
