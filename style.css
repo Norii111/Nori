@@ -3260,3 +3260,35 @@ display: none;
   transform: translateY(2px) scale(0.98);
 }
 
+
+
+
+/* Lift search suggestions on mouse or keyboard selection */
+
+#searchSuggestions .suggestion-item {
+  position: relative;
+
+  transition:
+    transform 160ms cubic-bezier(0.2, 1.8, 0.4, 1),
+    box-shadow 160ms ease;
+
+  transform: translateY(0);
+}
+
+#searchSuggestions .suggestion-item:hover,
+#searchSuggestions
+  .suggestion-item[style*="background: var(--ink-black)"] {
+  transform: translateY(-4px);
+
+  box-shadow:
+    5px 5px 0 var(--ink-black);
+
+  z-index: 5;
+}
+
+#searchSuggestions .suggestion-item:active {
+  transform: translateY(-1px);
+
+  box-shadow:
+    2px 2px 0 var(--ink-black);
+}
