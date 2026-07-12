@@ -3259,3 +3259,207 @@ display: none;
 .jrpg-toast-character:active {
   transform: translateY(2px) scale(0.98);
 }
+
+
+/* =================================
+   MANGA SEARCH SUGGESTION DROPDOWN
+================================= */
+
+#searchSuggestions {
+  top: calc(100% + 10px) !important;
+
+  padding: 38px 8px 8px !important;
+
+  background:
+    radial-gradient(
+      rgba(0, 0, 0, 0.13) 1px,
+      transparent 1.5px
+    ),
+    var(--bg-paper) !important;
+
+  background-size: 6px 6px !important;
+
+  border: 4px solid var(--ink-black) !important;
+  border-top: 4px solid var(--ink-black) !important;
+
+  box-shadow:
+    7px 7px 0 #b91c1c,
+    11px 11px 0 var(--ink-black) !important;
+
+  clip-path: polygon(
+    0 0,
+    97% 0,
+    100% 12%,
+    100% 100%,
+    3% 100%,
+    0 88%
+  );
+
+  animation: suggestion-drop-in 160ms ease-out;
+}
+
+/* Manga header bar */
+#searchSuggestions::before {
+  content: "検索結果 // SEARCH RESULTS";
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 11px;
+
+  background:
+    repeating-linear-gradient(
+      -25deg,
+      rgba(255, 255, 255, 0.17) 0,
+      rgba(255, 255, 255, 0.17) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    var(--ink-black);
+
+  color: var(--bg-paper);
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+/* Individual result */
+#searchSuggestions .suggestion-item {
+  position: relative;
+
+  margin-bottom: 7px;
+
+  padding:
+    11px
+    38px
+    11px
+    45px !important;
+
+  border: 3px solid var(--ink-black) !important;
+
+  background: var(--bg-paper);
+
+  box-shadow: 3px 3px 0 var(--ink-black);
+
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  clip-path: polygon(
+    0 0,
+    97% 0,
+    100% 25%,
+    100% 100%,
+    3% 100%,
+    0 75%
+  );
+
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+/* Result number */
+#searchSuggestions .suggestion-item::before {
+  content: "0" attr(data-index);
+
+  position: absolute;
+  left: 9px;
+  top: 50%;
+
+  transform:
+    translateY(-50%)
+    rotate(-4deg);
+
+  padding: 3px 5px;
+
+  background: var(--ink-black);
+  color: var(--bg-paper);
+
+  border: 2px solid var(--ink-black);
+
+  font-size: 9px;
+  font-weight: 900;
+}
+
+/* Selection arrow */
+#searchSuggestions .suggestion-item::after {
+  content: "▶";
+
+  position: absolute;
+  right: 11px;
+  top: 50%;
+
+  opacity: 0;
+
+  transform:
+    translateY(-50%)
+    translateX(8px);
+
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+/* Mouse hover and keyboard-selected result */
+#searchSuggestions .suggestion-item:hover,
+#searchSuggestions
+  .suggestion-item[style*="background: var(--ink-black)"] {
+  background: var(--ink-black) !important;
+  color: var(--bg-paper) !important;
+
+  transform:
+    translate(-3px, -2px)
+    rotate(-0.4deg);
+
+  box-shadow:
+    6px 6px 0 #b91c1c,
+    8px 8px 0 var(--ink-black);
+}
+
+#searchSuggestions .suggestion-item:hover::before,
+#searchSuggestions
+  .suggestion-item[style*="background: var(--ink-black)"]::before {
+  background: #fff3b0;
+  color: var(--ink-black);
+}
+
+#searchSuggestions .suggestion-item:hover::after,
+#searchSuggestions
+  .suggestion-item[style*="background: var(--ink-black)"]::after {
+  opacity: 1;
+
+  transform:
+    translateY(-50%)
+    translateX(0);
+}
+
+#searchSuggestions .suggestion-item:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes suggestion-drop-in {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(-7px)
+      scaleY(0.94);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scaleY(1);
+  }
+}
