@@ -589,33 +589,6 @@ function updatePredictionTimeToolbar() {
     if (cancelButton) cancelButton.style.display = predictionTimeEditMode ? 'inline-block' : 'none';
 }
 
-function openSearchSuggestions() {
-  const suggestionsBox =
-    document.getElementById("searchSuggestions");
-
-  if (!suggestionsBox) return;
-
-  // Remove old inline display rules, including !important.
-  suggestionsBox.style.removeProperty("display");
-  suggestionsBox.classList.add("is-open");
-}
-
-function closeSearchSuggestions({ clear = false } = {}) {
-  const suggestionsBox =
-    document.getElementById("searchSuggestions");
-
-  if (!suggestionsBox) return;
-
-  suggestionsBox.classList.remove("is-open");
-  suggestionsBox.style.removeProperty("display");
-
-  if (clear) {
-    suggestionsBox.replaceChildren();
-  }
-
-  focusedSuggestionIndex = -1;
-}
-
 
 function querySheetMatrix() {
     const searchInput = document.getElementById('sheetKeySearch');
@@ -639,63 +612,27 @@ function querySheetMatrix() {
     const filteredMatches = googleSheetData.filter(row => row.key.toUpperCase().includes(searchKey));
     
     if (filteredMatches.length > 0) {
-        closeSearchSuggestions({ clear: true });
-        openSearchSuggestions();
+        suggestionsBox.innerHTML = "";
+        suggestionsBox.style.display = "block";
         
         filteredMatches.slice(0, 10).forEach((match, idx) => {
-  const rowOption = document.createElement("div");
-
-  rowOption.className = "suggestion-item";
-  rowOption.dataset.index = String(idx);
-            rowOption.dataset.key = match.key;
-  rowOption.dataset.number = String(idx + 1).padStart(2, "0");
-
-  const copyWrap = document.createElement("div");
-  copyWrap.className = "suggestion-copy";
-
-  const title = document.createElement("strong");
-  title.className = "suggestion-title";
-  title.textContent = match.key;
-
-  const preview = document.createElement("span");
-  preview.className = "suggestion-preview";
-
-  const cleanedPreview = String(match.payload || "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  preview.textContent =
-    cleanedPreview.length > 85
-      ? `${cleanedPreview.slice(0, 85)}…`
-      : cleanedPreview || "No description";
-
-  copyWrap.append(title, preview);
-
-
-  rowOption.addEventListener("mouseenter", () => {
-    highlightSuggestion(idx);
-  });
-
-  rowOption.addEventListener("click", () => {
-    selectFinalMatch(match);
-  });
-
- const numberSpacer = document.createElement("span");
-numberSpacer.setAttribute("aria-hidden", "true");
-
-const arrowSpacer = document.createElement("span");
-arrowSpacer.setAttribute("aria-hidden", "true");
-
-rowOption.replaceChildren(
-  numberSpacer,
-  copyWrap,
-  arrowSpacer
-);
-
-suggestionsBox.appendChild(rowOption);
-});
+            const rowOption = document.createElement('div');
+            rowOption.className = "suggestion-item";
+            rowOption.setAttribute("data-index", idx);
+            rowOption.style.padding = "8px 12px";
+            rowOption.style.cursor = "pointer";
+            rowOption.style.borderBottom = "1px solid var(--ink-black)";
+            rowOption.style.fontSize = "13px";
+            rowOption.style.fontWeight = "bold";
+            rowOption.style.background = "var(--bg-paper)";
+            rowOption.innerText = match.key;
+            
+            rowOption.onmouseover = () => { highlightSuggestion(idx); };
+            rowOption.onclick = () => { selectFinalMatch(match); };
+            suggestionsBox.appendChild(rowOption);
+        });
     } else {
-        closeSearchSuggestions({ clear: true });
+        suggestionsBox.style.display = "none";
         payloadOutput.style.display = "block";
         actionsHeader.style.display = "flex";
         document.getElementById('searchButtonGroup').style.display = "none";
@@ -704,29 +641,20 @@ suggestionsBox.appendChild(rowOption);
 }
 
 function highlightSuggestion(index) {
-  const suggestionsBox =
-    document.getElementById("searchSuggestions");
-
-  if (!suggestionsBox) return;
-
-  const items =
-    suggestionsBox.querySelectorAll(".suggestion-item");
-
-  items.forEach(item => {
-    item.classList.remove("is-focused");
-  });
-
-  focusedSuggestionIndex = index;
-
-  if (index >= 0 && index < items.length) {
-    const focusedItem = items[index];
-
-    focusedItem.classList.add("is-focused");
-
-    focusedItem.scrollIntoView({
-      block: "nearest"
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    const items = suggestionsBox.querySelectorAll('.suggestion-item');
+    
+    items.forEach(item => {
+        item.style.background = "var(--bg-paper)";
+        item.style.color = "var(--ink-black)";
     });
-  }
+
+    focusedSuggestionIndex = index;
+    if (index >= 0 && index < items.length) {
+        items[index].style.background = "var(--ink-black)";
+        items[index].style.color = "var(--bg-paper)";
+        items[index].scrollIntoView({ block: 'nearest' });
+    }
 }
 
 function selectFinalMatch(match) {
@@ -739,7 +667,7 @@ function selectFinalMatch(match) {
     searchInput.value = match.key;
     payloadOutput.value = match.payload;
     
-    closeSearchSuggestions({ clear: true });
+    suggestionsBox.style.display = "none";
     payloadOutput.style.display = "block"; 
     actionsHeader.style.display = "flex";    
     buttonGroup.style.display = "flex";    
@@ -748,22 +676,11 @@ function selectFinalMatch(match) {
 }
 
 function clearAndHideSearch() {
-  const payloadArea =
-    document.getElementById("sheetPayloadArea");
-
-  const actionsHeader =
-    document.getElementById("searchActionsHeader");
-
-  if (payloadArea) {
-    payloadArea.value = "";
-    payloadArea.style.display = "none";
-  }
-
-  if (actionsHeader) {
-    actionsHeader.style.display = "none";
-  }
-
-  closeSearchSuggestions({ clear: true });
+    document.getElementById('sheetPayloadArea').value = "";
+    document.getElementById('sheetPayloadArea').style.display = "none";
+    document.getElementById('searchActionsHeader').style.display = "none";
+    document.getElementById('searchSuggestions').style.display = "none";
+    document.getElementById('searchSuggestions').innerHTML = "";
 }
 
 function copySearchPayload() {
@@ -973,7 +890,8 @@ function renderArchiveContainer() {
             // 3. Absolute execution kill on the dropdown box AND all its suggestion-items
             const suggestionsBox = document.getElementById('searchSuggestions');
             if (suggestionsBox) {
-                closeSearchSuggestions({ clear: true });
+                suggestionsBox.innerHTML = "";            // Deletes all .suggestion-item nodes instantly
+                suggestionsBox.style.setProperty('display', 'none', 'important'); // Blasts container out of sight
             }
 
             // 4. Wipe archive UI out of frame cleanly
@@ -1012,12 +930,7 @@ if (e.altKey && (e.key === 'c' || e.key === 'C')) {
 }
 
     const suggestionsBox = document.getElementById('searchSuggestions');
-    if (
-  !suggestionsBox ||
-  !suggestionsBox.classList.contains("is-open")
-) {
-  return;
-}
+    if (!suggestionsBox || suggestionsBox.style.display === "none") return;
 
     const items = suggestionsBox.querySelectorAll('.suggestion-item');
     if (items.length === 0) return;
@@ -1035,13 +948,8 @@ if (e.altKey && (e.key === 'c' || e.key === 'C')) {
     } else if (e.key === "Enter" || e.key === "Tab") {
         if (focusedSuggestionIndex >= 0 && focusedSuggestionIndex < items.length) {
             e.preventDefault();
-            const selectedKey =
-  items[focusedSuggestionIndex].dataset.key;
-
-const fullMatch =
-  googleSheetData.find(
-    row => row.key === selectedKey
-  );
+            const selectedText = items[focusedSuggestionIndex].innerText;
+            const fullMatch = googleSheetData.find(row => row.key === selectedText);
             if (fullMatch) selectFinalMatch(fullMatch);
         }
     }
@@ -1984,7 +1892,8 @@ function switchTab(tabName) {
     if (logsTab) logsTab.style.display = 'none';
     if (devTab) devTab.style.display = 'none';
 
-closeSearchSuggestions({ clear: true });
+    const suggestions = document.getElementById('searchSuggestions');
+    if (suggestions) suggestions.style.display = "none";
 
     const archive = document.getElementById('sheetArchiveArea');
     if (archive) archive.style.display = "none";
@@ -2570,7 +2479,8 @@ pillWrapper.style.setProperty('--pill-tilt', `${randomTilt}deg`);
                 }
 
                 if (suggestionsBox) {
-                    closeSearchSuggestions({ clear: true });
+                    suggestionsBox.innerHTML = "";
+                    suggestionsBox.style.setProperty('display', 'none', 'important');
                 }
             }
         };
