@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>夢幻</title>
+
+<link
+  rel="icon"
+  type="image/svg+xml"
+  href="favicon.svg"
+>
+
+<link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -74,7 +82,7 @@
     <div style="position: relative; width: 100%;">
         <input type="text" id="sheetKeySearch" placeholder="Ketik di sini ....." oninput="querySheetMatrix()" autocomplete="off" style="width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); padding: 12px; font-family: inherit; font-weight: bold; font-size: 14px; box-sizing: border-box;">
         
-        <div id="searchSuggestions" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); border-top: none; max-height: 200px; overflow-y: auto; box-sizing: border-box; box-shadow: 5px 5px 0px var(--ink-black); z-index: 9999;"></div>
+        <div id="searchSuggestions" class="search-suggestions" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--bg-paper); border: 3px solid var(--ink-black); border-top: none; max-height: 200px; overflow-y: auto; box-sizing: border-box; box-shadow: 5px 5px 0px var(--ink-black); z-index: 9999;"></div>
     </div>
 
     <div id="searchHistoryContainer" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; font-family: inherit;"></div>
