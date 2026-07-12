@@ -3292,3 +3292,46 @@ display: none;
   box-shadow:
     2px 2px 0 var(--ink-black);
 }
+
+
+/* Let selected suggestions escape the dropdown frame */
+
+#searchSuggestions {
+  overflow: visible !important;
+}
+
+#searchSuggestions .suggestion-item {
+  position: relative;
+  box-sizing: border-box;
+
+  transition:
+    transform 160ms cubic-bezier(0.2, 1.8, 0.4, 1),
+    width 160ms ease,
+    box-shadow 160ms ease;
+
+  transform: translate(0, 0);
+  width: 100%;
+  z-index: 1;
+}
+
+#searchSuggestions .suggestion-item:hover,
+#searchSuggestions
+  .suggestion-item[style*="background: var(--ink-black)"] {
+  width: calc(100% + 16px);
+
+  transform:
+    translate(-16px, -4px);
+
+  box-shadow:
+    7px 7px 0 var(--ink-black);
+
+  z-index: 20;
+}
+
+#searchSuggestions .suggestion-item:active {
+  transform:
+    translate(-13px, -1px);
+
+  box-shadow:
+    3px 3px 0 var(--ink-black);
+}
