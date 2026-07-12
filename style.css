@@ -2878,17 +2878,22 @@ textarea::placeholder {
 .jrpg-toast-layer {
   position: fixed;
   inset: 0;
-
   z-index: 999999;
 
   overflow: hidden;
   pointer-events: none;
 
   visibility: hidden;
+
+  /* Wait until Eren finishes sliding out before hiding the layer */
+  transition: visibility 0s linear 500ms;
 }
 
 .jrpg-toast-layer.is-visible {
   visibility: visible;
+
+  /* Show immediately when entering */
+  transition-delay: 0s;
 }
 
 .jrpg-toast-stage {
@@ -3212,9 +3217,7 @@ display: none;
 
 /* JRPG notification final positioning */
 
-.jrpg-toast-stage {
-  right: 0;
-}
+
 
 /* Dialogue box moves farther right and behind character */
 .jrpg-toast-bubble {
@@ -3237,4 +3240,11 @@ display: none;
 /* No speech-bubble arrow */
 .jrpg-toast-bubble::after {
   display: none;
+}
+
+/* JRPG notification final positioning */
+
+.jrpg-toast-stage {
+  right: 0;
+  bottom: -24px;
 }
