@@ -1998,6 +1998,7 @@ let jrpgToastIsVisible = false;
 
 let jrpgToastHideTimer = null;
 let jrpgToastClearTimer = null;
+let jrpgToastWasManuallyDismissed = false;
 
 /*
   All existing showToast("message") calls
@@ -2027,13 +2028,21 @@ function showToast(message) {
     Beginning a completely new appearance:
     clear messages from the previous visit.
   */
-  if (!jrpgToastIsVisible) {
-    jrpgToastIsVisible = true;
+if (!jrpgToastIsVisible) {
+  jrpgToastIsVisible = true;
 
+  /*
+    Clear old lines after a normal completed visit,
+    but preserve them when the user manually hid Eren.
+    Typing may still be running in the background.
+  */
+  if (!jrpgToastWasManuallyDismissed) {
     lines.replaceChildren();
-
-    layer.classList.add("is-visible");
   }
+
+  jrpgToastWasManuallyDismissed = false;
+  layer.classList.add("is-visible");
+}
 
   processJrpgToastQueue();
 }
@@ -2076,6 +2085,27 @@ async function processJrpgToastQueue() {
   jrpgToastIsTyping = false;
 
   scheduleJrpgToastExit();
+}
+
+
+
+function dismissJrpgToast() {
+  const layer =
+    document.getElementById("toastContainer");
+
+  if (!layer || !jrpgToastIsVisible) return;
+
+  /*
+    Stop pending automatic cleanup from interfering,
+    but do not stop typing or empty the queue.
+  */
+  clearTimeout(jrpgToastHideTimer);
+  clearTimeout(jrpgToastClearTimer);
+
+  jrpgToastWasManuallyDismissed = true;
+  jrpgToastIsVisible = false;
+
+  layer.classList.remove("is-visible");
 }
 
 function typeJrpgNotificationLine(message) {
@@ -3887,3 +3917,32 @@ if (mainTextarea) {
     });
 }
 };
+
+
+function initializeJrpgToastDismiss() {
+  const character =
+    document.getElementById("jrpgToastCharacter");
+
+  if (
+    !character ||
+    character.dataset.dismissBound === "true"
+  ) {
+    return;
+  }
+
+  character.dataset.dismissBound = "true";
+
+  character.addEventListener(
+    "click",
+    dismissJrpgToast
+  );
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeJrpgToastDismiss
+  );
+} else {
+  initializeJrpgToastDismiss();
+}
