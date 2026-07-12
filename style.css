@@ -3248,3 +3248,14 @@ display: none;
   right: 0;
   bottom: -24px;
 }
+
+
+.jrpg-toast-character {
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.jrpg-toast-character:active {
+  transform: translateY(2px) scale(0.98);
+}
