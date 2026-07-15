@@ -1903,15 +1903,38 @@ function animatePageTitle(tabElement) {
     }, 750);
 }
 
+function animatePageTitle(tabElement) {
+    if (!tabElement) return;
+
+    const title = tabElement.querySelector(
+        '.panel-header h3 .bilingual-label'
+    );
+
+    if (!title) return;
+
+    title.classList.remove('page-title-enter');
+
+    // Force animation restart
+    void title.offsetWidth;
+
+    title.classList.add('page-title-enter');
+
+    clearTimeout(title._pageTitleAnimationTimer);
+
+    title._pageTitleAnimationTimer = setTimeout(() => {
+        title.classList.remove('page-title-enter');
+    }, 750);
+}
 
 function switchTab(tabName) {
-    let openedTab = null;
     const dashTab = document.getElementById('dashboardTab');
     const searchTab = document.getElementById('searchMenuTab');
     const predictionTab = document.getElementById('predictionTab');
     const logsTab = document.getElementById('logsTab');
     const devTab = document.getElementById('devToolsTab');
     const navLinks = document.querySelectorAll('.nav-links a');
+
+    let openedTab = null;
 
     navLinks.forEach(link => link.classList.remove('active'));
 
@@ -1922,55 +1945,91 @@ function switchTab(tabName) {
     if (devTab) devTab.style.display = 'none';
 
     const suggestions = document.getElementById('searchSuggestions');
-    if (suggestions) suggestions.style.display = "none";
+    if (suggestions) suggestions.style.display = 'none';
 
     const archive = document.getElementById('sheetArchiveArea');
-    if (archive) archive.style.display = "none";
+    if (archive) archive.style.display = 'none';
 
     isArchiveOpen = false;
 
     if (tabName === 'dashboard') {
-        if (dashTab) dashTab.style.display = 'flex';
-        openedTab = dashTab;
-        if (navLinks[0]) navLinks[0].classList.add('active');
-        showToast("Switched to Main Command Dashboard");
+        if (dashTab) {
+            dashTab.style.display = 'flex';
+            openedTab = dashTab;
+        }
+
+        if (navLinks[0]) {
+            navLinks[0].classList.add('active');
+        }
+
+        showToast('Switched to Main Command Dashboard');
 
     } else if (tabName === 'searchTab') {
-        if (searchTab) searchTab.style.display = 'flex';
-        openedTab = dashTab;
-        if (navLinks[1]) navLinks[1].classList.add('active');
+        if (searchTab) {
+            searchTab.style.display = 'flex';
+            openedTab = searchTab;
+        }
 
-        showToast("Switched to Sheet Search Engine");
+        if (navLinks[1]) {
+            navLinks[1].classList.add('active');
+        }
 
-        const searchInput = document.getElementById('sheetKeySearch');
-        if (searchInput) searchInput.value = "";
+        showToast('Opened the Grimoire');
+
+        const searchInput =
+            document.getElementById('sheetKeySearch');
+
+        if (searchInput) {
+            searchInput.value = '';
+        }
 
         clearAndHideSearch();
 
     } else if (tabName === 'prediction') {
-        if (predictionTab) predictionTab.style.display = 'flex';
-        openedTab = dashTab;
-        if (navLinks[2]) navLinks[2].classList.add('active');
+        if (predictionTab) {
+            predictionTab.style.display = 'flex';
+            openedTab = predictionTab;
+        }
+
+        if (navLinks[2]) {
+            navLinks[2].classList.add('active');
+        }
 
         clearPredictionSearch();
         renderPredictionCards();
-        showToast("Viewing Prediction Cards");
+
+        showToast('Viewing Prophecy Cards');
 
     } else if (tabName === 'logs') {
-        if (logsTab) logsTab.style.display = 'flex';
-        openedTab = dashTab;
-        if (navLinks[3]) navLinks[3].classList.add('active');
+        if (logsTab) {
+            logsTab.style.display = 'flex';
+            openedTab = logsTab;
+        }
 
-        showToast("Viewing Core System Performance Records");
+        if (navLinks[3]) {
+            navLinks[3].classList.add('active');
+        }
+
+        showToast('Opening the Chronicles');
 
     } else if (tabName === 'devTools') {
-        if (devTab) devTab.style.display = 'flex';
-        openedTab = dashTab;
-        if (navLinks[4]) navLinks[4].classList.add('active');
+        if (devTab) {
+            devTab.style.display = 'flex';
+            openedTab = devTab;
+        }
 
-        showToast("DEV TOOLS ACCESS GRANTED");
+        if (navLinks[4]) {
+            navLinks[4].classList.add('active');
+        }
+
+        showToast('Workshop access granted');
     }
-animatePageTitle(openedTab);
+
+    // Wait one frame so the newly displayed panel is rendered.
+    requestAnimationFrame(() => {
+        animatePageTitle(openedTab);
+    });
+
     changeToRandomGif();
 }
 
