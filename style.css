@@ -3335,3 +3335,111 @@ display: none;
   box-shadow:
     3px 3px 0 var(--ink-black);
 }
+
+
+/* =================================
+   PREDICTION CARD — FULL EDIT MODE
+================================= */
+
+.prediction-card.prediction-card-editing {
+  opacity: 1 !important;
+  filter: none !important;
+
+  height: auto !important;
+  min-height: max-content !important;
+  max-height: none !important;
+
+  overflow: visible !important;
+
+  transform: none !important;
+}
+
+.prediction-card.prediction-card-editing .prediction-card-content {
+  display: block !important;
+
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+
+  overflow: visible !important;
+
+  opacity: 1 !important;
+  filter: none !important;
+
+  white-space: pre-wrap !important;
+  text-overflow: unset !important;
+  text-decoration: none !important;
+
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+}
+
+.prediction-card.prediction-card-editing .prediction-card-timer-editor {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.prediction-card.prediction-card-editing::after {
+  display: none !important;
+}
+
+/* Give the editor enough room to display expanded cards */
+#predictionTab:has(.prediction-card-editing) .prediction-card-grid {
+  align-items: start;
+  overflow: visible;
+}
+
+/* Expired cards remain completely readable during editing */
+.prediction-card-expired.prediction-card-editing {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+
+/* =================================
+   BILINGUAL JAPANESE / ENGLISH TEXT
+================================= */
+
+.bilingual-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.05;
+}
+
+.bilingual-label .label-jp {
+  display: block;
+  font-size: inherit;
+  font-weight: 900;
+}
+
+.bilingual-label .label-en {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+/* Navigation labels stay centered */
+.nav-links .bilingual-label {
+  align-items: center;
+  width: 100%;
+}
+
+/* English subtitle color on active navigation item */
+.nav-links a.active .label-en {
+  color: var(--bg-paper);
+  opacity: 0.72;
+}
+
+/* English subtitle inside black panel headers */
+.panel-header h3 .label-en {
+  color: var(--bg-paper);
+  opacity: 0.7;
+  font-size: 9px;
+  margin-top: 2px;
+}
