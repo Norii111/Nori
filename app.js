@@ -121,7 +121,7 @@ function canOpenChessLock() {
     }
 
     showToast(
-        `DEFENSE MATRIX LOCKED. Try again in ${formatChessLockTime(status.remainingMs)}.`
+        `Forbidden for ${formatChessLockTime(status.remainingMs)}.`
     );
 
     return false;
