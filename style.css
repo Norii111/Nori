@@ -3055,7 +3055,7 @@ width: clamp(220px, 30vw, 340px);
   content: "";
 display: none;
   position: absolute;
-  right: -30px;
+  right: -35px;
   bottom: 24px;
 
   width: 38px;
