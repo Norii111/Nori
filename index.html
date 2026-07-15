@@ -62,7 +62,12 @@
         <main class="main-content" id="dashboardTab">
             <section class="manga-panel primary-gas-panel" style="height: 66%;">
                 <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-<h3 class="font-glitch">何かを探していますか？</h3>
+<h3 class="font-glitch">
+    <span class="bilingual-label">
+        <span class="label-jp">司令塔</span>
+        <span class="label-en">Command Center</span>
+    </span>
+</h3>
               <div class="button-group" style="display: flex; gap: 6px;">
    <button
     class="manga-btn font-glitch glitch-delay-one"
@@ -101,10 +106,10 @@
         <main class="main-content" id="searchMenuTab" style="display: none;">
             <section class="manga-panel" style="grid-row: span 2; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
                 <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                   <h3 class="font-glitch">
+<h3 class="font-glitch glitch-delay-one">
     <span class="bilingual-label">
-        <span class="label-jp">何かを探していますか？</span>
-        <span class="label-en">Looking for something?</span>
+        <span class="label-jp">魔導書庫</span>
+        <span class="label-en">Grimoire</span>
     </span>
 </h3>
                     <div style="display: flex; gap: 6px;">
@@ -141,7 +146,12 @@
  <main class="main-content" id="predictionTab" style="display: none;">
     <section class="manga-panel" style="height: 100%; display: flex; flex-direction: column; overflow: visible;">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-    <h3 class="font-glitch glitch-delay-two">Prediction Cards</h3>
+   <h3 class="font-glitch glitch-delay-two">
+    <span class="bilingual-label">
+        <span class="label-jp">予言札</span>
+        <span class="label-en">Prophecy Cards</span>
+    </span>
+</h3>
 
     <div style="display: flex; gap: 6px;">
         <button id="predictionSetTimeButton" class="manga-btn" style="font-size: 11px; padding: 4px 10px;" onclick="requestPredictionTimeAccess()">
@@ -184,9 +194,12 @@
         <main class="main-content" id="logsTab" style="display: none;">
            <section class="manga-panel" style="height: 100%; display: flex; flex-direction: column;">
                 <div class="panel-header">
-  <h3 class="font-glitch glitch-delay-three">
-    SYSTEM LOGS
-  </h3>
+<h3 class="font-glitch glitch-delay-three">
+    <span class="bilingual-label">
+        <span class="label-jp">年代記</span>
+        <span class="label-en">Chronicles</span>
+    </span>
+</h3>
 </div>
                 <textarea readonly id="systemLogsArea">座って待ちます</textarea>
             </section>
