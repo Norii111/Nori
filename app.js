@@ -455,7 +455,7 @@ function copyPredictionCardContent(cardId) {
     }
 
     navigator.clipboard.writeText(card.content || '')
-        .then(() => showToast('Prediction content copied.'))
+        .then(() => showToast(`"${card.title}" copied.`))
         .catch(() => showToast('Copy failed.'));
 }
 
