@@ -38,6 +38,182 @@ const OFFLINE_DATABASE_STORAGE_KEY = 'mangaOfflineDatabase';
 let devToolsUnlocked = false;
 let devToolsRows = [];
 let chessLockContext = { type: null, payload: null };
+// =================================
+// CHESS LOCK — LOCAL ANTI-SPAM
+// =================================
+
+const CHESS_LOCK_STORAGE_KEY = 'mangaChessLockSecurity';
+const CHESS_LOCK_MAX_FAILURES = 3;
+const CHESS_LOCK_DURATION_MS = 24 * 60 * 60 * 1000;
+
+function getChessLockState() {
+    try {
+        const saved = JSON.parse(
+            localStorage.getItem(CHESS_LOCK_STORAGE_KEY)
+        );
+
+        return {
+            failedAttempts: Number(saved?.failedAttempts) || 0,
+            lockedUntil: Number(saved?.lockedUntil) || 0
+        };
+    } catch (error) {
+        return {
+            failedAttempts: 0,
+            lockedUntil: 0
+        };
+    }
+}
+
+function saveChessLockState(state) {
+    localStorage.setItem(
+        CHESS_LOCK_STORAGE_KEY,
+        JSON.stringify(state)
+    );
+}
+
+function formatChessLockTime(milliseconds) {
+    const totalMinutes = Math.max(
+        1,
+        Math.ceil(milliseconds / 60000)
+    );
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours && minutes) {
+        return `${hours}h ${minutes}m`;
+    }
+
+    if (hours) {
+        return `${hours}h`;
+    }
+
+    return `${minutes}m`;
+}
+
+function getChessLockoutStatus() {
+    const state = getChessLockState();
+    const now = Date.now();
+
+    if (state.lockedUntil > now) {
+        return {
+            locked: true,
+            remainingMs: state.lockedUntil - now
+        };
+    }
+
+    // Remove expired lock and failed attempts.
+    if (state.lockedUntil > 0) {
+        localStorage.removeItem(CHESS_LOCK_STORAGE_KEY);
+    }
+
+    return {
+        locked: false,
+        remainingMs: 0
+    };
+}
+
+function canOpenChessLock() {
+    const status = getChessLockoutStatus();
+
+    if (!status.locked) {
+        return true;
+    }
+
+    showToast(
+        `DEFENSE MATRIX LOCKED. Try again in ${formatChessLockTime(status.remainingMs)}.`
+    );
+
+    return false;
+}
+
+function registerWrongChessMove() {
+    const status = getChessLockoutStatus();
+
+    if (status.locked) {
+        return {
+            locked: true,
+            remainingAttempts: 0
+        };
+    }
+
+    const state = getChessLockState();
+    const failedAttempts = state.failedAttempts + 1;
+
+    if (failedAttempts >= CHESS_LOCK_MAX_FAILURES) {
+        saveChessLockState({
+            failedAttempts,
+            lockedUntil: Date.now() + CHESS_LOCK_DURATION_MS
+        });
+
+        return {
+            locked: true,
+            remainingAttempts: 0
+        };
+    }
+
+    saveChessLockState({
+        failedAttempts,
+        lockedUntil: 0
+    });
+
+    return {
+        locked: false,
+        remainingAttempts:
+            CHESS_LOCK_MAX_FAILURES - failedAttempts
+    };
+}
+
+function resetChessLockFailures() {
+    localStorage.removeItem(CHESS_LOCK_STORAGE_KEY);
+}
+
+function handleWrongChessMove(resetBoardFunction) {
+    const result = registerWrongChessMove();
+
+    currentLondonStep = 0;
+    selectedPieceCoord = null;
+
+    if (typeof resetBoardFunction === 'function') {
+        resetBoardFunction();
+    }
+
+    if (result.locked) {
+        const indicator =
+            document.getElementById('chessStepIndicator');
+
+        if (indicator) {
+            indicator.innerText =
+                'DEFENSE MATRIX LOCKED: 24 HOURS';
+        }
+
+        showToast(
+            '3 wrong moves detected. Chess access is locked for 24 hours.'
+        );
+
+        closeChessModal();
+        changeToRandomGif();
+        return;
+    }
+
+    const indicator =
+        document.getElementById('chessStepIndicator');
+
+    if (indicator) {
+        indicator.innerText =
+            `SECURITY RESET · ${result.remainingAttempts} ATTEMPT${
+                result.remainingAttempts === 1 ? '' : 'S'
+            } LEFT`;
+    }
+
+    showToast(
+        `BLUNDER! ${result.remainingAttempts} attempt${
+            result.remainingAttempts === 1 ? '' : 's'
+        } left.`
+    );
+
+    changeToRandomGif();
+}
 
 let googleSheetData = []; 
 let predictionCards = [];
@@ -106,7 +282,7 @@ function getActiveStickyNote() {
         String(item.id) === String(currentSnippetBeingEdited) &&
         (item.isSticky || item.id === "local-sticky-note")
     );
-}
+}        
 
 function handleStickyNoteAutosave() {
     const textarea = document.getElementById('primaryGasArea');
@@ -177,6 +353,8 @@ function resetSicilianBoardState() {
 }
 
 function openUserScriptChessLock(context, promptText) {
+    if (!canOpenChessLock()) return;
+
     chessLockContext = context;
     currentLondonStep = 0;
     selectedPieceCoord = null;
@@ -210,6 +388,10 @@ function renderSicilianChessBoard() {
 }
 
 function handleSicilianSquareClick(clickedCoord) {
+        if (!canOpenChessLock()) {
+        closeChessModal();
+        return;
+    }
     const clickedPiece = chessBoardState[clickedCoord];
 
     if (selectedPieceCoord === clickedCoord) {
@@ -264,15 +446,11 @@ showToast("Stage 2 accepted...");
         }
 
         else {
-            currentLondonStep = 0;
-            selectedPieceCoord = null;
-            resetSicilianBoardState();
-            renderSicilianChessBoard();
-            document.getElementById('chessStepIndicator').innerText =
-                "SECURITY ALERT: SICILIAN RESET";
-            showToast("BLUNDER! Access Denied.");
-            changeToRandomGif();
-        }
+    handleWrongChessMove(() => {
+        resetSicilianBoardState();
+        renderSicilianChessBoard();
+    });
+}
     }
 }
 
@@ -981,6 +1159,8 @@ function deleteSnippet(id) {
 let currentChessGridLayout = null; // Add this as a global variable near the top with other chess vars
 
 function openChessLock(context, promptText) {
+    if (!canOpenChessLock()) return;
+
     chessLockContext = context;
     currentLondonStep = 0;
     selectedPieceCoord = null;
@@ -1014,6 +1194,10 @@ const gridLayout = currentChessGridLayout;
 }
 
 function handleSquareClick(clickedCoord) {
+    if (!canOpenChessLock()) {
+        closeChessModal();
+        return;
+    }
     const clickedPiece = chessBoardState[clickedCoord];
     if (selectedPieceCoord === clickedCoord) { selectedPieceCoord = null; renderChessBoard(); return; }
     if (clickedPiece !== '') { selectedPieceCoord = clickedCoord; renderChessBoard(); return; }
@@ -1037,12 +1221,11 @@ function handleSquareClick(clickedCoord) {
             executeChessSuccess();
         } 
         else {
-            currentLondonStep = 0; selectedPieceCoord = null;
-            resetChessBoardState(); renderChessBoard();
-            document.getElementById('chessStepIndicator').innerText = "SECURITY ALERT: MATRIX RESET";
-            showToast("BLUNDER! Access Denied.");
-            changeToRandomGif();
-        }
+    handleWrongChessMove(() => {
+        resetChessBoardState();
+        renderChessBoard();
+    });
+}
     }
 }
 
@@ -1063,6 +1246,12 @@ function executeMove(fromCoord, toCoord) {
 }
 
 function executeChessSuccess() {
+        if (!canOpenChessLock()) {
+        closeChessModal();
+        return;
+    }
+    resetChessLockFailures();
+
     if (chessLockContext.type === 'delete') {
         const targetItem = offlineDatabase.bottomSnippets.find(x => x.id === chessLockContext.payload);
         offlineDatabase.bottomSnippets = offlineDatabase.bottomSnippets.filter(x => x.id !== chessLockContext.payload);
