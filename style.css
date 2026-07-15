@@ -3221,7 +3221,7 @@ display: none;
 
 /* Dialogue box moves farther right and behind character */
 .jrpg-toast-bubble {
-  margin-right: -70px;
+  margin-right: -120px;
   z-index: 1;
 
   /* Keeps text away from the part covered by the image */
