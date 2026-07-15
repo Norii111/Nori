@@ -1878,7 +1878,34 @@ function copyTextAreaContent() {
         .catch(() => showToast("Error executing clipboard pipeline."));
 }
 
+
+function animatePageTitle(tabElement) {
+    if (!tabElement) return;
+
+    // Only animate the first/main header of the opened page.
+    const title = tabElement.querySelector(
+        '.panel-header h3 .bilingual-label'
+    );
+
+    if (!title) return;
+
+    title.classList.remove('page-title-enter');
+
+    // Force the browser to restart the animation.
+    void title.offsetWidth;
+
+    title.classList.add('page-title-enter');
+
+    clearTimeout(title._pageTitleAnimationTimer);
+
+    title._pageTitleAnimationTimer = setTimeout(() => {
+        title.classList.remove('page-title-enter');
+    }, 750);
+}
+
+
 function switchTab(tabName) {
+    let openedTab = null;
     const dashTab = document.getElementById('dashboardTab');
     const searchTab = document.getElementById('searchMenuTab');
     const predictionTab = document.getElementById('predictionTab');
@@ -1904,11 +1931,13 @@ function switchTab(tabName) {
 
     if (tabName === 'dashboard') {
         if (dashTab) dashTab.style.display = 'flex';
+        openedTab = dashTab;
         if (navLinks[0]) navLinks[0].classList.add('active');
         showToast("Switched to Main Command Dashboard");
 
     } else if (tabName === 'searchTab') {
         if (searchTab) searchTab.style.display = 'flex';
+        openedTab = dashTab;
         if (navLinks[1]) navLinks[1].classList.add('active');
 
         showToast("Switched to Sheet Search Engine");
@@ -1920,6 +1949,7 @@ function switchTab(tabName) {
 
     } else if (tabName === 'prediction') {
         if (predictionTab) predictionTab.style.display = 'flex';
+        openedTab = dashTab;
         if (navLinks[2]) navLinks[2].classList.add('active');
 
         clearPredictionSearch();
@@ -1928,17 +1958,19 @@ function switchTab(tabName) {
 
     } else if (tabName === 'logs') {
         if (logsTab) logsTab.style.display = 'flex';
+        openedTab = dashTab;
         if (navLinks[3]) navLinks[3].classList.add('active');
 
         showToast("Viewing Core System Performance Records");
 
     } else if (tabName === 'devTools') {
         if (devTab) devTab.style.display = 'flex';
+        openedTab = dashTab;
         if (navLinks[4]) navLinks[4].classList.add('active');
 
         showToast("DEV TOOLS ACCESS GRANTED");
     }
-
+animatePageTitle(openedTab);
     changeToRandomGif();
 }
 
