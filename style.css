@@ -3236,7 +3236,7 @@ display: none;
   /* Removes the remaining edge gap */
   margin-right: -12px;
 }
-
+ 
 /* No speech-bubble arrow */
 .jrpg-toast-bubble::after {
   display: none;
