@@ -700,7 +700,7 @@ function copySearchPayload() {
 
     navigator.clipboard.writeText(textToCopy)
         .then(() => {
-            showToast('Copied content!');
+            showToast(`"${title}" copied.`);
             playSearchCopyDisappear(payloadOutput, searchInput);
         })
         .catch(() => {
