@@ -700,6 +700,8 @@ function copySearchPayload() {
 
     navigator.clipboard.writeText(textToCopy)
         .then(() => {
+            const title = searchInput?.value?.trim() || 'Grimoire entry';
+
             showToast(`"${title}" copied.`);
             playSearchCopyDisappear(payloadOutput, searchInput);
         })
