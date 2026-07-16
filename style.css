@@ -3630,10 +3630,11 @@ display: none;
   overflow: visible;
 }
 
-
-/* Remove the old straight animated line */
+/* Remove the old straight underline */
 .panel-header h3 .bilingual-label::before,
 .panel-header h3 .bilingual-label::after,
+.panel-header h3 .label-jp::before,
+.panel-header h3 .label-jp::after,
 .panel-header h3 .label-en::before,
 .panel-header h3 .label-en::after {
   content: none !important;
@@ -3642,7 +3643,6 @@ display: none;
 
 .panel-header h3 .label-jp {
   position: relative;
-
   display: block;
 
   color: #fff4d2 !important;
@@ -3660,7 +3660,6 @@ display: none;
 
 .panel-header h3 .label-en {
   position: relative;
-
   display: block;
 
   margin: 0;
@@ -3685,52 +3684,129 @@ display: none;
 
 
 /* ==================================================
-   QUICK WOODEN PLAQUE ENTRANCE
+   CYBER SHRINE PLAQUE + TEXT ENTRANCE
 ================================================== */
 
+/* Plaque enters and then shakes when the text lands */
 .panel-header h3:has(
   .bilingual-label.page-title-enter
 ) {
   animation:
-    temple-plaque-enter
-    300ms
-    cubic-bezier(0.16, 1.25, 0.3, 1)
+    shrine-plaque-enter
+    240ms
+    cubic-bezier(0.16, 1.3, 0.3, 1)
+    both,
+
+    shrine-plaque-impact
+    260ms
+    150ms
+    steps(5, end)
     both;
 }
 
+/* Keep glitch active during plaque entrance */
+.panel-header h3.font-glitch:has(
+  .bilingual-label.page-title-enter
+) {
+  animation:
+    shrine-plaque-enter
+    240ms
+    cubic-bezier(0.16, 1.3, 0.3, 1)
+    both,
+
+    shrine-plaque-impact
+    260ms
+    150ms
+    steps(5, end)
+    both,
+
+    shrine-text-glitch
+    4.8s
+    var(--glitch-delay, 0s)
+    steps(1, end)
+    infinite;
+}
+
+/* Use the outlined glitch after entrance finishes too */
+.panel-header h3.font-glitch,
+.panel-header h3 .font-glitch {
+  animation-name: shrine-text-glitch;
+}
+
+
+/* Japanese text enters first */
 .panel-header h3
 .bilingual-label.page-title-enter
 .label-jp {
   animation:
-    temple-title-jp-enter
-    190ms
-    65ms
-    ease-out
+    shrine-title-jp-enter
+    180ms
+    80ms
+    cubic-bezier(0.16, 1, 0.3, 1)
     both;
 }
 
+/* English subtitle enters second */
 .panel-header h3
 .bilingual-label.page-title-enter
 .label-en {
   animation:
-    temple-title-en-enter
-    170ms
-    105ms
-    ease-out
+    shrine-title-en-enter
+    160ms
+    125ms
+    cubic-bezier(0.22, 1, 0.36, 1)
     both;
 }
 
 
+/* Preserve glitch on Japanese text */
+.panel-header h3
+.bilingual-label.page-title-enter
+.label-jp.font-glitch {
+  animation:
+    shrine-title-jp-enter
+    180ms
+    80ms
+    cubic-bezier(0.16, 1, 0.3, 1)
+    both,
+
+    shrine-text-glitch
+    4.8s
+    var(--glitch-delay, 0s)
+    steps(1, end)
+    infinite;
+}
+
+/* Preserve glitch on English text */
+.panel-header h3
+.bilingual-label.page-title-enter
+.label-en.font-glitch {
+  animation:
+    shrine-title-en-enter
+    160ms
+    125ms
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both,
+
+    shrine-text-glitch
+    4.8s
+    var(--glitch-delay, 0s)
+    steps(1, end)
+    infinite;
+}
+
+
 /* ==================================================
-   PLAQUE KEYFRAMES
+   PLAQUE MOVEMENT
 ================================================== */
 
-@keyframes temple-plaque-enter {
+@keyframes shrine-plaque-enter {
   0% {
     opacity: 0;
 
     transform:
-      translateY(-12px)
+      translateX(-18px)
+      translateY(-9px)
       rotate(-4deg)
       scale(0.94);
   }
@@ -3739,28 +3815,10 @@ display: none;
     opacity: 1;
 
     transform:
-      translateY(3px)
-      rotate(1deg)
-      scale(1.02);
-  }
-
-  100% {
-    opacity: 1;
-
-    transform:
-      translateY(0)
-      rotate(-0.8deg)
-      scale(1);
-  }
-}
-
-@keyframes temple-title-jp-enter {
-  0% {
-    opacity: 0;
-
-    transform:
-      translateX(-9px)
-      scaleX(0.94);
+      translateX(3px)
+      translateY(2px)
+      rotate(1.2deg)
+      scale(1.025);
   }
 
   100% {
@@ -3768,27 +3826,154 @@ display: none;
 
     transform:
       translateX(0)
-      scaleX(1);
+      translateY(0)
+      rotate(-0.8deg)
+      scale(1);
   }
 }
 
-@keyframes temple-title-en-enter {
+/* Plaque reacts when the text lands */
+@keyframes shrine-plaque-impact {
+  0% {
+    translate: 0 0;
+  }
+
+  20% {
+    translate: -2px 1px;
+  }
+
+  40% {
+    translate: 2px -1px;
+  }
+
+  60% {
+    translate: -1px 0;
+  }
+
+  80% {
+    translate: 1px 1px;
+  }
+
+  100% {
+    translate: 0 0;
+  }
+}
+
+
+/* ==================================================
+   TEXT MOVEMENT
+================================================== */
+
+@keyframes shrine-title-jp-enter {
   0% {
     opacity: 0;
 
     transform:
-      translateY(4px);
+      translateX(-13px)
+      skewX(-8deg)
+      scaleX(0.92);
 
-    letter-spacing: 2.2px;
+    filter: blur(1px);
+  }
+
+  70% {
+    opacity: 1;
+
+    transform:
+      translateX(2px)
+      skewX(1deg)
+      scaleX(1.02);
+
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform:
+      translateX(0)
+      skewX(0)
+      scaleX(1);
+
+    filter: blur(0);
+  }
+}
+
+@keyframes shrine-title-en-enter {
+  0% {
+    opacity: 0;
+
+    transform:
+      translateY(5px)
+      translateX(5px);
+
+    letter-spacing: 2.4px;
   }
 
   100% {
     opacity: 0.82;
 
     transform:
-      translateY(0);
+      translateY(0)
+      translateX(0);
 
     letter-spacing: 1.4px;
+  }
+}
+
+
+/* ==================================================
+   PLAQUE-SAFE GLITCH
+   Keeps the dark carved outline between glitch bursts
+================================================== */
+
+@keyframes shrine-text-glitch {
+  0%,
+  82%,
+  91%,
+  95%,
+  100% {
+    text-shadow:
+      2px 2px 0 #1c0d07,
+      -1px 0 0 #1c0d07,
+      0 -1px 0 #1c0d07,
+      1px 0 0 #1c0d07;
+  }
+
+  83% {
+    text-shadow:
+      -2px 0 #ff1744,
+      2px 0 #00e5ff,
+      2px 2px 0 #1c0d07;
+  }
+
+  85% {
+    text-shadow:
+      2px 0 #ff1744,
+      -2px 0 #00e5ff,
+      2px 2px 0 #1c0d07;
+  }
+
+  87% {
+    text-shadow:
+      -1px 0 #fff3b0,
+      2px 0 #b91c1c,
+      -2px 1px #00e5ff,
+      2px 2px 0 #1c0d07;
+  }
+
+  89% {
+    text-shadow:
+      3px 0 #ff1744,
+      -1px 0 #00e5ff,
+      2px 2px 0 #1c0d07;
+  }
+
+  94% {
+    text-shadow:
+      -1px 0 #ff1744,
+      1px 0 #00e5ff,
+      2px 2px 0 #1c0d07;
   }
 }
 
