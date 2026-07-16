@@ -3397,10 +3397,12 @@ display: none;
 }
 
 
-/* =================================
-   BILINGUAL JAPANESE / ENGLISH TEXT
-================================= */
+/* ==================================================
+   BILINGUAL LABELS + MANGA PANEL TITLES
+   FINAL CLEAN VERSION
+================================================== */
 
+/* Default bilingual layout */
 .bilingual-label {
   display: inline-flex;
   flex-direction: column;
@@ -3424,117 +3426,261 @@ display: none;
   opacity: 0.72;
 }
 
-/* Navigation labels stay centered */
+
+/* ==================================================
+   SIDEBAR NAVIGATION
+================================================== */
+
 .nav-links .bilingual-label {
-  align-items: center;
   width: 100%;
+  align-items: center;
 }
 
-/* English subtitle color on active navigation item */
 .nav-links a.active .label-en {
   color: var(--bg-paper);
   opacity: 0.72;
 }
 
-/* English subtitle inside black panel headers */
-.panel-header h3 .label-en {
-  color: var(--bg-paper);
-  opacity: 0.7;
-  font-size: 9px;
-  margin-top: 2px;
+
+/* ==================================================
+   MAIN PANEL HEADER
+================================================== */
+
+.panel-header {
+  position: relative;
+  z-index: 2;
 }
-
-
-
-/* =================================
-   PAGE TITLE — JRPG ENTRANCE
-================================= */
 
 .panel-header h3 {
-  overflow: hidden;
-}
-
-/* The bilingual wrapper becomes the animation stage */
-.panel-header h3 .bilingual-label {
   position: relative;
 
-  padding-bottom: 4px;
+  display: inline-flex;
+  align-items: center;
 
-  overflow: hidden;
+  width: fit-content;
+
+  margin: 0;
+  padding: 3px 10px 10px 19px;
+
+  background: transparent !important;
+  color: var(--ink-black) !important;
+
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1;
+
+  transform: rotate(-1deg);
+
+  overflow: visible !important;
 }
 
-/* Japanese title */
-.panel-header h3 .label-jp {
-  position: relative;
 
-  transform-origin: left center;
-}
-
-/* English subtitle */
-.panel-header h3 .label-en {
-  position: relative;
-}
-
-/* Ink line beneath the title */
-.panel-header h3 .bilingual-label::after {
+/* Vertical manga editorial marker */
+.panel-header h3::before {
   content: "";
 
   position: absolute;
 
-  left: 0;
-  bottom: 0;
+  left: 1px;
+  top: 50%;
 
-  width: 100%;
-  height: 2px;
+  width: 8px;
+  height: 72%;
 
-  background: var(--bg-paper);
+  background: var(--ink-black);
 
-  transform: scaleX(0);
-  transform-origin: left center;
+  transform:
+    translateY(-50%)
+    skewY(-15deg)
+    rotate(3deg);
 
-  opacity: 0.85;
+  pointer-events: none;
 }
 
-/* Japanese title enters first */
+
+/* Uneven manga ink underline */
+.panel-header h3::after {
+  content: "";
+
+  position: absolute;
+
+  left: 14px;
+  right: -12px;
+  bottom: 0;
+
+  height: 6px;
+
+  background:
+    linear-gradient(
+      177deg,
+      transparent 0 14%,
+      var(--ink-black) 16% 45%,
+      transparent 48% 56%,
+      var(--ink-black) 59% 85%,
+      transparent 88% 100%
+    );
+
+  clip-path: polygon(
+    0% 38%,
+    7% 18%,
+    15% 34%,
+    24% 10%,
+    34% 27%,
+    44% 13%,
+    54% 37%,
+    64% 17%,
+    74% 31%,
+    84% 9%,
+    93% 28%,
+    100% 18%,
+
+    99% 72%,
+    91% 61%,
+    82% 86%,
+    72% 66%,
+    62% 88%,
+    52% 70%,
+    42% 91%,
+    31% 67%,
+    21% 84%,
+    11% 63%,
+    0% 77%
+  );
+
+  transform:
+    scaleX(1)
+    rotate(-0.7deg);
+
+  transform-origin: left center;
+
+  opacity: 1;
+
+  pointer-events: none;
+}
+
+
+/* ==================================================
+   PANEL TITLE TEXT
+================================================== */
+
+.panel-header h3 .bilingual-label {
+  position: relative;
+
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+
+  width: auto;
+
+  gap: 8px;
+  padding: 0;
+
+  overflow: visible;
+}
+
+.panel-header h3 .label-jp {
+  position: relative;
+
+  display: inline-block;
+
+  color: var(--ink-black);
+
+  font-size: 19px;
+  font-weight: 950;
+  line-height: 1;
+
+  transform-origin: left center;
+}
+
+.panel-header h3 .label-en {
+  position: relative;
+
+  display: inline-block;
+
+  margin: 0;
+  padding: 0;
+
+  color: var(--ink-black);
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+  line-height: 1;
+
+  text-transform: uppercase;
+  text-decoration: none;
+
+  border: 0;
+
+  opacity: 0.72;
+}
+
+
+/* Remove every old straight underline */
+.panel-header h3 .label-en::before,
+.panel-header h3 .label-en::after,
+.panel-header h3 .bilingual-label::before,
+.panel-header h3 .bilingual-label::after {
+  content: none !important;
+  display: none !important;
+}
+
+
+/* ==================================================
+   TITLE ENTRANCE
+================================================== */
+
 .panel-header h3
 .bilingual-label.page-title-enter
 .label-jp {
   animation:
-    page-title-jp-enter
+    manga-title-jp-enter
     380ms
     cubic-bezier(0.16, 1, 0.3, 1)
     both;
 }
 
-/* English subtitle follows */
 .panel-header h3
 .bilingual-label.page-title-enter
 .label-en {
   animation:
-    page-title-en-enter
+    manga-title-en-enter
     360ms
-    110ms
+    100ms
     cubic-bezier(0.22, 1, 0.36, 1)
     both;
 }
 
-/* Line draws last */
-.panel-header h3
-.bilingual-label.page-title-enter::after {
+
+/* Animate the actual uneven h3 line */
+.panel-header h3:has(
+  .bilingual-label.page-title-enter
+)::after {
   animation:
-    page-title-line-draw
-    420ms
-    170ms
-    cubic-bezier(0.22, 1, 0.36, 1)
+    manga-uneven-ink-draw
+    520ms
+    120ms
+    steps(8, end)
     both;
 }
 
-@keyframes page-title-jp-enter {
+
+/* ==================================================
+   TITLE KEYFRAMES
+================================================== */
+
+@keyframes manga-title-jp-enter {
   0% {
     opacity: 0;
 
     transform:
-      translateX(-24px)
+      translateX(-22px)
       skewX(-8deg);
 
     filter: blur(2px);
@@ -3561,15 +3707,15 @@ display: none;
   }
 }
 
-@keyframes page-title-en-enter {
+@keyframes manga-title-en-enter {
   0% {
     opacity: 0;
 
     transform:
-      translateY(8px)
-      translateX(6px);
+      translateY(7px)
+      translateX(5px);
 
-    letter-spacing: 2px;
+    letter-spacing: 2.2px;
   }
 
   100% {
@@ -3579,23 +3725,61 @@ display: none;
       translateY(0)
       translateX(0);
 
-    letter-spacing: 0.7px;
+    letter-spacing: 1.4px;
   }
 }
 
-@keyframes page-title-line-draw {
+
+/* Uneven line draws, then remains visible */
+@keyframes manga-uneven-ink-draw {
   0% {
-    transform: scaleX(0);
+    transform:
+      scaleX(0)
+      rotate(-1.8deg);
+
     opacity: 0;
   }
 
+  14% {
+    transform:
+      scaleX(0.1)
+      rotate(0.8deg);
+
+    opacity: 1;
+  }
+
+  34% {
+    transform:
+      scaleX(0.33)
+      rotate(-1.3deg);
+  }
+
+  56% {
+    transform:
+      scaleX(0.58)
+      rotate(0.4deg);
+  }
+
+  78% {
+    transform:
+      scaleX(0.84)
+      rotate(-1deg);
+  }
+
   100% {
-    transform: scaleX(1);
-    opacity: 0.85;
+    transform:
+      scaleX(1)
+      rotate(-0.7deg);
+
+    opacity: 1;
   }
 }
 
-/* Respect reduced-motion accessibility preferences */
+
+/* ==================================================
+   REDUCED MOTION
+================================================== */
+
 @media (prefers-reduced-motion: reduce) {
   .panel-header h3
   .bilingual-label.page-title-enter
@@ -3605,263 +3789,9 @@ display: none;
   .bilingual-label.page-title-enter
   .label-en,
 
-  .panel-header h3
-  .bilingual-label.page-title-enter::after {
+  .panel-header h3:has(
+    .bilingual-label.page-title-enter
+  )::after {
     animation: none;
-  }
-}
-
-
-.jrpg-toast-bubble {
-  display: flex;
-  flex-direction: column;
-  max-height: 170px;
-}
-
-.jrpg-notification-lines {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.panel-header h3 {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-
-  width: fit-content;
-  margin: 0;
-  padding: 2px 8px 7px 18px;
-
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-
-  color: var(--ink-black);
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  line-height: 1;
-
-  transform: rotate(-1deg);
-  overflow: visible;
-}
-
-/* Small manga editorial marker */
-.panel-header h3::before {
-  content: "";
-  position: absolute;
-
-  left: 1px;
-  top: 50%;
-
-  width: 8px;
-  height: 70%;
-
-  background: var(--ink-black);
-  transform:
-    translateY(-50%)
-    skewY(-15deg)
-    rotate(3deg);
-}
-
-/* Rough double-ink underline */
-.panel-header h3::after {
-  content: "";
-  position: absolute;
-
-  left: 14px;
-  right: -10px;
-  bottom: 0;
-
-  height: 5px;
-
-  background:
-    linear-gradient(
-      177deg,
-      transparent 0 18%,
-      var(--ink-black) 20% 55%,
-      transparent 58% 70%,
-      var(--ink-black) 72% 88%,
-      transparent 90%
-    );
-
-  transform: rotate(-0.7deg);
-  pointer-events: none;
-}
-
-.panel-header h3 .bilingual-label {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.panel-header h3 .label-jp {
-  font-size: 19px;
-  font-weight: 950;
-}
-
-.panel-header h3 .label-en {
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  opacity: 0.72;
-}
-
-
-/* English subtitle */
-.panel-header h3 .label-en {
-  position: relative;
-  display: inline-block;
-  padding-bottom: 5px;
-
-  border: 0 !important;
-  text-decoration: none !important;
-}
-
-/* Remove any older straight-line pseudo-element */
-.panel-header h3 .label-en::before {
-  display: none !important;
-}
-
-/* Uneven ink stroke */
-.panel-header h3 .label-en::after {
-  content: "";
-  position: absolute;
-
-  left: -3px;
-  right: -8px;
-  bottom: 0;
-
-  height: 5px;
-
-  background:
-    linear-gradient(
-      176deg,
-      transparent 0 12%,
-      var(--ink-black) 14% 47%,
-      transparent 49% 57%,
-      var(--ink-black) 59% 86%,
-      transparent 88%
-    );
-
-  clip-path: polygon(
-    0 38%,
-    8% 20%,
-    18% 34%,
-    29% 8%,
-    42% 30%,
-    55% 14%,
-    68% 37%,
-    81% 11%,
-    92% 28%,
-    100% 18%,
-    98% 78%,
-    86% 64%,
-    73% 88%,
-    60% 69%,
-    46% 91%,
-    33% 66%,
-    20% 84%,
-    7% 63%,
-    0 75%
-  );
-
-  transform:
-    scaleX(0)
-    rotate(-1deg)
-    skewX(-8deg);
-
-  transform-origin: left center;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.panel-header h3
-.bilingual-label.page-title-enter
-.label-en::after {
-  animation:
-    mangaInkDraw 650ms
-    steps(7, end)
-    forwards;
-}
-
-@keyframes mangaInkDraw {
-  0% {
-    transform:
-      scaleX(0)
-      rotate(-2deg)
-      skewX(-12deg);
-
-    opacity: 0;
-  }
-
-  18% {
-    transform:
-      scaleX(0.16)
-      rotate(1deg)
-      skewX(-5deg);
-
-    opacity: 0.85;
-  }
-
-  38% {
-    transform:
-      scaleX(0.42)
-      rotate(-1.5deg)
-      skewX(-10deg);
-  }
-
-  61% {
-    transform:
-      scaleX(0.68)
-      rotate(0.5deg)
-      skewX(-4deg);
-  }
-
-  82% {
-    transform:
-      scaleX(0.91)
-      rotate(-1deg)
-      skewX(-8deg);
-  }
-
-  100% {
-    transform:
-      scaleX(1)
-      rotate(-0.7deg)
-      skewX(-6deg);
-
-    opacity: 1;
-  }
-}
-
-.panel-header h3
-.bilingual-label.page-title-enter
-.label-en {
-  animation:
-    mangaSubtitleImpact 650ms
-    steps(5, end);
-}
-
-@keyframes mangaSubtitleImpact {
-  0%,
-  70% {
-    transform: translateX(0);
-  }
-
-  78% {
-    transform: translateX(-1px) rotate(-0.4deg);
-  }
-
-  88% {
-    transform: translateX(1px) rotate(0.3deg);
-  }
-
-  100% {
-    transform: translateX(0);
   }
 }
