@@ -3638,47 +3638,38 @@ display: none;
   display: none !important;
 }
 
+/* ==================================================
+   STRONG HAND-INKED TITLE OUTLINE
+================================================== */
 
 .panel-header h3 .label-jp {
-  position: relative;
-  display: block;
-
   color: #ffffff !important;
 
-  font-size: 19px;
-  font-weight: 950;
-  line-height: 1;
+  /* Actual black outline around every character */
+  -webkit-text-stroke: 1px var(--ink-black);
+  paint-order: stroke fill;
 
   text-shadow:
-    2px 2px 0 var(--ink-black),
-    -1px 0 0 var(--ink-black),
-    0 -1px 0 var(--ink-black),
     1px 0 0 var(--ink-black),
-    0 1px 0 var(--ink-black);
+    -1px 0 0 var(--ink-black),
+    0 1px 0 var(--ink-black),
+    0 -1px 0 var(--ink-black),
+
+    2px 2px 0 var(--ink-black),
+    3px 3px 0 rgba(0, 0, 0, 0.55);
 }
 
 .panel-header h3 .label-en {
-  position: relative;
-  display: block;
+  color: #ffffff !important;
 
-  margin: 0;
-  padding: 0;
-
-  color: #e8e8e8 !important;
-
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 1.4px;
-  line-height: 1;
-
-  text-transform: uppercase;
-
-  opacity: 0.82;
+  -webkit-text-stroke: 0.45px var(--ink-black);
+  paint-order: stroke fill;
 
   text-shadow:
     1px 1px 0 var(--ink-black),
     -1px 0 0 var(--ink-black),
-    0 -1px 0 var(--ink-black);
+    0 -1px 0 var(--ink-black),
+    2px 2px 0 rgba(0, 0, 0, 0.55);
 }
 
 
@@ -4172,4 +4163,62 @@ display: none;
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Keep the rough underline below the title text */
+.panel-header h3,
+.manga-panel .panel-header h3 {
+  padding-bottom: 16px;
+}
+
+/* Text always stays above decorative strokes */
+.panel-header h3 .bilingual-label {
+  position: relative;
+  z-index: 2;
+}
+
+/* Move the horizontal stroke underneath the English subtitle */
+.panel-header h3::after {
+  left: 18px;
+  bottom: 3px;
+
+  width: min(72%, 115px);
+  height: 6px;
+
+  z-index: 1;
+}
+
+/* Keep the vertical stroke behind the text too */
+.panel-header h3::before {
+  z-index: 1;
+}
+
+/* Final readable manga title outline */
+.panel-header h3 .label-jp {
+  color: #ffffff !important;
+
+  -webkit-text-stroke: 1px var(--ink-black);
+  paint-order: stroke fill;
+
+  text-shadow:
+    1px 0 0 var(--ink-black),
+    -1px 0 0 var(--ink-black),
+    0 1px 0 var(--ink-black),
+    0 -1px 0 var(--ink-black),
+    2px 2px 0 var(--ink-black),
+    3px 3px 0 rgba(0, 0, 0, 0.55);
+}
+
+.panel-header h3 .label-en {
+  color: #ffffff !important;
+
+  -webkit-text-stroke: 0.45px var(--ink-black);
+  paint-order: stroke fill;
+
+  text-shadow:
+    1px 0 0 var(--ink-black),
+    -1px 0 0 var(--ink-black),
+    0 1px 0 var(--ink-black),
+    0 -1px 0 var(--ink-black),
+    2px 2px 0 rgba(0, 0, 0, 0.55);
 }
