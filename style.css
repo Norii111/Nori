@@ -4194,7 +4194,7 @@ display: none;
 /* Move the horizontal stroke underneath the English subtitle */
 .panel-header h3::after {
   left: 18px;
-  bottom: 3px;
+  bottom: -3px;
 
   width: min(72%, 115px);
   height: 6px;
