@@ -3626,3 +3626,87 @@ display: none;
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+.panel-header h3 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  width: fit-content;
+  margin: 0;
+  padding: 2px 8px 7px 18px;
+
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+
+  color: var(--ink-black);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1;
+
+  transform: rotate(-1deg);
+  overflow: visible;
+}
+
+/* Small manga editorial marker */
+.panel-header h3::before {
+  content: "";
+  position: absolute;
+
+  left: 1px;
+  top: 50%;
+
+  width: 8px;
+  height: 70%;
+
+  background: var(--ink-black);
+  transform:
+    translateY(-50%)
+    skewY(-15deg)
+    rotate(3deg);
+}
+
+/* Rough double-ink underline */
+.panel-header h3::after {
+  content: "";
+  position: absolute;
+
+  left: 14px;
+  right: -10px;
+  bottom: 0;
+
+  height: 5px;
+
+  background:
+    linear-gradient(
+      177deg,
+      transparent 0 18%,
+      var(--ink-black) 20% 55%,
+      transparent 58% 70%,
+      var(--ink-black) 72% 88%,
+      transparent 90%
+    );
+
+  transform: rotate(-0.7deg);
+  pointer-events: none;
+}
+
+.panel-header h3 .bilingual-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.panel-header h3 .label-jp {
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.panel-header h3 .label-en {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
