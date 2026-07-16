@@ -4166,12 +4166,24 @@ display: none;
 }
 
 /* Keep the rough underline below the title text */
+/* Give the English subtitle more breathing room */
 .panel-header h3,
 .manga-panel .panel-header h3 {
-  padding-bottom: 16px;
+  padding-bottom: 23px;
 }
 
-/* Text always stays above decorative strokes */
+/* Move the rough underline clearly below the subtitle */
+.panel-header h3::after {
+  left: 18px;
+  bottom: -2px;
+
+  width: min(72%, 115px);
+  height: 5px;
+
+  z-index: 1;
+}
+
+/* Keep all lettering above the stroke */
 .panel-header h3 .bilingual-label {
   position: relative;
   z-index: 2;
