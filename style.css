@@ -3398,15 +3398,15 @@ display: none;
 
 
 /* ==================================================
-   JAPANESE TEMPLE WOODEN NAME PLAQUE
+   MONOCHROME CYBER SHRINE PLAQUE
 ================================================== */
 
 .bilingual-label {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
 
+  gap: 3px;
   line-height: 1;
 }
 
@@ -3427,7 +3427,7 @@ display: none;
 }
 
 
-/* Navigation labels remain normal */
+/* Navigation remains unchanged */
 .nav-links .bilingual-label {
   width: 100%;
   align-items: center;
@@ -3439,7 +3439,7 @@ display: none;
 
 
 /* ==================================================
-   WOODEN PLAQUE
+   BLACK-LACQUER PLAQUE
 ================================================== */
 
 .panel-header {
@@ -3457,68 +3457,81 @@ display: none;
   width: fit-content;
 
   margin: 0;
-  padding: 12px 34px 13px 34px;
+  padding: 11px 34px 12px;
 
-  color: #fff4d2 !important;
+  color: var(--bg-paper) !important;
 
+  /* Monochrome grain and manga screentone */
   background:
+    radial-gradient(
+      circle at 18% 32%,
+      rgba(255, 255, 255, 0.15) 0 1px,
+      transparent 1.8px
+    ),
     repeating-linear-gradient(
-      7deg,
+      6deg,
       transparent 0,
-      transparent 7px,
-      rgba(40, 17, 7, 0.18) 8px,
-      rgba(40, 17, 7, 0.18) 9px,
-      transparent 10px,
-      transparent 17px
+      transparent 8px,
+      rgba(255, 255, 255, 0.08) 9px,
+      rgba(255, 255, 255, 0.08) 10px,
+      transparent 11px,
+      transparent 18px
     ),
     repeating-linear-gradient(
       92deg,
       transparent 0,
-      transparent 24px,
-      rgba(255, 220, 160, 0.06) 25px,
-      transparent 28px
+      transparent 28px,
+      rgba(255, 255, 255, 0.045) 29px,
+      transparent 32px
     ),
     linear-gradient(
       90deg,
-      #4a2817 0%,
-      #704225 18%,
-      #56301b 42%,
-      #7b4a29 68%,
-      #4b2917 100%
+      #070707 0%,
+      #242424 20%,
+      #0c0c0c 45%,
+      #2c2c2c 70%,
+      #080808 100%
     ) !important;
+
+  background-size:
+    7px 7px,
+    100% 100%,
+    100% 100%,
+    100% 100%;
 
   border:
     4px
     solid
-    #24120a !important;
+    var(--ink-black) !important;
 
   outline:
     2px
     solid
-    rgba(255, 224, 170, 0.22);
+    var(--bg-paper);
 
   outline-offset: -8px;
 
   box-shadow:
-    5px 6px 0 #160b06,
-    9px 11px 0 rgba(0, 0, 0, 0.28),
-    inset 0 3px 0 rgba(255, 221, 168, 0.16),
-    inset 0 -5px 0 rgba(25, 10, 4, 0.32) !important;
+    0 0 0 2px var(--bg-paper),
+    6px 7px 0 var(--ink-black),
+    10px 11px 0 rgba(0, 0, 0, 0.3),
+    inset 0 3px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.7) !important;
 
   clip-path: polygon(
-    2% 6%,
-    18% 2%,
+    2% 7%,
+    17% 2%,
     38% 5%,
-    60% 1%,
-    82% 4%,
+    59% 1%,
+    81% 4%,
     98% 8%,
-    100% 84%,
-    94% 96%,
-    74% 93%,
-    51% 98%,
-    27% 94%,
-    3% 97%,
-    0 79%
+    100% 83%,
+    95% 96%,
+    75% 93%,
+    52% 98%,
+    28% 94%,
+    4% 97%,
+    0 80%
   ) !important;
 
   font-size: 16px;
@@ -3526,63 +3539,23 @@ display: none;
   letter-spacing: 0;
   line-height: 1;
 
-  text-shadow:
-    2px 2px 0 #1c0d07,
-    -1px 0 0 #1c0d07,
-    0 -1px 0 #1c0d07,
-    1px 0 0 #1c0d07,
-    0 1px 0 #1c0d07;
-
-  transform: rotate(-0.8deg);
+  transform: rotate(-0.7deg);
+  transform-origin: left center;
 
   overflow: visible !important;
   isolation: isolate;
 }
 
 
-/* Left wooden peg */
-.panel-header h3::before {
-  content: "";
+/* ==================================================
+   MONOCHROME METAL PEGS
+================================================== */
 
-  position: absolute;
-
-  left: 11px;
-  top: 50%;
-
-  width: 10px;
-  height: 10px;
-
-  border:
-    2px
-    solid
-    #160b06;
-
-  border-radius: 50%;
-
-  background:
-    radial-gradient(
-      circle at 35% 30%,
-      #b48755 0 18%,
-      #68401f 22% 55%,
-      #2b160b 60% 100%
-    );
-
-  box-shadow:
-    1px 2px 0 rgba(0, 0, 0, 0.7);
-
-  transform: translateY(-50%);
-
-  pointer-events: none;
-}
-
-
-/* Right wooden peg */
+.panel-header h3::before,
 .panel-header h3::after {
   content: "";
 
   position: absolute;
-
-  right: 11px;
   top: 50%;
 
   width: 10px;
@@ -3591,29 +3564,39 @@ display: none;
   border:
     2px
     solid
-    #160b06;
+    var(--ink-black);
 
   border-radius: 50%;
 
   background:
     radial-gradient(
       circle at 35% 30%,
-      #b48755 0 18%,
-      #68401f 22% 55%,
-      #2b160b 60% 100%
+      #ffffff 0 15%,
+      #bdbdbd 18% 46%,
+      #4b4b4b 50% 70%,
+      #111111 74% 100%
     );
 
   box-shadow:
-    1px 2px 0 rgba(0, 0, 0, 0.7);
+    0 0 0 1px var(--bg-paper),
+    2px 2px 0 var(--ink-black);
 
   transform: translateY(-50%);
 
   pointer-events: none;
 }
 
+.panel-header h3::before {
+  left: 11px;
+}
+
+.panel-header h3::after {
+  right: 11px;
+}
+
 
 /* ==================================================
-   PLAQUE TEXT
+   STACKED PLAQUE TEXT
 ================================================== */
 
 .panel-header h3 .bilingual-label {
@@ -3628,9 +3611,23 @@ display: none;
   padding: 0;
 
   overflow: visible;
+
+  /*
+   * The glitch runs here instead of on the text elements.
+   * This prevents it from replacing their entrance animations.
+   */
+  animation:
+    shrine-wrapper-glitch
+    4.8s
+    var(--glitch-delay, 0s)
+    steps(1, end)
+    infinite;
+
+  will-change: filter;
 }
 
-/* Remove the old straight underline */
+
+/* Remove old title lines */
 .panel-header h3 .bilingual-label::before,
 .panel-header h3 .bilingual-label::after,
 .panel-header h3 .label-jp::before,
@@ -3641,21 +3638,23 @@ display: none;
   display: none !important;
 }
 
+
 .panel-header h3 .label-jp {
   position: relative;
   display: block;
 
-  color: #fff4d2 !important;
+  color: #ffffff !important;
 
   font-size: 19px;
   font-weight: 950;
   line-height: 1;
 
   text-shadow:
-    2px 2px 0 #1c0d07,
-    -1px 0 0 #1c0d07,
-    0 -1px 0 #1c0d07,
-    1px 0 0 #1c0d07;
+    2px 2px 0 var(--ink-black),
+    -1px 0 0 var(--ink-black),
+    0 -1px 0 var(--ink-black),
+    1px 0 0 var(--ink-black),
+    0 1px 0 var(--ink-black);
 }
 
 .panel-header h3 .label-en {
@@ -3665,7 +3664,7 @@ display: none;
   margin: 0;
   padding: 0;
 
-  color: #ead8ad !important;
+  color: #e8e8e8 !important;
 
   font-size: 9px;
   font-weight: 900;
@@ -3677,60 +3676,39 @@ display: none;
   opacity: 0.82;
 
   text-shadow:
-    1px 1px 0 #1c0d07,
-    -1px 0 0 #1c0d07,
-    0 -1px 0 #1c0d07;
+    1px 1px 0 var(--ink-black),
+    -1px 0 0 var(--ink-black),
+    0 -1px 0 var(--ink-black);
+}
+
+
+/* Stop the old generic glitch from fighting this title system */
+.panel-header h3.font-glitch,
+.panel-header h3 .label-jp.font-glitch,
+.panel-header h3 .label-en.font-glitch {
+  animation: none;
 }
 
 
 /* ==================================================
-   CYBER SHRINE PLAQUE + TEXT ENTRANCE
+   PLAQUE + TEXT ENTRANCE
 ================================================== */
 
-/* Plaque enters and then shakes when the text lands */
+/* Plaque slams in and reacts when the text lands */
 .panel-header h3:has(
   .bilingual-label.page-title-enter
 ) {
   animation:
     shrine-plaque-enter
-    240ms
+    230ms
     cubic-bezier(0.16, 1.3, 0.3, 1)
     both,
 
     shrine-plaque-impact
-    260ms
-    150ms
+    220ms
+    130ms
     steps(5, end)
     both;
-}
-
-/* Keep glitch active during plaque entrance */
-.panel-header h3.font-glitch:has(
-  .bilingual-label.page-title-enter
-) {
-  animation:
-    shrine-plaque-enter
-    240ms
-    cubic-bezier(0.16, 1.3, 0.3, 1)
-    both,
-
-    shrine-plaque-impact
-    260ms
-    150ms
-    steps(5, end)
-    both,
-
-    shrine-text-glitch
-    4.8s
-    var(--glitch-delay, 0s)
-    steps(1, end)
-    infinite;
-}
-
-/* Use the outlined glitch after entrance finishes too */
-.panel-header h3.font-glitch,
-.panel-header h3 .font-glitch {
-  animation-name: shrine-text-glitch;
 }
 
 
@@ -3740,59 +3718,23 @@ display: none;
 .label-jp {
   animation:
     shrine-title-jp-enter
-    180ms
-    80ms
+    175ms
+    65ms
     cubic-bezier(0.16, 1, 0.3, 1)
     both;
 }
 
-/* English subtitle enters second */
+
+/* English text enters second */
 .panel-header h3
 .bilingual-label.page-title-enter
 .label-en {
   animation:
     shrine-title-en-enter
-    160ms
-    125ms
+    155ms
+    110ms
     cubic-bezier(0.22, 1, 0.36, 1)
     both;
-}
-
-
-/* Preserve glitch on Japanese text */
-.panel-header h3
-.bilingual-label.page-title-enter
-.label-jp.font-glitch {
-  animation:
-    shrine-title-jp-enter
-    180ms
-    80ms
-    cubic-bezier(0.16, 1, 0.3, 1)
-    both,
-
-    shrine-text-glitch
-    4.8s
-    var(--glitch-delay, 0s)
-    steps(1, end)
-    infinite;
-}
-
-/* Preserve glitch on English text */
-.panel-header h3
-.bilingual-label.page-title-enter
-.label-en.font-glitch {
-  animation:
-    shrine-title-en-enter
-    160ms
-    125ms
-    cubic-bezier(0.22, 1, 0.36, 1)
-    both,
-
-    shrine-text-glitch
-    4.8s
-    var(--glitch-delay, 0s)
-    steps(1, end)
-    infinite;
 }
 
 
@@ -3805,8 +3747,8 @@ display: none;
     opacity: 0;
 
     transform:
-      translateX(-18px)
-      translateY(-9px)
+      translateX(-17px)
+      translateY(-8px)
       rotate(-4deg)
       scale(0.94);
   }
@@ -3817,7 +3759,7 @@ display: none;
     transform:
       translateX(3px)
       translateY(2px)
-      rotate(1.2deg)
+      rotate(1deg)
       scale(1.025);
   }
 
@@ -3827,12 +3769,13 @@ display: none;
     transform:
       translateX(0)
       translateY(0)
-      rotate(-0.8deg)
+      rotate(-0.7deg)
       scale(1);
   }
 }
 
-/* Plaque reacts when the text lands */
+
+/* Box moves again as the lettering appears */
 @keyframes shrine-plaque-impact {
   0% {
     translate: 0 0;
@@ -3923,57 +3866,47 @@ display: none;
 
 
 /* ==================================================
-   PLAQUE-SAFE GLITCH
-   Keeps the dark carved outline between glitch bursts
+   GLITCH THAT DOES NOT CONFLICT WITH TEXT ANIMATION
 ================================================== */
 
-@keyframes shrine-text-glitch {
+@keyframes shrine-wrapper-glitch {
   0%,
   82%,
   91%,
   95%,
   100% {
-    text-shadow:
-      2px 2px 0 #1c0d07,
-      -1px 0 0 #1c0d07,
-      0 -1px 0 #1c0d07,
-      1px 0 0 #1c0d07;
+    filter: none;
   }
 
   83% {
-    text-shadow:
-      -2px 0 #ff1744,
-      2px 0 #00e5ff,
-      2px 2px 0 #1c0d07;
+    filter:
+      drop-shadow(-2px 0 #ff1744)
+      drop-shadow(2px 0 #00e5ff);
   }
 
   85% {
-    text-shadow:
-      2px 0 #ff1744,
-      -2px 0 #00e5ff,
-      2px 2px 0 #1c0d07;
+    filter:
+      drop-shadow(2px 0 #ff1744)
+      drop-shadow(-2px 0 #00e5ff);
   }
 
   87% {
-    text-shadow:
-      -1px 0 #fff3b0,
-      2px 0 #b91c1c,
-      -2px 1px #00e5ff,
-      2px 2px 0 #1c0d07;
+    filter:
+      drop-shadow(-1px 0 #fff3b0)
+      drop-shadow(2px 0 #b91c1c)
+      drop-shadow(-2px 1px #00e5ff);
   }
 
   89% {
-    text-shadow:
-      3px 0 #ff1744,
-      -1px 0 #00e5ff,
-      2px 2px 0 #1c0d07;
+    filter:
+      drop-shadow(3px 0 #ff1744)
+      drop-shadow(-1px 0 #00e5ff);
   }
 
   94% {
-    text-shadow:
-      -1px 0 #ff1744,
-      1px 0 #00e5ff,
-      2px 2px 0 #1c0d07;
+    filter:
+      drop-shadow(-1px 0 #ff1744)
+      drop-shadow(1px 0 #00e5ff);
   }
 }
 
@@ -3993,7 +3926,9 @@ display: none;
 
   .panel-header h3
   .bilingual-label.page-title-enter
-  .label-en {
+  .label-en,
+
+  .panel-header h3 .bilingual-label {
     animation: none;
   }
 }
