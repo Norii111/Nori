@@ -3438,162 +3438,6 @@ display: none;
 }
 
 
-/* ==================================================
-   BLACK-LACQUER PLAQUE
-================================================== */
-
-.panel-header {
-  position: relative;
-  z-index: 2;
-}
-
-.panel-header h3,
-.manga-panel .panel-header h3 {
-  position: relative;
-
-  display: inline-flex !important;
-  align-items: flex-start;
-
-  width: fit-content;
-
-  margin: 0;
-  padding: 11px 34px 12px;
-
-  color: var(--bg-paper) !important;
-
-  /* Monochrome grain and manga screentone */
-  background:
-    radial-gradient(
-      circle at 18% 32%,
-      rgba(255, 255, 255, 0.15) 0 1px,
-      transparent 1.8px
-    ),
-    repeating-linear-gradient(
-      6deg,
-      transparent 0,
-      transparent 8px,
-      rgba(255, 255, 255, 0.08) 9px,
-      rgba(255, 255, 255, 0.08) 10px,
-      transparent 11px,
-      transparent 18px
-    ),
-    repeating-linear-gradient(
-      92deg,
-      transparent 0,
-      transparent 28px,
-      rgba(255, 255, 255, 0.045) 29px,
-      transparent 32px
-    ),
-    linear-gradient(
-      90deg,
-      #070707 0%,
-      #242424 20%,
-      #0c0c0c 45%,
-      #2c2c2c 70%,
-      #080808 100%
-    ) !important;
-
-  background-size:
-    7px 7px,
-    100% 100%,
-    100% 100%,
-    100% 100%;
-
-  border:
-    4px
-    solid
-    var(--ink-black) !important;
-
-  outline:
-    2px
-    solid
-    var(--bg-paper);
-
-  outline-offset: -8px;
-
-  box-shadow:
-    0 0 0 2px var(--bg-paper),
-    6px 7px 0 var(--ink-black),
-    10px 11px 0 rgba(0, 0, 0, 0.3),
-    inset 0 3px 0 rgba(255, 255, 255, 0.13),
-    inset 0 -5px 0 rgba(0, 0, 0, 0.7) !important;
-
-  clip-path: polygon(
-    2% 7%,
-    17% 2%,
-    38% 5%,
-    59% 1%,
-    81% 4%,
-    98% 8%,
-    100% 83%,
-    95% 96%,
-    75% 93%,
-    52% 98%,
-    28% 94%,
-    4% 97%,
-    0 80%
-  ) !important;
-
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1;
-
-  transform: rotate(-0.7deg);
-  transform-origin: left center;
-
-  overflow: visible !important;
-  isolation: isolate;
-}
-
-
-/* ==================================================
-   MONOCHROME METAL PEGS
-================================================== */
-
-.panel-header h3::before,
-.panel-header h3::after {
-  content: "";
-
-  position: absolute;
-  top: 50%;
-
-  width: 10px;
-  height: 10px;
-
-  border:
-    2px
-    solid
-    var(--ink-black);
-
-  border-radius: 50%;
-
-  background:
-    radial-gradient(
-      circle at 35% 30%,
-      #ffffff 0 15%,
-      #bdbdbd 18% 46%,
-      #4b4b4b 50% 70%,
-      #111111 74% 100%
-    );
-
-  box-shadow:
-    0 0 0 1px var(--bg-paper),
-    2px 2px 0 var(--ink-black);
-
-  transform: translateY(-50%);
-
-  pointer-events: none;
-}
-
-.panel-header h3::before {
-  left: 11px;
-}
-
-.panel-header h3::after {
-  right: 11px;
-}
-
 
 /* ==================================================
    STACKED PLAQUE TEXT
@@ -3638,48 +3482,7 @@ display: none;
   display: none !important;
 }
 
-/* ==================================================
-   STRONG HAND-INKED TITLE OUTLINE
-================================================== */
-
-.panel-header h3 .label-jp {
-  color: #ffffff !important;
-
-  /* Actual black outline around every character */
-  -webkit-text-stroke: 1px var(--ink-black);
-  paint-order: stroke fill;
-
-  text-shadow:
-    1px 0 0 var(--ink-black),
-    -1px 0 0 var(--ink-black),
-    0 1px 0 var(--ink-black),
-    0 -1px 0 var(--ink-black),
-
-    2px 2px 0 var(--ink-black),
-    3px 3px 0 rgba(0, 0, 0, 0.55);
-}
-
-.panel-header h3 .label-en {
-  color: #ffffff !important;
-
-  -webkit-text-stroke: 0.45px var(--ink-black);
-  paint-order: stroke fill;
-
-  text-shadow:
-    1px 1px 0 var(--ink-black),
-    -1px 0 0 var(--ink-black),
-    0 -1px 0 var(--ink-black),
-    2px 2px 0 rgba(0, 0, 0, 0.55);
-}
-
-
-/* Stop the old generic glitch from fighting this title system */
-.panel-header h3.font-glitch,
-.panel-header h3 .label-jp.font-glitch,
-.panel-header h3 .label-en.font-glitch {
-  animation: none;
-}
-
+  
 
 /* ==================================================
    PLAQUE + TEXT ENTRANCE
@@ -3902,36 +3705,7 @@ display: none;
 }
 
 
-/* ==================================================
-   REDUCED MOTION
-================================================== */
-
-@media (prefers-reduced-motion: reduce) {
-  .panel-header h3:has(
-    .bilingual-label.page-title-enter
-  ),
-
-  .panel-header h3
-  .bilingual-label.page-title-enter
-  .label-jp,
-
-  .panel-header h3
-  .bilingual-label.page-title-enter
-  .label-en,
-
-  .panel-header h3 .bilingual-label {
-    animation: none;
-  }
-}
-
-
-
-
-
-
-
-
-/* ==================================================
+/* =================================================
    BOARDLESS HAND-DRAWN MANGA TITLE
    Keeps entrance, shake and glitch animations
 ================================================== */
@@ -4229,4 +4003,47 @@ display: none;
     0 1px 0 var(--ink-black),
     0 -1px 0 var(--ink-black),
     2px 2px 0 rgba(0, 0, 0, 0.55);
+}
+
+/* ==================================================
+   SOFT BLACK INK FOG AROUND TITLE GLYPHS
+================================================== */
+
+.panel-header h3 .label-jp {
+  color: #ffffff !important;
+
+  -webkit-text-stroke: 1px var(--ink-black);
+  paint-order: stroke fill;
+
+  text-shadow:
+    /* Crisp hand-inked outline */
+    1px 0 0 var(--ink-black),
+    -1px 0 0 var(--ink-black),
+    0 1px 0 var(--ink-black),
+    0 -1px 0 var(--ink-black),
+
+    /* Manga offset shadow */
+    2px 2px 0 var(--ink-black),
+
+    /* Soft ink fog */
+    0 0 3px rgba(0, 0, 0, 0.95),
+    0 0 7px rgba(0, 0, 0, 0.78),
+    1px 2px 10px rgba(0, 0, 0, 0.58);
+}
+
+.panel-header h3 .label-en {
+  color: #ffffff !important;
+
+  -webkit-text-stroke: 0.45px var(--ink-black);
+  paint-order: stroke fill;
+
+  text-shadow:
+    1px 0 0 var(--ink-black),
+    -1px 0 0 var(--ink-black),
+    0 1px 0 var(--ink-black),
+    0 -1px 0 var(--ink-black),
+
+    /* Lighter fog for the small English line */
+    0 0 3px rgba(0, 0, 0, 0.9),
+    0 0 6px rgba(0, 0, 0, 0.68);
 }
