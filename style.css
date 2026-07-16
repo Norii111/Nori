@@ -3455,12 +3455,14 @@ display: none;
   position: relative;
 
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
+  padding: 3px 10px 10px 19px;
+
 
   width: fit-content;
 
   margin: 0;
-  padding: 3px 10px 10px 19px;
+
 
   background: transparent !important;
   color: var(--ink-black) !important;
@@ -3511,9 +3513,10 @@ display: none;
   position: absolute;
 
   left: 14px;
-  right: -12px;
+  right: auto;
   bottom: 0;
 
+  width: min(72%, 150px);
   height: 6px;
 
   background:
@@ -3539,7 +3542,6 @@ display: none;
     84% 9%,
     93% 28%,
     100% 18%,
-
     99% 72%,
     91% 61%,
     82% 86%,
@@ -3560,7 +3562,6 @@ display: none;
   transform-origin: left center;
 
   opacity: 1;
-
   pointer-events: none;
 }
 
@@ -3573,16 +3574,16 @@ display: none;
   position: relative;
 
   display: inline-flex;
-  flex-direction: row;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: flex-start;
 
   width: auto;
-
-  gap: 8px;
+  gap: 2px;
   padding: 0;
 
   overflow: visible;
 }
+
 
 .panel-header h3 .label-jp {
   position: relative;
