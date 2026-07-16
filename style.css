@@ -4176,7 +4176,7 @@ display: none;
 .panel-header h3::after {
   left: 18px;
   top: auto !important;
-  bottom: -5px !important;
+  bottom: -3px !important;
 
 
   width: min(72%, 115px);
