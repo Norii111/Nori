@@ -4175,7 +4175,9 @@ display: none;
 /* Move the rough underline clearly below the subtitle */
 .panel-header h3::after {
   left: 18px;
-  bottom: -5px;
+  top: auto !important;
+  bottom: -5px !important;
+
 
   width: min(72%, 115px);
   height: 5px;
