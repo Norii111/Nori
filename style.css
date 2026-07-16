@@ -4006,39 +4006,61 @@ display: none;
 }
 
 /* ==================================================
-   SOFT BLACK INK FOG AROUND TITLE GLYPHS
+   VISIBLE INK FOG BEHIND TITLE TEXT
 ================================================== */
 
-.panel-header h3 .label-jp {
-  color: #ffffff !important;
-
-  -webkit-text-stroke: 1px var(--ink-black);
-  paint-order: stroke fill;
-
-   text-shadow:
-    1px 0 0 var(--ink-black),
-    -1px 0 0 var(--ink-black),
-    0 1px 0 var(--ink-black),
-    0 -1px 0 var(--ink-black),
-    2px 2px 0 var(--ink-black),
-    0 0 3px rgba(0, 0, 0, 0.95),
-    0 0 7px rgba(0, 0, 0, 0.78),
-    1px 2px 10px rgba(0, 0, 0, 0.58);
+.panel-header h3 .label-jp,
+.panel-header h3 .label-en {
+  position: relative;
+  isolation: isolate;
 }
 
-.panel-header h3 .label-en {
-  color: #ffffff !important;
+/* Japanese ink cloud */
+.panel-header h3 .label-jp::before {
+  content: "" !important;
+  display: block !important;
 
-  -webkit-text-stroke: 0.45px var(--ink-black);
-  paint-order: stroke fill;
+  position: absolute;
+  z-index: -1;
 
-  text-shadow:
-    1px 0 0 var(--ink-black),
-    -1px 0 0 var(--ink-black),
-    0 1px 0 var(--ink-black),
-    0 -1px 0 var(--ink-black),
-    1px 1px 0 var(--ink-black),
-    0 0 2px rgba(0, 0, 0, 0.95),
-    0 0 4px rgba(0, 0, 0, 0.75),
-    0 1px 6px rgba(0, 0, 0, 0.55);
+  inset: -2px -7px -2px -6px;
+
+  background: rgba(0, 0, 0, 0.78);
+
+  border-radius:
+    46% 54% 43% 57% /
+    58% 42% 55% 45%;
+
+  filter: blur(4px);
+
+  transform:
+    rotate(-1deg)
+    skewX(-2deg);
+
+  pointer-events: none;
+}
+
+/* Smaller fog behind English subtitle */
+.panel-header h3 .label-en::before {
+  content: "" !important;
+  display: block !important;
+
+  position: absolute;
+  z-index: -1;
+
+  inset: -1px -5px -2px -5px;
+
+  background: rgba(0, 0, 0, 0.82);
+
+  border-radius:
+    48% 52% 45% 55% /
+    55% 45% 58% 42%;
+
+  filter: blur(3px);
+
+  transform:
+    rotate(0.5deg)
+    skewX(2deg);
+
+  pointer-events: none;
 }
