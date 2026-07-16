@@ -3932,3 +3932,220 @@ display: none;
     animation: none;
   }
 }
+
+
+/* ==================================================
+   HAND-DRAWN MONOCHROME SHRINE OVERRIDE
+================================================== */
+
+.panel-header h3,
+.manga-panel .panel-header h3 {
+  /* Rough pencil and ink texture */
+  background:
+    repeating-linear-gradient(
+      -7deg,
+      transparent 0 7px,
+      rgba(255, 255, 255, 0.07) 8px 9px,
+      transparent 10px 15px
+    ),
+    repeating-linear-gradient(
+      4deg,
+      transparent 0 15px,
+      rgba(255, 255, 255, 0.035) 16px 18px,
+      transparent 19px 25px
+    ),
+    radial-gradient(
+      circle at 22% 30%,
+      rgba(255, 255, 255, 0.14) 0 1px,
+      transparent 1.7px
+    ),
+    linear-gradient(
+      91deg,
+      #050505 0%,
+      #1c1c1c 19%,
+      #080808 43%,
+      #242424 68%,
+      #070707 100%
+    ) !important;
+
+  background-size:
+    100% 100%,
+    100% 100%,
+    7px 7px,
+    100% 100%;
+
+  /* Slightly imperfect ink edge */
+  border:
+    3px
+    solid
+    var(--ink-black) !important;
+
+  outline:
+    2px
+    solid
+    var(--bg-paper);
+
+  outline-offset: -7px;
+
+  /*
+   * Alternating black/white offsets make the edge
+   * look repeatedly sketched instead of digitally clean.
+   */
+  box-shadow:
+    2px 1px 0 var(--bg-paper),
+    5px 4px 0 var(--ink-black),
+    7px 6px 0 var(--bg-paper),
+    10px 9px 0 var(--ink-black),
+    13px 12px 0 rgba(0, 0, 0, 0.24),
+    inset 2px 1px 0 rgba(255, 255, 255, 0.12),
+    inset -3px -2px 0 rgba(0, 0, 0, 0.75) !important;
+
+  /* More irregular hand-cut silhouette */
+  clip-path: polygon(
+    1% 9%,
+    6% 3%,
+    15% 6%,
+    25% 2%,
+    36% 5%,
+    47% 1%,
+    59% 4%,
+    70% 2%,
+    81% 6%,
+    91% 3%,
+    98% 9%,
+
+    100% 23%,
+    98% 39%,
+    100% 55%,
+    97% 72%,
+    99% 85%,
+
+    94% 97%,
+    82% 94%,
+    71% 98%,
+    60% 95%,
+    49% 99%,
+    37% 95%,
+    25% 98%,
+    14% 94%,
+    4% 97%,
+
+    0 84%,
+    2% 68%,
+    0 52%,
+    2% 35%,
+    0 20%
+  ) !important;
+
+  transform:
+    rotate(-0.9deg)
+    skewX(-0.25deg);
+}
+
+
+/* ==================================================
+   ROUGH HAND-DRAWN PEGS
+================================================== */
+
+.panel-header h3::before,
+.panel-header h3::after {
+  border-width: 2px 3px 3px 2px;
+
+  border-radius:
+    43% 57% 46% 54% /
+    55% 42% 58% 45%;
+
+  box-shadow:
+    1px 0 0 var(--bg-paper),
+    3px 2px 0 var(--ink-black);
+
+  background:
+    radial-gradient(
+      circle at 33% 28%,
+      #ffffff 0 12%,
+      #bcbcbc 15% 39%,
+      #4a4a4a 43% 68%,
+      #090909 72% 100%
+    );
+}
+
+.panel-header h3::before {
+  transform:
+    translateY(-50%)
+    rotate(-11deg);
+}
+
+.panel-header h3::after {
+  transform:
+    translateY(-50%)
+    rotate(9deg);
+}
+
+
+/* ==================================================
+   HAND-INKED LETTERING
+================================================== */
+
+.panel-header h3 .label-jp {
+  rotate: -0.6deg;
+
+  letter-spacing: 0.3px;
+
+  -webkit-text-stroke:
+    0.25px
+    #ffffff;
+
+  text-shadow:
+    2px 1px 0 var(--ink-black),
+    -1px 1px 0 var(--ink-black),
+    1px -1px 0 var(--ink-black),
+    3px 3px 0 rgba(0, 0, 0, 0.85);
+}
+
+.panel-header h3 .label-en {
+  rotate: 0.7deg;
+
+  letter-spacing: 1.5px;
+
+  text-shadow:
+    1px 1px 0 var(--ink-black),
+    -1px 0 0 var(--ink-black),
+    2px 2px 0 rgba(0, 0, 0, 0.85);
+}
+
+
+/* ==================================================
+   MORE HAND-DRAWN IMPACT MOVEMENT
+================================================== */
+
+@keyframes shrine-plaque-impact {
+  0% {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+
+  20% {
+    translate: -3px 1px;
+    rotate: -0.7deg;
+  }
+
+  40% {
+    translate: 2px -2px;
+    rotate: 0.6deg;
+  }
+
+  60% {
+    translate: -1px 1px;
+    rotate: -0.35deg;
+  }
+
+  80% {
+    translate: 1px 0;
+    rotate: 0.2deg;
+  }
+
+  100% {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
