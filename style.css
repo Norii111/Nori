@@ -3710,3 +3710,158 @@ display: none;
   text-transform: uppercase;
   opacity: 0.72;
 }
+
+
+/* English subtitle */
+.panel-header h3 .label-en {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 5px;
+
+  border: 0 !important;
+  text-decoration: none !important;
+}
+
+/* Remove any older straight-line pseudo-element */
+.panel-header h3 .label-en::before {
+  display: none !important;
+}
+
+/* Uneven ink stroke */
+.panel-header h3 .label-en::after {
+  content: "";
+  position: absolute;
+
+  left: -3px;
+  right: -8px;
+  bottom: 0;
+
+  height: 5px;
+
+  background:
+    linear-gradient(
+      176deg,
+      transparent 0 12%,
+      var(--ink-black) 14% 47%,
+      transparent 49% 57%,
+      var(--ink-black) 59% 86%,
+      transparent 88%
+    );
+
+  clip-path: polygon(
+    0 38%,
+    8% 20%,
+    18% 34%,
+    29% 8%,
+    42% 30%,
+    55% 14%,
+    68% 37%,
+    81% 11%,
+    92% 28%,
+    100% 18%,
+    98% 78%,
+    86% 64%,
+    73% 88%,
+    60% 69%,
+    46% 91%,
+    33% 66%,
+    20% 84%,
+    7% 63%,
+    0 75%
+  );
+
+  transform:
+    scaleX(0)
+    rotate(-1deg)
+    skewX(-8deg);
+
+  transform-origin: left center;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.panel-header h3
+.bilingual-label.page-title-enter
+.label-en::after {
+  animation:
+    mangaInkDraw 650ms
+    steps(7, end)
+    forwards;
+}
+
+@keyframes mangaInkDraw {
+  0% {
+    transform:
+      scaleX(0)
+      rotate(-2deg)
+      skewX(-12deg);
+
+    opacity: 0;
+  }
+
+  18% {
+    transform:
+      scaleX(0.16)
+      rotate(1deg)
+      skewX(-5deg);
+
+    opacity: 0.85;
+  }
+
+  38% {
+    transform:
+      scaleX(0.42)
+      rotate(-1.5deg)
+      skewX(-10deg);
+  }
+
+  61% {
+    transform:
+      scaleX(0.68)
+      rotate(0.5deg)
+      skewX(-4deg);
+  }
+
+  82% {
+    transform:
+      scaleX(0.91)
+      rotate(-1deg)
+      skewX(-8deg);
+  }
+
+  100% {
+    transform:
+      scaleX(1)
+      rotate(-0.7deg)
+      skewX(-6deg);
+
+    opacity: 1;
+  }
+}
+
+.panel-header h3
+.bilingual-label.page-title-enter
+.label-en {
+  animation:
+    mangaSubtitleImpact 650ms
+    steps(5, end);
+}
+
+@keyframes mangaSubtitleImpact {
+  0%,
+  70% {
+    transform: translateX(0);
+  }
+
+  78% {
+    transform: translateX(-1px) rotate(-0.4deg);
+  }
+
+  88% {
+    transform: translateX(1px) rotate(0.3deg);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
