@@ -4160,3 +4160,16 @@ display: none;
     -1px 0 0 var(--ink-black),
     2px 2px 0 rgba(0, 0, 0, 0.72);
 }
+
+/* Keep reduced-motion effective after the final override */
+@media (prefers-reduced-motion: reduce) {
+  .panel-header h3,
+  .panel-header h3 .bilingual-label,
+  .panel-header h3 .label-jp,
+  .panel-header h3 .label-en,
+  .panel-header h3::before,
+  .panel-header h3::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
