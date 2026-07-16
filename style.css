@@ -639,315 +639,2915 @@ body {
   z-index: 2;
 }
 
-/* ==================================================
-   FAST WHITE MANGA TITLE + INK DRAW
-================================================== */
-
 .panel-header h3 {
-  color: var(--bg-paper) !important;
-
-  text-shadow:
-    2px 2px 0 var(--ink-black),
-    -1px 0 0 var(--ink-black),
-    0 -1px 0 var(--ink-black),
-    1px 0 0 var(--ink-black),
-    0 1px 0 var(--ink-black);
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  background: var(--ink-black);
+  color: var(--bg-paper);
+  padding: 4px 10px;
+  letter-spacing: 1px;
+  display: inline-block;
 }
 
-.panel-header h3 .label-jp,
-.panel-header h3 .label-en {
-  color: var(--bg-paper) !important;
+/* THE CODE WORKSPACE PRINT ENGINE */
 
-  text-shadow:
-    2px 2px 0 var(--ink-black),
-    -1px 0 0 var(--ink-black),
-    0 -1px 0 var(--ink-black),
-    1px 0 0 var(--ink-black),
-    0 1px 0 var(--ink-black);
-}
+textarea {
+  width: 100%;
+  flex-grow: 1;
+  border: 3px solid var(--ink-black);
+  border-radius: 0;
+  padding: 12px;
 
+  font-family:
+    ui-monospace,
+    "SFMono-Regular",
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    monospace;
 
-/* ==================================================
-   VERTICAL WHITE INK MARK
-================================================== */
-
-.panel-header h3::before {
-  content: "";
-
-  position: absolute;
-
-  left: 1px;
-  top: 50%;
-
-  width: 8px;
-  height: 72%;
-
+  font-size: 14px;
+  font-weight: bold;
+  resize: none;
   background: var(--bg-paper);
+  color: var(--ink-black);
+  box-sizing: border-box;
+  margin-top: 10px;
+  z-index: 2;
+
+  /* SNAPPY TRANSITION TACTIC */
+
+  transition:
+    transform 0.25s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.25s ease;
+
+  transform-origin: bottom right;
+}
+
+/* PAPER SWIPE & SHIFT ROTATION TRANSFORMS */
+
+textarea.page-turn {
+  transform:
+    translateY(-18px)
+    translateX(12px)
+    rotate(3deg)
+    scale(0.98);
+
+  opacity: 0.08;
+  filter: blur(0.5px);
+}
+
+textarea,
+input {
+  font-family:
+    ui-monospace,
+    "SFMono-Regular",
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    monospace;
+}
+
+/* SWAP VIEW — MANGA PANEL SNAP */
+
+textarea.workspace-swap {
+  animation:
+    workspace-panel-snap
+    420ms
+    cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes workspace-panel-snap {
+  0% {
+    opacity: 0.25;
+
+    transform:
+      translateX(28px)
+      translateY(-4px)
+      rotate(1deg)
+      scale(0.985);
+
+    box-shadow:
+      1px 1px 0 var(--ink-black);
+  }
+
+  55% {
+    opacity: 1;
+
+    transform:
+      translateX(-5px)
+      translateY(2px)
+      rotate(-0.3deg)
+      scale(1.005);
+
+    box-shadow:
+      8px 8px 0 var(--ink-black);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform:
+      translateX(0)
+      translateY(0)
+      rotate(0)
+      scale(1);
+
+    box-shadow: none;
+  }
+}
+
+/* SEARCH COPY — INK WIPE DISAPPEARANCE */
+
+#sheetPayloadArea.search-copy-disappear {
+  pointer-events: none;
+  contain: paint;
+  will-change:
+    transform,
+    opacity,
+    clip-path;
+
+  animation:
+    search-ink-wipe
+    460ms
+    cubic-bezier(0.55, 0, 0.3, 1)
+    forwards;
+}
+
+@keyframes search-ink-wipe {
+  0% {
+    opacity: 1;
+
+    transform:
+      translateX(0)
+      translateY(0)
+      rotate(0deg)
+      scale(1);
+
+    clip-path: inset(0 0 0 0);
+  }
+
+  35% {
+    opacity: 1;
+
+    transform:
+      translateX(-3px)
+      translateY(-4px)
+      rotate(-0.35deg)
+      scale(1.005);
+
+    clip-path: inset(0 0 0 0);
+
+    box-shadow:
+      7px 7px 0 var(--ink-black);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translateX(18px)
+      translateY(-16px)
+      rotate(1.2deg)
+      scale(0.97);
+
+    clip-path: inset(0 0 100% 0);
+
+    box-shadow:
+      0 0 0 var(--ink-black);
+  }
+}
+
+/* OVERFLOW SNIPPETS PAGES GRID */
+
+.bottom-item-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 15px;
+
+  overflow-x: auto;
+  overflow-y: visible !important;
+
+  padding: 28px 8px 18px;
+
+  z-index: 2;
+
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.bottom-item-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.snippet-card {
+  position: relative;
+
+  flex:
+    0
+    0
+    220px;
+
+  min-width: 220px;
+  max-width: 220px;
+  height: 110px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  box-sizing: border-box;
+
+  overflow: visible !important;
+
+  padding: 12px;
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  background-image:
+    linear-gradient(
+      45deg,
+      var(--screentone) 25%,
+      transparent 25%,
+      transparent 50%,
+      var(--screentone) 50%,
+      var(--screentone) 75%,
+      transparent 75%,
+      transparent
+    );
+
+  background-size:
+    10px
+    10px;
+
+  transition:
+    transform 0.16s cubic-bezier(0.2, 1.8, 0.4, 1),
+    box-shadow 0.16s ease,
+    background 0.16s ease,
+    filter 0.16s ease;
+}
+
+.snippet-card strong {
+  background:
+    rgba(255, 255, 255, 0.4);
+
+  padding:
+    2px
+    4px;
+
+  border-bottom:
+    2px
+    solid
+    var(--ink-black);
+}
+
+/* PERFECTLY CENTERED GRAPHIC INK AVATAR FRAME */
+
+.blank-character-frame {
+  border:
+    4px
+    solid
+    var(--ink-black);
+
+  background:
+    var(--bg-paper);
+
+  width: 120px;
+  height: 120px;
+
+  margin:
+    auto
+    auto
+    0
+    auto;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  cursor: pointer;
 
   box-shadow:
-    2px 2px 0 var(--ink-black);
+    4px 4px 0 var(--ink-black);
 
-  transform:
-    translateY(-50%)
-    scaleY(1)
-    skewY(-15deg)
-    rotate(3deg);
+  transition:
+    transform
+    0.4s
+    cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
-  transform-origin: center bottom;
-
-  pointer-events: none;
+  z-index: 2;
 }
 
+.blank-character-frame.flipped {
+  transform:
+    scaleX(-1)
+    rotate(3deg);
+}
 
-/* ==================================================
-   SHORT WHITE UNEVEN UNDERLINE
-================================================== */
+/* MANGA "IMPACT" ACTION BUTTONS */
 
-.panel-header h3::after {
+.manga-btn {
+  padding:
+    6px
+    16px;
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  background:
+    var(--bg-paper);
+
+  color:
+    var(--ink-black);
+
+  box-shadow:
+    3px 3px 0 var(--ink-black);
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+
+  cursor: pointer;
+}
+
+.manga-btn:hover {
+  background:
+    var(--ink-black);
+
+  color:
+    var(--bg-paper);
+
+  transform:
+    translate(-2px, -2px);
+
+  box-shadow:
+    5px 5px 0 var(--ink-black);
+}
+
+.manga-btn.danger {
+  background:
+    #fee2e2;
+}
+
+.manga-btn.danger:hover {
+  background:
+    #ef4444;
+
+  color:
+    white;
+}
+
+/* FLOATING OVERLAY DIALOGUE BOX */
+
+.modal-overlay {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background:
+    rgba(17, 17, 17, 0.8);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 10000;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transition:
+    opacity
+    0.2s
+    ease-in-out;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-panel {
+  background:
+    var(--bg-paper);
+
+  border:
+    6px
+    solid
+    var(--ink-black);
+
+  box-shadow:
+    12px 12px 0 var(--ink-black);
+
+  padding: 25px;
+
+  width: 340px;
+
+  text-align: center;
+}
+
+.modal-panel input {
+  width: 100%;
+
+  background:
+    var(--bg-paper);
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  padding: 10px;
+
+  color:
+    var(--ink-black);
+
+  font-weight: bold;
+  font-family: inherit;
+
+  box-sizing: border-box;
+
+  margin-bottom: 20px;
+}
+
+/* SYSTEM TOAST ALERT LABELS */
+
+.toast-container {
+  position: fixed;
+
+  bottom: 30px;
+  right: 30px;
+
+  z-index: 9999;
+}
+
+.manga-toast {
+  background:
+    var(--ink-black);
+
+  color:
+    var(--bg-paper);
+
+  border:
+    3px
+    solid
+    var(--bg-paper);
+
+  outline:
+    3px
+    solid
+    var(--ink-black);
+
+  padding:
+    12px
+    24px;
+
+  font-weight: 900;
+  font-size: 13px;
+
+  box-shadow:
+    6px 6px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* CHUNKY INK-PRINT SCROLLBARS */
+
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background:
+    var(--bg-paper);
+
+  border-left:
+    3px
+    solid
+    var(--ink-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background:
+    var(--ink-black);
+
+  border:
+    2px
+    solid
+    var(--bg-paper);
+
+  box-shadow:
+    inset
+    0
+    0
+    0
+    1px
+    var(--ink-black);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background:
+    #3a3a40;
+}
+
+* {
+  scrollbar-width: auto;
+
+  scrollbar-color:
+    var(--ink-black)
+    var(--bg-paper);
+}
+
+/* --- COMPACT MANGA BATTLE CHESS MATRIX --- */
+
+.chess-matrix-board {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  grid-template-rows: repeat(3, 1fr);
+
+  gap: 3px;
+
+  border: 5px solid var(--ink-black);
+
+  background: var(--ink-black);
+
+  width: 180px;
+
+  height: 180px;
+
+  margin: 12px auto;
+
+  box-shadow: 5px 5px 0 var(--ink-black);
+}
+
+.chess-square {
+  background-color: var(--bg-paper);
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  font-size: 28px;
+
+  font-weight: 900;
+
+  cursor: pointer;
+
+  position: relative;
+
+  user-select: none;
+
+  color: var(--ink-black);
+
+  transition: background 0.12s ease;
+}
+
+/* Screentone layout for dark tiles */
+
+.chess-square.dark-tile {
+  background-color: #d1d5db;
+
+  background-image: radial-gradient(
+    var(--screentone) 18%,
+    transparent 19%
+  );
+
+  background-size: 4px 4px;
+}
+
+/* Invert colors instantly on hover */
+
+.chess-square:hover {
+  background-color: var(--ink-black) !important;
+
+  color: var(--bg-paper) !important;
+}
+
+.chess-square:hover .square-coord {
+  color: var(--bg-paper);
+}
+
+/* Coordinates positioned subtly in the corner */
+
+.square-coord {
+  position: absolute;
+
+  bottom: 2px;
+
+  right: 4px;
+
+  font-size: 8px;
+
+  font-family: monospace;
+
+  color: #55555d;
+
+  font-weight: 900;
+}
+
+/* ================================
+   PREDICTION CARD GRID
+================================ */
+
+.prediction-card-grid {
+  flex-grow: 1;
+
+  display: grid;
+
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(260px, 1fr)
+  );
+
+  align-items: start;
+
+  gap: 18px;
+
+  overflow-y: auto;
+
+  overflow-x: hidden;
+
+  padding: 22px 10px 100px;
+
+  box-sizing: border-box;
+
+  position: relative;
+
+  z-index: 2;
+}
+
+.prediction-card {
+  position: relative;
+
+  isolation: isolate;
+
+  height: 190px;
+
+  min-height: 190px;
+
+  box-sizing: border-box;
+
+  overflow: hidden;
+
+  padding: 16px 16px 18px;
+
+  border: 3px solid var(--ink-black);
+
+  box-shadow: 6px 6px 0 var(--ink-black);
+
+  transition:
+    box-shadow 0.12s ease,
+    height 0.12s ease;
+
+  transform-origin: top center;
+
+  z-index: 1;
+}
+
+.prediction-card:hover {
+  height: auto;
+
+  min-height: 190px;
+
+  overflow: visible;
+
+  z-index: 20;
+
+  transform:
+    rotate(
+      var(--card-tilt)
+    ) !important;
+
+  box-shadow:
+    6px 6px 0 var(--ink-black),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.7);
+
+  animation: none;
+}
+
+/* =================================
+   PREDICTION CARD INTERNAL EFFECTS
+================================= */
+
+/* Pin jumps without moving the card */
+
+.prediction-card:hover .prediction-card-pin {
+  animation:
+    prediction-pin-pop
+    480ms
+    cubic-bezier(0.2, 1.7, 0.4, 1);
+}
+
+@keyframes prediction-pin-pop {
+  0% {
+    transform:
+      translateX(-50%)
+      scale(1);
+  }
+
+  45% {
+    transform:
+      translateX(-50%)
+      scale(1.4)
+      rotate(-12deg);
+  }
+
+  70% {
+    transform:
+      translateX(-50%)
+      scale(0.9)
+      rotate(5deg);
+  }
+
+  100% {
+    transform:
+      translateX(-50%)
+      scale(1)
+      rotate(0);
+  }
+}
+
+/* Title receives a manga emphasis line */
+
+.prediction-card-title {
+  position: relative;
+
+  display: inline-block;
+
+  max-width: calc(100% - 70px);
+
+  margin: 0;
+
+  padding: 4px 8px;
+
+  background: var(--ink-black);
+
+  color: var(--bg-paper);
+
+  font-size: 14px;
+
+  line-height: 1.25;
+
+  word-break: break-word;
+
+  transform: rotate(-1deg);
+}
+
+.prediction-card-title::after {
   content: "";
 
   position: absolute;
 
-  left: 14px;
-  right: auto;
+  left: 0;
+
+  bottom: -4px;
+
+  width: 0;
+
+  height: 3px;
+
+  background: var(--ink-black);
+
+  transition:
+    width
+    220ms
+    cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.prediction-card:hover
+.prediction-card-title::after {
+  width: 100%;
+}
+
+/* Timer label reacts */
+
+.prediction-card-timer {
+  display: inline-block;
+
+  margin-bottom: 10px;
+
+  padding: 3px 7px;
+
+  border: 2px solid var(--ink-black);
+
+  box-shadow: 2px 2px 0 var(--ink-black);
+
+  font-size: 10px;
+
+  font-weight: 900;
+
+  letter-spacing: 0.5px;
+
+  transition:
+    letter-spacing 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.prediction-card:hover
+.prediction-card-timer {
+  letter-spacing: 1px;
+
+  transform: none;
+
+  box-shadow: 3px 3px 0 var(--ink-black);
+}
+
+/* Copy button comic pulse */
+
+.prediction-card:hover
+.prediction-copy-btn:not(:disabled) {
+  animation:
+    prediction-copy-pulse
+    850ms
+    ease-in-out
+    infinite;
+}
+
+@keyframes prediction-copy-pulse {
+  0%,
+  100% {
+    box-shadow:
+      3px 3px 0
+      var(--ink-black);
+  }
+
+  50% {
+    box-shadow:
+      5px 5px 0
+      var(--ink-black);
+  }
+}
+
+/* Internal moving paper texture */
+
+.prediction-card::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 6px;
+
+  border:
+    1px
+    dashed
+    rgba(0, 0, 0, 0.25);
+
+  background-image:
+    repeating-linear-gradient(
+      -35deg,
+      rgba(0, 0, 0, 0.035) 0,
+      rgba(0, 0, 0, 0.035) 2px,
+      transparent 2px,
+      transparent 10px
+    );
+
+  background-size:
+    18px
+    18px;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  z-index: 0;
+
+  transition:
+    opacity
+    180ms
+    ease;
+}
+
+.prediction-card > * {
+  position: relative;
+
+  z-index: 1;
+}
+
+.prediction-card:hover::before {
+  opacity: 1;
+
+  animation:
+    prediction-paper-flow
+    700ms
+    linear
+    infinite;
+}
+
+@keyframes prediction-paper-flow {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 18px 0;
+  }
+}
+
+/* Bottom content fade while collapsed */
+
+.prediction-card::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+
+  right: 0;
+
   bottom: 0;
 
-  width: min(72%, 150px);
-  height: 6px;
+  height: 45px;
 
   background:
     linear-gradient(
-      177deg,
-      transparent 0 14%,
-      var(--bg-paper) 16% 45%,
-      transparent 48% 56%,
-      var(--bg-paper) 59% 85%,
-      transparent 88% 100%
+      to bottom,
+      transparent,
+      rgba(244, 243, 239, 0.95)
     );
 
-  clip-path: polygon(
-    0% 38%,
-    7% 18%,
-    15% 34%,
-    24% 10%,
-    34% 27%,
-    44% 13%,
-    54% 37%,
-    64% 17%,
-    74% 31%,
-    84% 9%,
-    93% 28%,
-    100% 18%,
-    99% 72%,
-    91% 61%,
-    82% 86%,
-    72% 66%,
-    62% 88%,
-    52% 70%,
-    42% 91%,
-    31% 67%,
-    21% 84%,
-    11% 63%,
-    0% 77%
-  );
-
-  filter:
-    drop-shadow(
-      2px
-      2px
-      0
-      var(--ink-black)
-    );
-
-  transform:
-    scaleX(1)
-    rotate(-0.7deg);
-
-  transform-origin: left center;
-
-  opacity: 1;
   pointer-events: none;
 }
 
+.prediction-card:hover::after {
+  display: none;
+}
 
-/* ==================================================
-   FASTER TITLE TEXT ANIMATION
-================================================== */
+.prediction-card-pin {
+  position: absolute;
 
+  top: -10px;
+
+  left: 50%;
+
+  width: 18px;
+
+  height: 18px;
+
+  transform: translateX(-50%);
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  border-radius: 50%;
+
+  background: #d94a4a;
+
+  box-shadow:
+    2px 2px 0
+    var(--ink-black);
+
+  color: transparent;
+
+  z-index: 3;
+}
+
+.prediction-card-topline {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-start;
+
+  gap: 8px;
+
+  margin-bottom: 10px;
+}
+
+.prediction-copy-btn {
+  font-size: 10px;
+
+  padding: 3px 8px;
+
+  flex-shrink: 0;
+
+  position: relative;
+
+  z-index: 5;
+}
+
+.prediction-card-content {
+  font-size: 13px;
+
+  line-height: 1.45;
+
+  white-space: pre-wrap;
+
+  overflow-wrap: anywhere;
+
+  word-break: normal;
+}
+
+.prediction-empty-state {
+  border:
+    3px
+    dashed
+    var(--ink-black);
+
+  background:
+    var(--bg-paper);
+
+  padding: 18px;
+
+  font-size: 13px;
+
+  font-weight: bold;
+
+  box-shadow:
+    5px 5px 0
+    var(--ink-black);
+}
+
+.prediction-filter-bar {
+  margin-bottom: 15px;
+
+  position: relative;
+
+  z-index: 5;
+}
+
+.timer-live {
+  background: #d8f3dc;
+
+  color: #111;
+}
+
+.timer-dead {
+  background: #2b2b2b;
+
+  color: #f4f3ef;
+}
+
+/* =================================
+   EXPIRED PREDICTION CARDS
+================================= */
+
+.prediction-card-expired {
+  filter: grayscale(1);
+
+  opacity: 0.62;
+
+  background:
+    #d1d1d1 !important;
+
+  box-shadow:
+    6px 6px 0
+    #555 !important;
+}
+
+.prediction-card-expired
+.prediction-card-title {
+  background: #333;
+
+  color: #cfcfcf;
+}
+
+.prediction-card-expired
+.prediction-card-content {
+  text-decoration: line-through;
+
+  opacity: 0.75;
+}
+
+.prediction-card-expired
+.prediction-copy-btn {
+  cursor: not-allowed;
+
+  opacity: 0.45;
+
+  box-shadow: none;
+}
+
+.prediction-time-editor {
+  border:
+    3px
+    dashed
+    var(--ink-black);
+
+  background:
+    rgba(255, 255, 255, 0.5);
+
+  padding: 8px;
+
+  margin-bottom: 10px;
+
+  position: relative;
+
+  z-index: 10;
+}
+
+.prediction-time-row {
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
+  gap: 8px;
+
+  margin-bottom: 8px;
+}
+
+.prediction-time-row label {
+  font-size: 10px;
+
+  font-weight: 900;
+
+  text-transform: uppercase;
+}
+
+.prediction-time-row input {
+  width: 100%;
+
+  margin-top: 3px;
+
+  border:
+    2px
+    solid
+    var(--ink-black);
+
+  background:
+    var(--bg-paper);
+
+  font-family: inherit;
+
+  font-weight: bold;
+
+  padding: 4px;
+
+  box-sizing: border-box;
+}
+
+.prediction-day-row {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 5px;
+
+  margin-bottom: 8px;
+}
+
+.prediction-day-chip {
+  border:
+    2px
+    solid
+    var(--ink-black);
+
+  padding: 3px 6px;
+
+  font-size: 10px;
+
+  font-weight: 900;
+
+  background:
+    var(--bg-paper);
+
+  cursor: pointer;
+
+  box-shadow:
+    2px 2px 0
+    var(--ink-black);
+}
+
+.prediction-day-chip input {
+  display: none;
+}
+
+.prediction-day-chip.active {
+  background:
+    var(--ink-black);
+
+  color:
+    var(--bg-paper);
+}
+
+.prediction-clear-time-btn {
+  font-size: 10px;
+
+  padding: 3px 8px;
+}
+
+.prediction-card-expired:not(
+  .prediction-card-editing
+):hover {
+  height: 190px;
+
+  min-height: 190px;
+
+  overflow: hidden;
+
+  z-index: 1;
+
+  transform:
+    rotate(
+      var(--card-tilt)
+    ) !important;
+
+  box-shadow:
+    6px 6px 0
+    #555 !important;
+}
+
+.prediction-card-expired:not(
+  .prediction-card-editing
+):hover
+.prediction-card-content {
+  text-decoration: line-through;
+
+  opacity: 0.75;
+}
+
+/* ================================
+   MANGA TEXT AREA UPGRADE
+================================ */
+
+textarea,
+#sheetArchiveArea,
+#searchSuggestions {
+  background-color: #f8f3df;
+
+  background-image:
+    radial-gradient(
+      circle at 18% 24%,
+      rgba(0, 0, 0, 0.13) 1px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle at 78% 18%,
+      rgba(0, 0, 0, 0.08) 1px,
+      transparent 2px
+    ),
+    repeating-linear-gradient(
+      -8deg,
+      rgba(17, 17, 17, 0.035) 0,
+      rgba(17, 17, 17, 0.035) 2px,
+      transparent 2px,
+      transparent 13px
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.55),
+      rgba(222, 211, 184, 0.35)
+    );
+
+  background-size:
+    11px 11px,
+    17px 17px,
+    100% 100%,
+    100% 100%;
+
+  box-shadow:
+    inset 5px 5px 0 rgba(0, 0, 0, 0.06),
+    inset -4px -4px 0 rgba(255, 255, 255, 0.45),
+    5px 5px 0 var(--ink-black);
+
+  outline:
+    2px
+    solid
+    rgba(17, 17, 17, 0.12);
+
+  outline-offset: -8px;
+}
+
+textarea:focus {
+  background-color: #fff3cc;
+
+  transform:
+    translate(-2px, -2px)
+    rotate(0.35deg);
+
+  box-shadow:
+    inset 5px 5px 0 rgba(0, 0, 0, 0.07),
+    inset -4px -4px 0 rgba(255, 255, 255, 0.55),
+    8px 8px 0 var(--ink-black);
+}
+
+textarea::placeholder {
+  color:
+    rgba(17, 17, 17, 0.52);
+
+  font-weight: 900;
+
+  letter-spacing: 0.5px;
+}
+
+/* ================================
+   RECENT SEARCH PILLS — ALIVE HOVER
+================================ */
+
+/* Stable hover zone for recent search pills */
+
+#searchHistoryContainer {
+  overflow: visible !important;
+
+  padding: 10px 6px 16px;
+}
+
+.search-history-pill {
+  position: relative;
+
+  isolation: isolate;
+
+  overflow: visible !important;
+
+  transform:
+    rotate(
+      var(--pill-tilt, 0deg)
+    );
+
+  transition:
+    transform 0.16s cubic-bezier(0.2, 1.8, 0.4, 1),
+    box-shadow 0.16s ease,
+    filter 0.16s ease;
+}
+
+/* Invisible hover cushion */
+
+.search-history-pill::before {
+  content: "";
+
+  position: absolute;
+
+  inset: -12px;
+
+  background: transparent;
+
+  pointer-events: auto;
+
+  z-index: -1;
+}
+
+.search-history-pill:hover {
+  transform:
+    rotate(
+      var(--pill-tilt, 0deg)
+    )
+    translateY(-3px)
+    scale(1.05);
+
+  box-shadow:
+    7px 7px 0
+    var(--ink-black) !important;
+
+  filter:
+    contrast(1.08)
+    saturate(1.08);
+
+  z-index: 9999;
+}
+
+.search-history-pill:active {
+  transform:
+    rotate(
+      var(--pill-tilt, 0deg)
+    )
+    translateY(1px)
+    scale(0.98);
+
+  box-shadow:
+    2px 2px 0
+    var(--ink-black) !important;
+}
+
+.search-history-pill.is-pinned {
+  background:
+    #fff3b0 !important;
+}
+
+/* ================================
+   MAIN MANGA PANEL HOVER
+================================ */
+
+.manga-panel {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.manga-panel:hover {
+  transform:
+    translate(-1px, -1px);
+
+  box-shadow:
+    7px 7px 0 var(--ink-black),
+    13px 13px 0 rgba(0, 0, 0, 0.18);
+
+  filter:
+    contrast(1.03);
+}
+
+.manga-panel
+.panel-header h3 {
+  position: relative;
+
+  clip-path:
+    polygon(
+      0 0,
+      94% 0,
+      100% 35%,
+      100% 100%,
+      6% 100%,
+      0 70%
+    );
+
+  box-shadow:
+    4px 4px 0
+    #b91c1c;
+}
+
+/* ================================
+   ACTIVE COMMAND CENTER CARD
+================================ */
+
+.snippet-card.active-card {
+  background:
+    radial-gradient(
+      circle at 18% 28%,
+      rgba(0, 0, 0, 0.16) 1px,
+      transparent 2px
+    ),
+    linear-gradient(
+      135deg,
+      #fff3b0,
+      #ebdccb
+    ) !important;
+
+  border: 4px solid var(--ink-black);
+
+  box-shadow:
+    7px 7px 0 #b91c1c,
+    11px 11px 0 var(--ink-black) !important;
+
+  transform:
+    translate(-4px, -4px)
+    rotate(0deg)
+    scale(1.03) !important;
+
+  filter: contrast(1.08);
+
+  z-index: 99999 !important;
+}
+
+.snippet-card.active-card::before {
+  content: "NOW VIEWING";
+
+  position: absolute;
+
+  top: -13px;
+
+  left: 10px;
+
+  padding: 2px 7px;
+
+  border: 3px solid var(--ink-black);
+
+  background: #b91c1c;
+
+  color: #fff3b0;
+
+  box-shadow:
+    3px 3px 0
+    var(--ink-black);
+
+  font-size: 9px;
+
+  font-weight: 900;
+
+  letter-spacing: 0.6px;
+
+  transform: rotate(-3deg);
+
+  z-index: 100000 !important;
+}
+
+.snippet-card.active-card::after {
+  content: "✦";
+
+  position: absolute;
+
+  right: 8px;
+
+  top: 6px;
+
+  font-size: 18px;
+
+  font-weight: 900;
+
+  color: #b91c1c;
+
+  text-shadow:
+    2px 2px 0
+    var(--ink-black);
+
+  z-index: 5;
+}
+
+.snippet-card.editing-card::before {
+  content: "EDITING";
+
+  background: var(--ink-black);
+
+  color: var(--bg-paper);
+}
+
+.snippet-card:hover {
+  transform:
+    translate(-2px, -2px)
+    rotate(1deg);
+
+  box-shadow:
+    7px 7px 0
+    var(--ink-black);
+}
+
+/* ================================
+   LOCAL STICKY NOTE CARD
+================================ */
+
+.snippet-card.sticky-note-card {
+  background:
+    radial-gradient(
+      circle at 18% 28%,
+      rgba(0, 0, 0, 0.12) 1px,
+      transparent 2px
+    ),
+    linear-gradient(
+      135deg,
+      #fff3b0,
+      #f8df7a
+    ) !important;
+
+  border: 4px solid var(--ink-black);
+
+  box-shadow:
+    6px 6px 0 #b91c1c,
+    10px 10px 0 var(--ink-black);
+}
+
+.snippet-card.sticky-note-card::after {
+  content: "LOCAL";
+
+  position: absolute;
+
+  right: 8px;
+
+  top: -12px;
+
+  background: #b91c1c;
+
+  color: #fff3b0;
+
+  border: 3px solid var(--ink-black);
+
+  padding: 2px 6px;
+
+  font-size: 9px;
+
+  font-weight: 900;
+
+  box-shadow:
+    3px 3px 0
+    var(--ink-black);
+
+  transform: rotate(4deg);
+}
+
+.bottom-overflow-panel {
+  overflow: visible !important;
+}
+
+/* ================================
+   WALLPAPER GALLERY MODAL
+================================ */
+
+.wallpaper-modal {
+  position: fixed;
+
+  inset: 0;
+
+  background:
+    rgba(0, 0, 0, 0.62);
+
+  z-index: 999999;
+
+  display: none;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 28px;
+}
+
+.wallpaper-modal.open {
+  display: flex;
+}
+
+.wallpaper-panel {
+  width: min(1100px, 96vw);
+
+  height: 430px;
+
+  background: var(--bg-paper);
+
+  border: 5px solid var(--ink-black);
+
+  box-shadow:
+    12px 12px 0
+    var(--ink-black);
+
+  padding: 18px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+.wallpaper-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  border-bottom:
+    4px
+    solid
+    var(--ink-black);
+
+  padding-bottom: 12px;
+
+  margin-bottom: 14px;
+}
+
+.wallpaper-header h3 {
+  margin: 0;
+
+  font-size: 20px;
+
+  font-weight: 900;
+
+  letter-spacing: 1px;
+}
+
+.wallpaper-actions {
+  display: flex;
+
+  gap: 8px;
+
+  flex-wrap: wrap;
+}
+
+.wallpaper-gallery-strip {
+  flex:
+    0
+    0
+    auto;
+
+  height: 310px;
+
+  display: flex;
+
+  gap: 18px;
+
+  overflow-x: auto;
+
+  overflow-y: hidden;
+
+  padding:
+    24px
+    18px
+    28px;
+
+  align-items: flex-start;
+
+  box-sizing: border-box;
+}
+
+.wallpaper-card {
+  flex:
+    0
+    0
+    260px;
+
+  height: 250px;
+
+  border:
+    4px
+    solid
+    var(--ink-black);
+
+  background: #fff8df;
+
+  box-shadow:
+    7px 7px 0
+    var(--ink-black);
+
+  cursor: pointer;
+
+  padding: 8px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    filter 0.14s ease;
+
+  position: relative;
+
+  box-sizing: border-box;
+}
+
+.wallpaper-card:hover {
+  transform:
+    translateY(-3px)
+    rotate(-1deg);
+
+  box-shadow:
+    10px 10px 0
+    var(--ink-black);
+
+  filter: contrast(1.08);
+
+  z-index: 5;
+}
+
+.wallpaper-card.is-active {
+  background: #fff3b0;
+
+  box-shadow:
+    7px 7px 0 #b91c1c,
+    11px 11px 0 var(--ink-black);
+}
+
+.wallpaper-card.is-active::before {
+  content: "ACTIVE";
+
+  position: absolute;
+
+  top: 6px;
+
+  left: 8px;
+
+  background: #b91c1c;
+
+  color: #fff3b0;
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  padding: 2px 8px;
+
+  font-size: 10px;
+
+  font-weight: 900;
+
+  box-shadow:
+    3px 3px 0
+    var(--ink-black);
+
+  z-index: 10;
+}
+
+.wallpaper-card img {
+  width: 100%;
+
+  height: 175px;
+
+  object-fit: cover;
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  background: #ddd;
+
+  box-sizing: border-box;
+}
+
+.wallpaper-card-title {
+  margin-top: 8px;
+
+  font-size: 13px;
+
+  font-weight: 900;
+
+  line-height: 1.2;
+
+  word-break: break-word;
+}
+
+.wallpaper-empty {
+  font-size: 15px;
+
+  font-weight: 900;
+
+  padding: 20px;
+
+  border:
+    4px
+    dashed
+    var(--ink-black);
+
+  background: #fff8df;
+}
+
+.wallpaper-strength-control {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  background: #fff8df;
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  box-shadow:
+    3px 3px 0
+    var(--ink-black);
+
+  padding: 4px 8px;
+
+  font-size: 11px;
+
+  font-weight: 900;
+}
+
+.wallpaper-strength-control input {
+  width: 120px;
+
+  accent-color: #111;
+}
+
+.wallpaper-strength-control strong {
+  min-width: 34px;
+
+  text-align: right;
+}
+
+.wallpaper-gallery-strip::-webkit-scrollbar {
+  height: 14px;
+}
+
+.wallpaper-gallery-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wallpaper-gallery-strip::-webkit-scrollbar-thumb {
+  background: var(--ink-black);
+
+  border:
+    4px
+    solid
+    var(--bg-paper);
+}
+
+/* Wallpaper images and video previews */
+
+.wallpaper-card img,
+.wallpaper-card video {
+  width: 100%;
+
+  height: 175px;
+
+  object-fit: cover;
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  background: #ddd;
+
+  box-sizing: border-box;
+}
+
+.wallpaper-card video {
+  pointer-events: none;
+}
+
+.wallpaper-media-tag {
+  display: inline-block;
+
+  margin-left: 6px;
+
+  background: var(--ink-black);
+
+  color: var(--bg-paper);
+
+  border:
+    2px
+    solid
+    var(--ink-black);
+
+  padding: 1px 5px;
+
+  font-size: 9px;
+
+  font-weight: 900;
+}
+
+.wallpaper-card-status {
+  position: absolute;
+
+  top: 12px;
+
+  right: 12px;
+
+  z-index: 12;
+
+  padding: 3px 7px;
+
+  border:
+    2px
+    solid
+    var(--ink-black);
+
+  background: var(--bg-paper);
+
+  color: var(--ink-black);
+
+  font-size: 9px;
+
+  font-weight: 900;
+
+  text-transform: uppercase;
+
+  box-shadow:
+    3px 3px 0
+    var(--ink-black);
+
+  pointer-events: none;
+}
+
+.wallpaper-card-status.ok {
+  opacity: 0.86;
+}
+
+.wallpaper-card-status.slow {
+  background: #fff3b0;
+}
+
+.wallpaper-card-status.error {
+  background: #b91c1c;
+
+  color: #fff3b0;
+}
+
+/* ================================
+   WALLPAPER ADD FORM
+================================ */
+
+.wallpaper-add-row {
+  display: grid;
+
+  grid-template-columns:
+    minmax(150px, 0.7fr)
+    minmax(260px, 1.5fr)
+    auto;
+
+  gap: 10px;
+
+  align-items: center;
+
+  margin-bottom: 12px;
+
+  position: relative;
+
+  z-index: 2;
+}
+
+.wallpaper-add-row input {
+  width: 100%;
+
+  min-width: 0;
+
+  box-sizing: border-box;
+
+  border:
+    3px
+    solid
+    var(--ink-black);
+
+  background: #fff8df;
+
+  color: var(--ink-black);
+
+  padding: 9px 10px;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  font-weight: 900;
+
+  outline: none;
+
+  box-shadow:
+    3px 3px 0
+    var(--ink-black);
+}
+
+.wallpaper-add-row input:focus {
+  background: #fff3b0;
+
+  transform:
+    translate(-1px, -1px);
+
+  box-shadow:
+    5px 5px 0
+    var(--ink-black);
+}
+
+.wallpaper-add-row .manga-btn:disabled {
+  opacity: 0.55;
+
+  cursor: wait;
+
+  transform: none;
+}
+
+/* ===========================================
+   KEEP SEARCH + PREDICTION PANELS STABLE
+=========================================== */
+
+#searchMenuTab .manga-panel,
+#predictionTab .manga-panel {
+  transition: none;
+}
+
+#searchMenuTab .manga-panel:hover,
+#predictionTab .manga-panel:hover {
+  transform: none;
+
+  filter: none;
+
+  box-shadow:
+    5px 5px 0
+    var(--ink-black);
+}
+
+/* ===========================================
+   SEARCH PANEL — TEXTAREA SCROLLING ONLY
+=========================================== */
+
+#searchMenuTab {
+  overflow: hidden;
+
+  min-height: 0;
+}
+
+#searchMenuTab > .manga-panel {
+  overflow: hidden !important;
+
+  min-height: 0;
+}
+
+#sheetPayloadArea {
+  min-height: 0;
+
+  overflow-y: auto;
+
+  overflow-x: hidden;
+
+  /* Reserve scrollbar space so text does not shift */
+
+  scrollbar-gutter: stable;
+}
+
+/* ================================
+   WORKSPACE TEXT CARET
+================================ */
+
+#primaryGasArea {
+  caret-color: #b91c1c;
+}
+
+#primaryGasArea:focus {
+  caret-color: #b91c1c;
+}
+
+/* Guarantee the textarea returns to its normal state */
+
+#primaryGasArea:not(.workspace-swap):not(.page-turn) {
+  opacity: 1;
+
+  filter: none;
+}
+
+/* ================================
+   REUSABLE CYBER FONT GLITCH
+================================ */
+
+.font-glitch {
+  animation:
+    cyber-font-glitch
+    4.8s
+    var(--glitch-delay, 0s)
+    steps(1, end)
+    infinite;
+}
+
+/* Different timing so everything does not glitch together */
+
+.glitch-delay-one {
+  --glitch-delay: -1.6s;
+}
+
+.glitch-delay-two {
+  --glitch-delay: -3.1s;
+}
+
+.glitch-delay-three {
+  --glitch-delay: -4.2s;
+}
+/* Stronger and more frequent while hovering buttons */
+
+.manga-btn.font-glitch:hover {
+  animation-duration: 2.4s;
+}
+
+@keyframes cyber-font-glitch {
+  0%,
+  82%,
+  100% {
+    text-shadow: none;
+  }
+
+  83% {
+    text-shadow:
+      -2px 0 #ff1744,
+      2px 0 #00e5ff;
+  }
+
+  85% {
+    text-shadow:
+      2px 0 #ff1744,
+      -2px 0 #00e5ff;
+  }
+
+  87% {
+    text-shadow:
+      -1px 0 #fff3b0,
+      2px 0 #b91c1c,
+      -2px 1px #00e5ff;
+  }
+
+  89% {
+    text-shadow:
+      3px 0 #ff1744,
+      -1px 0 #00e5ff;
+  }
+
+  91% {
+    text-shadow: none;
+  }
+
+  94% {
+    text-shadow:
+      -1px 0 #ff1744,
+      1px 0 #00e5ff;
+  }
+
+  95% {
+    text-shadow: none;
+  }
+}
+
+/* ================================
+   CLEAN TEXT SELECTION
+================================ */
+
+::selection {
+  background: var(--ink-black);
+
+  color: var(--bg-paper);
+
+  text-shadow: none;
+}
+
+::-moz-selection {
+  background: var(--ink-black);
+
+  color: var(--bg-paper);
+
+  text-shadow: none;
+}
+
+/* ================================
+   JRPG CHARACTER NOTIFICATIONS
+================================ */
+
+.jrpg-toast-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+
+  overflow: hidden;
+  pointer-events: none;
+
+  visibility: hidden;
+
+  /* Wait until Eren finishes sliding out before hiding the layer */
+  transition: visibility 0s linear 500ms;
+}
+
+.jrpg-toast-layer.is-visible {
+  visibility: visible;
+
+  /* Show immediately when entering */
+  transition-delay: 0s;
+}
+
+.jrpg-toast-stage {
+  position: absolute;
+  right: 18px;
+  bottom: 0;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+
+  width: min(680px, 92vw);
+}
+
+/* ================================
+   TRANSPARENT CHARACTER
+================================ */
+
+.jrpg-character-wrap {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  transform:
+    translateX(115%)
+    translateY(25px);
+
+  opacity: 0;
+
+  transition:
+    transform 430ms cubic-bezier(0.18, 1.2, 0.34, 1),
+    opacity 180ms ease;
+}
+
+.jrpg-toast-layer.is-visible
+.jrpg-character-wrap {
+  transform:
+    translateX(0)
+    translateY(0);
+
+  opacity: 1;
+}
+
+.jrpg-toast-character {
+  display: block;
+
+  width: min(280px, 28vw);
+  max-height: 76vh;
+
+  object-fit: contain;
+  object-position: right bottom;
+
+  filter:
+    grayscale(1)
+    contrast(1.12);
+
+  transform-origin: center bottom;
+
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Character reacts when another message arrives */
+
+.jrpg-toast-character.notification-bounce {
+  animation:
+    jrpg-character-bounce
+    320ms
+    steps(4, end);
+}
+
+@keyframes jrpg-character-bounce {
+  0% {
+    transform: translateY(0);
+  }
+
+  25% {
+    transform: translateY(-11px);
+  }
+
+  50% {
+    transform: translateY(4px);
+  }
+
+  75% {
+    transform: translateY(-5px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   MANGA SPEECH BUBBLE
+================================ */
+
+.jrpg-toast-bubble {
+  position: relative;
+
+width: clamp(220px, 30vw, 340px);
+  min-height: 70px;
+  max-height: 170px;
+
+  margin-right: -120px;
+  margin-bottom: 70px;
+
+  padding: 13px 24px 13px 14px;
+
+
+  border: 4px solid var(--ink-black);
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(17, 17, 17, 0.11) 1px,
+      transparent 1.5px
+    ),
+    var(--bg-paper);
+
+  background-size:
+    7px 7px,
+    100% 100%;
+
+  box-shadow:
+    7px 7px 0 var(--ink-black);
+
+  box-sizing: border-box;
+
+  opacity: 0;
+
+  transform:
+    translateX(35px)
+    translateY(16px)
+    scale(0.94);
+
+  transform-origin: right bottom;
+
+  transition:
+    opacity 180ms ease 120ms,
+    transform 260ms cubic-bezier(0.2, 1.4, 0.4, 1) 120ms;
+
+  z-index: 3;
+}
+
+.jrpg-toast-layer.is-visible
+.jrpg-toast-bubble {
+  opacity: 1;
+
+  transform:
+    translateX(0)
+    translateY(0)
+    scale(1);
+}
+
+/* Bubble tail pointing toward character */
+
+.jrpg-toast-bubble::after {
+  content: "";
+display: none;
+  position: absolute;
+  right: -35px;
+  bottom: 24px;
+
+  width: 38px;
+  height: 28px;
+
+  background: var(--bg-paper);
+
+  border-right: 4px solid var(--ink-black);
+  border-bottom: 4px solid var(--ink-black);
+
+  clip-path: polygon(
+    0 0,
+    100% 52%,
+    0 100%
+  );
+
+  transform: rotate(-7deg);
+}
+
+/* Small manga corner mark */
+
+.jrpg-toast-bubble::before {
+  content: "EREN YAEGER";
+
+  position: absolute;
+  left: 10px;
+  top: -12px;
+
+  padding: 2px 7px;
+
+  border: 3px solid var(--ink-black);
+
+  background: var(--ink-black);
+  color: var(--bg-paper);
+
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+
+  box-shadow:
+    3px 3px 0 var(--ink-black);
+
+  transform: rotate(-2deg);
+}
+
+/* ================================
+   TYPED NOTIFICATION LINES
+================================ */
+
+.jrpg-notification-lines {
+  max-height: 180px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 3px 5px 3px 0;
+
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.jrpg-notification-lines::-webkit-scrollbar {
+  display: none;
+}
+
+.jrpg-notification-line {
+  position: relative;
+
+  margin: 0 0 7px;
+
+  color: var(--ink-black);
+
+  font-size: 10px;
+
+  font-weight: 900;
+  line-height: 1.45;
+
+  overflow-wrap: anywhere;
+
+  animation:
+    jrpg-line-enter
+    160ms
+    steps(3, end);
+}
+
+.jrpg-notification-line:last-child {
+  margin-bottom: 0;
+}
+
+.jrpg-notification-line.is-typing::after {
+  content: "▮";
+
+  display: inline-block;
+
+  margin-left: 3px;
+
+  animation:
+    jrpg-caret-blink
+    480ms
+    steps(2, end)
+    infinite;
+}
+
+@keyframes jrpg-line-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes jrpg-caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  46%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ================================
+   RESPONSIVE SIZE
+================================ */
+
+@media (max-width: 760px) {
+  .jrpg-toast-stage {
+    right: 5px;
+  }
+
+  .jrpg-toast-character {
+    width: min(280px, 48vw);
+    max-height: 58vh;
+  }
+
+  .jrpg-toast-bubble {
+    width: min(300px, 58vw);
+
+    margin-right: -22px;
+    margin-bottom: 70px;
+
+    padding:
+      14px
+      24px
+      14px
+      13px;
+  }
+
+  .jrpg-notification-line {
+    font-size: 10px;
+  }
+}
+
+/* JRPG notification final positioning */
+
+
+
+/* Dialogue box moves farther right and behind character */
+.jrpg-toast-bubble {
+  margin-right: -120px;
+  z-index: 1;
+
+  /* Keeps text away from the part covered by the image */
+  padding-right: 72px;
+}
+
+/* Character stays in front of the dialogue box */
+.jrpg-character-wrap {
+  position: relative;
+  z-index: 2;
+
+  /* Removes the remaining edge gap */
+  margin-right: -12px;
+}
+ 
+/* No speech-bubble arrow */
+.jrpg-toast-bubble::after {
+  display: none;
+}
+
+/* JRPG notification final positioning */
+
+.jrpg-toast-stage {
+  right: 0;
+  bottom: -24px;
+}
+
+
+.jrpg-toast-character {
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.jrpg-toast-character:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+
+
+
+/* Lift search suggestions on mouse or keyboard selection */
+
+#searchSuggestions .suggestion-item {
+  position: relative;
+
+  transition:
+    transform 160ms cubic-bezier(0.2, 1.8, 0.4, 1),
+    box-shadow 160ms ease;
+
+  transform: translateY(0);
+}
+
+#searchSuggestions .suggestion-item:hover,
+#searchSuggestions
+  .suggestion-item[style*="background: var(--ink-black)"] {
+  transform: translateY(-4px);
+
+  box-shadow:
+    5px 5px 0 var(--ink-black);
+
+  z-index: 5;
+}
+
+#searchSuggestions .suggestion-item:active {
+  transform: translateY(-1px);
+
+  box-shadow:
+    2px 2px 0 var(--ink-black);
+}
+
+
+/* Let selected suggestions escape the dropdown frame */
+
+#searchSuggestions {
+  overflow: visible !important;
+}
+
+#searchSuggestions .suggestion-item {
+  position: relative;
+  box-sizing: border-box;
+
+  transition:
+    transform 160ms cubic-bezier(0.2, 1.8, 0.4, 1),
+    width 160ms ease,
+    box-shadow 160ms ease;
+
+  transform: translate(0, 0);
+  width: 100%;
+  z-index: 1;
+}
+
+#searchSuggestions .suggestion-item:hover,
+#searchSuggestions
+  .suggestion-item[style*="background: var(--ink-black)"] {
+  width: calc(100% + 16px);
+
+  transform:
+    translate(-16px, -4px);
+
+  box-shadow:
+    7px 7px 0 var(--ink-black);
+
+  z-index: 20;
+}
+
+#searchSuggestions .suggestion-item:active {
+  transform:
+    translate(-13px, -1px);
+
+  box-shadow:
+    3px 3px 0 var(--ink-black);
+}
+
+
+/* =================================
+   PREDICTION CARD — FULL EDIT MODE
+================================= */
+
+.prediction-card.prediction-card-editing {
+  opacity: 1 !important;
+  filter: none !important;
+
+  height: auto !important;
+  min-height: max-content !important;
+  max-height: none !important;
+
+  overflow: visible !important;
+
+  transform: none !important;
+}
+
+.prediction-card.prediction-card-editing .prediction-card-content {
+  display: block !important;
+
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+
+  overflow: visible !important;
+
+  opacity: 1 !important;
+  filter: none !important;
+
+  white-space: pre-wrap !important;
+  text-overflow: unset !important;
+  text-decoration: none !important;
+
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+}
+
+.prediction-card.prediction-card-editing .prediction-card-timer-editor {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.prediction-card.prediction-card-editing::after {
+  display: none !important;
+}
+
+/* Give the editor enough room to display expanded cards */
+#predictionTab:has(.prediction-card-editing) .prediction-card-grid {
+  align-items: start;
+  overflow: visible;
+}
+
+/* Expired cards remain completely readable during editing */
+.prediction-card-expired.prediction-card-editing {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+
+/* =================================
+   BILINGUAL JAPANESE / ENGLISH TEXT
+================================= */
+
+.bilingual-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.05;
+}
+
+.bilingual-label .label-jp {
+  display: block;
+  font-size: inherit;
+  font-weight: 900;
+}
+
+.bilingual-label .label-en {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+/* Navigation labels stay centered */
+.nav-links .bilingual-label {
+  align-items: center;
+  width: 100%;
+}
+
+/* English subtitle color on active navigation item */
+.nav-links a.active .label-en {
+  color: var(--bg-paper);
+  opacity: 0.72;
+}
+
+/* English subtitle inside black panel headers */
+.panel-header h3 .label-en {
+  color: var(--bg-paper);
+  opacity: 0.7;
+  font-size: 9px;
+  margin-top: 2px;
+}
+
+
+
+/* =================================
+   PAGE TITLE — JRPG ENTRANCE
+================================= */
+
+.panel-header h3 {
+  overflow: hidden;
+}
+
+/* The bilingual wrapper becomes the animation stage */
+.panel-header h3 .bilingual-label {
+  position: relative;
+
+  padding-bottom: 4px;
+
+  overflow: hidden;
+}
+
+/* Japanese title */
+.panel-header h3 .label-jp {
+  position: relative;
+
+  transform-origin: left center;
+}
+
+/* English subtitle */
+.panel-header h3 .label-en {
+  position: relative;
+}
+
+/* Ink line beneath the title */
+.panel-header h3 .bilingual-label::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 2px;
+
+  background: var(--bg-paper);
+
+  transform: scaleX(0);
+  transform-origin: left center;
+
+  opacity: 0.85;
+}
+
+/* Japanese title enters first */
 .panel-header h3
 .bilingual-label.page-title-enter
 .label-jp {
   animation:
-    manga-title-jp-enter
-    220ms
+    page-title-jp-enter
+    380ms
     cubic-bezier(0.16, 1, 0.3, 1)
     both;
 }
 
+/* English subtitle follows */
 .panel-header h3
 .bilingual-label.page-title-enter
 .label-en {
   animation:
-    manga-title-en-enter
-    190ms
-    45ms
+    page-title-en-enter
+    360ms
+    110ms
     cubic-bezier(0.22, 1, 0.36, 1)
     both;
 }
 
-
-/* ==================================================
-   FAST VERTICAL + HORIZONTAL INK DRAW
-================================================== */
-
-.panel-header h3:has(
-  .bilingual-label.page-title-enter
-)::before {
+/* Line draws last */
+.panel-header h3
+.bilingual-label.page-title-enter::after {
   animation:
-    manga-vertical-ink-draw
-    190ms
-    20ms
-    steps(4, end)
+    page-title-line-draw
+    420ms
+    170ms
+    cubic-bezier(0.22, 1, 0.36, 1)
     both;
 }
 
-.panel-header h3:has(
-  .bilingual-label.page-title-enter
-)::after {
-  animation:
-    manga-uneven-ink-draw
-    260ms
-    65ms
-    steps(6, end)
-    both;
-}
-
-
-/* ==================================================
-   FAST INK KEYFRAMES
-================================================== */
-
-@keyframes manga-vertical-ink-draw {
-  0% {
-    transform:
-      translateY(-50%)
-      scaleY(0)
-      skewY(-15deg)
-      rotate(3deg);
-
-    opacity: 0;
-  }
-
-  35% {
-    transform:
-      translateY(-50%)
-      scaleY(0.38)
-      skewY(-18deg)
-      rotate(5deg);
-
-    opacity: 1;
-  }
-
-  70% {
-    transform:
-      translateY(-50%)
-      scaleY(0.82)
-      skewY(-12deg)
-      rotate(1deg);
-  }
-
-  100% {
-    transform:
-      translateY(-50%)
-      scaleY(1)
-      skewY(-15deg)
-      rotate(3deg);
-
-    opacity: 1;
-  }
-}
-
-@keyframes manga-uneven-ink-draw {
-  0% {
-    transform:
-      scaleX(0)
-      rotate(-1.8deg);
-
-    opacity: 0;
-  }
-
-  25% {
-    transform:
-      scaleX(0.24)
-      rotate(0.7deg);
-
-    opacity: 1;
-  }
-
-  55% {
-    transform:
-      scaleX(0.59)
-      rotate(-1.2deg);
-  }
-
-  80% {
-    transform:
-      scaleX(0.86)
-      rotate(0.3deg);
-  }
-
-  100% {
-    transform:
-      scaleX(1)
-      rotate(-0.7deg);
-
-    opacity: 1;
-  }
-}
-
-/* Keep Japanese above English */
-.panel-header h3 {
-  position: relative;
-  display: inline-flex;
-  align-items: flex-start;
-
-  width: fit-content;
-  margin: 0;
-  padding: 3px 10px 10px 19px;
-
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  clip-path: none !important;
-
-  overflow: visible !important;
-}
-
-.panel-header h3 .bilingual-label {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-
-  gap: 2px;
-  width: auto;
-}
-
-/* Japanese title entrance */
-@keyframes manga-title-jp-enter {
+@keyframes page-title-jp-enter {
   0% {
     opacity: 0;
 
     transform:
-      translateX(-16px)
-      skewX(-7deg);
+      translateX(-24px)
+      skewX(-8deg);
+
+    filter: blur(2px);
   }
 
-  70% {
+  65% {
     opacity: 1;
 
     transform:
-      translateX(2px)
+      translateX(3px)
       skewX(1deg);
+
+    filter: blur(0);
   }
 
   100% {
@@ -956,17 +3556,18 @@ body {
     transform:
       translateX(0)
       skewX(0);
+
+    filter: blur(0);
   }
 }
 
-/* English subtitle entrance */
-@keyframes manga-title-en-enter {
+@keyframes page-title-en-enter {
   0% {
     opacity: 0;
 
     transform:
-      translateY(5px)
-      translateX(4px);
+      translateY(8px)
+      translateX(6px);
 
     letter-spacing: 2px;
   }
@@ -978,13 +3579,23 @@ body {
       translateY(0)
       translateX(0);
 
-    letter-spacing: 1.4px;
+    letter-spacing: 0.7px;
   }
 }
-/* ==================================================
-   REDUCED MOTION
-================================================== */
 
+@keyframes page-title-line-draw {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scaleX(1);
+    opacity: 0.85;
+  }
+}
+
+/* Respect reduced-motion accessibility preferences */
 @media (prefers-reduced-motion: reduce) {
   .panel-header h3
   .bilingual-label.page-title-enter
@@ -994,9 +3605,24 @@ body {
   .bilingual-label.page-title-enter
   .label-en,
 
-  .panel-header h3:has(
-    .bilingual-label.page-title-enter
-  )::after {
+  .panel-header h3
+  .bilingual-label.page-title-enter::after {
     animation: none;
   }
+}
+
+
+.jrpg-toast-bubble {
+  display: flex;
+  flex-direction: column;
+  max-height: 170px;
+}
+
+.jrpg-notification-lines {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+
+  overflow-y: auto;
+  overflow-x: hidden;
 }
