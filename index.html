@@ -160,7 +160,18 @@
         <button id="predictionSaveTimeButton" class="manga-btn primary-save" style="display:none; font-size: 11px; padding: 4px 10px;" onclick="savePredictionTimeConfigToDrive()">
             Save
         </button>
+<div class="wallpaper-strength-control">
+  <span>TONE</span>
 
+  <select
+    id="wallpaperToneSelect"
+    onchange="handleWallpaperToneChange(this.value)"
+  >
+    <option value="light">Light</option>
+    <option value="neutral">Neutral</option>
+    <option value="dark">Dark</option>
+  </select>
+</div>
         <button id="predictionCancelTimeButton" class="manga-btn danger" style="display:none; font-size: 11px; padding: 4px 10px;" onclick="cancelPredictionTimeEdit()">
             Cancel
         </button>
