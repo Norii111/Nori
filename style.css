@@ -3934,3 +3934,229 @@ display: none;
 }
 
 
+
+
+
+
+
+
+/* ==================================================
+   BOARDLESS HAND-DRAWN MANGA TITLE
+   Keeps entrance, shake and glitch animations
+================================================== */
+
+.panel-header h3,
+.manga-panel .panel-header h3 {
+  position: relative;
+
+  display: inline-flex !important;
+  align-items: flex-start;
+
+  width: fit-content;
+
+  margin: 0;
+  padding: 5px 14px 12px 20px;
+
+  /* Remove the physical board */
+  background: transparent !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+
+  color: #ffffff !important;
+
+  transform:
+    rotate(-0.9deg)
+    skewX(-0.25deg);
+
+  overflow: visible !important;
+}
+
+
+/* ==================================================
+   HAND-DRAWN VERTICAL INK STROKE
+================================================== */
+
+.panel-header h3::before {
+  content: "";
+
+  position: absolute;
+
+  left: 2px;
+  top: 48%;
+
+  width: 8px;
+  height: 78%;
+
+  border: 0;
+  border-radius: 0;
+
+  background:
+    linear-gradient(
+      88deg,
+      transparent 0 12%,
+      #ffffff 16% 47%,
+      transparent 51% 57%,
+      #ffffff 61% 88%,
+      transparent 92% 100%
+    );
+
+  clip-path: polygon(
+    30% 0,
+    73% 4%,
+    56% 17%,
+    82% 31%,
+    59% 45%,
+    75% 60%,
+    48% 75%,
+    66% 91%,
+    28% 100%,
+    9% 84%,
+    23% 67%,
+    5% 49%,
+    20% 30%,
+    3% 14%
+  );
+
+  box-shadow: none;
+
+  filter:
+    drop-shadow(2px 1px 0 var(--ink-black))
+    drop-shadow(-1px 0 0 var(--ink-black));
+
+  transform:
+    translateY(-50%)
+    rotate(4deg);
+
+  pointer-events: none;
+}
+
+
+/* ==================================================
+   SHORT ROUGH MANGA UNDERLINE
+================================================== */
+
+.panel-header h3::after {
+  content: "";
+
+  position: absolute;
+
+  left: 18px;
+  right: auto;
+  bottom: 1px;
+
+  width: min(78%, 125px);
+  height: 7px;
+
+  border: 0;
+  border-radius: 0;
+
+  background:
+    linear-gradient(
+      177deg,
+      transparent 0 13%,
+      #ffffff 15% 43%,
+      transparent 46% 55%,
+      #ffffff 58% 84%,
+      transparent 88% 100%
+    );
+
+  clip-path: polygon(
+    0% 38%,
+    8% 15%,
+    17% 31%,
+    26% 8%,
+    36% 27%,
+    46% 12%,
+    56% 36%,
+    66% 16%,
+    77% 32%,
+    87% 10%,
+    100% 27%,
+    98% 70%,
+    88% 58%,
+    77% 85%,
+    66% 66%,
+    55% 89%,
+    44% 68%,
+    33% 88%,
+    22% 65%,
+    11% 82%,
+    0% 68%
+  );
+
+  box-shadow: none;
+
+  filter:
+    drop-shadow(2px 2px 0 var(--ink-black))
+    drop-shadow(-1px 0 0 var(--ink-black));
+
+  transform:
+    rotate(-1deg);
+
+  pointer-events: none;
+}
+
+
+/* ==================================================
+   HAND-INKED TITLE TEXT
+================================================== */
+
+.panel-header h3 .bilingual-label {
+  position: relative;
+
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 3px;
+  padding: 0;
+
+  overflow: visible;
+
+  /* Keep your existing recurring glitch */
+  animation:
+    shrine-wrapper-glitch
+    4.8s
+    var(--glitch-delay, 0s)
+    steps(1, end)
+    infinite;
+}
+
+.panel-header h3 .label-jp {
+  color: #ffffff !important;
+
+  font-size: 19px;
+  font-weight: 950;
+  line-height: 1;
+
+  rotate: -0.7deg;
+
+  -webkit-text-stroke:
+    0.35px
+    #ffffff;
+
+  text-shadow:
+    2px 2px 0 var(--ink-black),
+    -1px 1px 0 var(--ink-black),
+    1px -1px 0 var(--ink-black),
+    3px 3px 0 rgba(0, 0, 0, 0.72);
+}
+
+.panel-header h3 .label-en {
+  color: #eeeeee !important;
+
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+
+  letter-spacing: 1.5px;
+
+  rotate: 0.6deg;
+
+  text-shadow:
+    1px 1px 0 var(--ink-black),
+    -1px 0 0 var(--ink-black),
+    2px 2px 0 rgba(0, 0, 0, 0.72);
+}
