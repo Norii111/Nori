@@ -21,7 +21,6 @@ let hasLoadedUserScriptsThisPage = false;
 let userScriptLoadPromise = null;
 let isPreloadingDriveNotes = false;
 let lastDriveSyncAt = 0;
-let wallpaperDraftStrength = 0.45;
 
 const DRIVE_NOTE_PRELOAD_CONCURRENCY = 5;
 
@@ -3284,16 +3283,42 @@ function installHorizontalNoteScroll() {
 
 window.addEventListener('load', installHorizontalNoteScroll);
 
-const WALLPAPER_STORAGE_KEY = 'mangaDashboardWallpaperUrl';
-const WALLPAPER_SHEET_KEY = 'ALL IN ONE';
-const WALLPAPER_ENTRY_SEPARATOR = '------------------------------------------------';
-const LAST_RANDOM_WALLPAPER_KEY = 'mangaLastRandomWallpaperUrl';
-const WALLPAPER_MODE_STORAGE_KEY = 'mangaDashboardWallpaperMode';
+const WALLPAPER_STORAGE_KEY =
+  'mangaDashboardWallpaperUrl';
+
+const WALLPAPER_STRENGTH_STORAGE_KEY =
+  'mangaDashboardWallpaperStrength';
+
+const WALLPAPER_TONE_STORAGE_KEY =
+  'mangaDashboardWallpaperTone';
+
+const WALLPAPER_MODE_STORAGE_KEY =
+  'mangaDashboardWallpaperMode';
+
+const WALLPAPER_SHEET_KEY =
+  'ALL IN ONE';
+
+const WALLPAPER_ENTRY_SEPARATOR =
+  '------------------------------------------------';
+
+const LAST_RANDOM_WALLPAPER_KEY =
+  'mangaLastRandomWallpaperUrl';
 
 let wallpaperDraftUrl = null;
 let wallpaperDraftTitle = '';
+
+let wallpaperDraftStrength =
+  getSavedWallpaperStrength();
+
+let wallpaperDraftTone =
+  localStorage.getItem(
+    WALLPAPER_TONE_STORAGE_KEY
+  ) || 'light';
+
 let wallpaperGalleryCache = [];
-const wallpaperVideoWarmCache = new Map();
+
+const wallpaperVideoWarmCache =
+  new Map();
     
 function escapeWallpaperHtml(value) {
     return String(value || '')
@@ -3307,8 +3332,6 @@ function escapeWallpaperHtml(value) {
 function getSavedWallpaperUrl() {
     return localStorage.getItem(WALLPAPER_STORAGE_KEY) || '';
 }
-
-const WALLPAPER_STRENGTH_STORAGE_KEY = 'mangaDashboardWallpaperStrength';
 
 function getSavedWallpaperStrength() {
     return Number(localStorage.getItem(WALLPAPER_STRENGTH_STORAGE_KEY) || 0.32);
@@ -3502,7 +3525,11 @@ function ensureDynamicWallpaperVideo(url) {
     video.play().catch(() => {});
 }
 
-function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
+function setDashboardWallpaper(
+  url,
+  strength = getSavedWallpaperStrength(),
+  tone = wallpaperDraftTone
+) {
     let styleTag = document.getElementById('dynamicWallpaperStyle');
 
     if (!url) {
@@ -3520,8 +3547,29 @@ function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
     }
 
     const safeUrl = escapeCssUrl(url);
-    const imageStrength = Math.max(0.08, Math.min(0.75, Number(strength) || 0.32));
-    const paperWash = Math.max(0.20, Math.min(0.92, 1 - imageStrength));
+    
+
+const overlayStrength =
+  Math.max(
+    0,
+    Math.min(
+      0.75,
+      Number(strength) || 0.32
+    )
+  );
+
+let overlayColor;
+
+if (tone === 'dark') {
+  overlayColor =
+    `rgba(0,0,0,${overlayStrength})`;
+} else if (tone === 'neutral') {
+  overlayColor =
+    'rgba(0,0,0,0)';
+} else {
+  overlayColor =
+    `rgba(244,243,239,${overlayStrength})`;
+}
 
     if (isVideoWallpaperUrl(url)) {
         ensureDynamicWallpaperVideo(url);
@@ -3546,7 +3594,8 @@ function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
 
             .sidebar-panel,
             .manga-panel {
-                background: rgba(244, 243, 239, ${paperWash}) !important;
+                background:
+  ${overlayColor} !important;
             }
 
             .sidebar-panel::before,
@@ -3578,8 +3627,10 @@ function setDashboardWallpaper(url, strength = getSavedWallpaperStrength()) {
         .sidebar-panel,
         .manga-panel {
             background:
-                linear-gradient(rgba(244,243,239,${paperWash}), rgba(244,243,239,${paperWash})),
-                url("${safeUrl}") center / cover no-repeat !important;
+linear-gradient(
+  ${overlayColor},
+  ${overlayColor}
+),                url("${safeUrl}") center / cover no-repeat !important;
         }
 
         .sidebar-panel::before,
@@ -3752,8 +3803,20 @@ function ensureWallpaperModal() {
                 <h3>WALLPAPER GALLERY</h3>
 
  <div class="wallpaper-actions">
+ <div class="wallpaper-strength-control">
+  <span>TONE</span>
+
+  <select
+    id="wallpaperToneSelect"
+    onchange="handleWallpaperToneChange(this.value)"
+  >
+    <option value="light">Light</option>
+    <option value="neutral">Neutral</option>
+    <option value="dark">Dark</option>
+  </select>
+</div>
     <div class="wallpaper-strength-control">
-        <span>BG POWER</span>
+     <span>TONE POWER</span>
         <input
             id="wallpaperStrengthSlider"
             type="range"
@@ -3848,6 +3911,20 @@ async function openWallpaperGallery() {
 
     wallpaperDraftUrl = getSavedWallpaperUrl();
     wallpaperDraftTitle = '';
+    wallpaperDraftTone =
+  localStorage.getItem(
+    WALLPAPER_TONE_STORAGE_KEY
+  ) || 'light';
+
+const toneSelect =
+  document.getElementById(
+    'wallpaperToneSelect'
+  );
+
+if (toneSelect) {
+  toneSelect.value =
+    wallpaperDraftTone;
+}
     wallpaperDraftStrength = getSavedWallpaperStrength();
     const addTitleInput = document.getElementById('wallpaperAddTitle');
 const addUrlInput = document.getElementById('wallpaperAddUrl');
@@ -4132,13 +4209,18 @@ function saveWallpaperSelection() {
 
     localStorage.setItem(WALLPAPER_STORAGE_KEY, selectedUrl);
     localStorage.setItem(WALLPAPER_STRENGTH_STORAGE_KEY, String(selectedStrength));
+    localStorage.setItem(WALLPAPER_MODE_STORAGE_KEY,'manual');
     localStorage.setItem(
-    WALLPAPER_MODE_STORAGE_KEY,
-    'manual'
+  WALLPAPER_TONE_STORAGE_KEY,
+  wallpaperDraftTone
 );
 
     wallpaperDraftStrength = selectedStrength;
-    setDashboardWallpaper(selectedUrl, selectedStrength);
+    setDashboardWallpaper(
+  selectedUrl,
+  selectedStrength,
+  wallpaperDraftTone
+);
 
     const modal = document.getElementById('wallpaperModal');
     if (modal) modal.classList.remove('open');
@@ -4147,23 +4229,51 @@ function saveWallpaperSelection() {
 }
 
 function cancelWallpaperSelection() {
-    const savedUrl = getSavedWallpaperUrl();
-    const savedStrength = getSavedWallpaperStrength();
+  const savedUrl =
+    getSavedWallpaperUrl();
 
-    wallpaperDraftUrl = savedUrl;
-    wallpaperDraftTitle = '';
-    wallpaperDraftStrength = savedStrength;
+  const savedStrength =
+    getSavedWallpaperStrength();
 
-    if (savedUrl) {
-        setDashboardWallpaper(savedUrl, savedStrength);
-    } else {
-        setDashboardWallpaper('');
-    }
+  const savedTone =
+    localStorage.getItem(
+      WALLPAPER_TONE_STORAGE_KEY
+    ) || 'light';
 
-    const modal = document.getElementById('wallpaperModal');
-    if (modal) modal.classList.remove('open');
+  wallpaperDraftUrl =
+    savedUrl;
 
-    showToast('Wallpaper change cancelled.');
+  wallpaperDraftTitle =
+    '';
+
+  wallpaperDraftStrength =
+    savedStrength;
+
+  wallpaperDraftTone =
+    savedTone;
+
+  if (savedUrl) {
+    setDashboardWallpaper(
+      savedUrl,
+      savedStrength,
+      savedTone
+    );
+  } else {
+    setDashboardWallpaper('');
+  }
+
+  const modal =
+    document.getElementById(
+      'wallpaperModal'
+    );
+
+  if (modal) {
+    modal.classList.remove('open');
+  }
+
+  showToast(
+    'Wallpaper change cancelled.'
+  );
 }
 
 
@@ -4227,4 +4337,24 @@ if (document.readyState === "loading") {
   );
 } else {
   initializeJrpgToastDismiss();
+}
+
+function handleWallpaperToneChange(value) {
+  wallpaperDraftTone =
+    ['light', 'neutral', 'dark']
+      .includes(value)
+      ? value
+      : 'light';
+
+  const activeUrl =
+    wallpaperDraftUrl ||
+    getSavedWallpaperUrl();
+
+  if (activeUrl) {
+    setDashboardWallpaper(
+      activeUrl,
+      wallpaperDraftStrength,
+      wallpaperDraftTone
+    );
+  }
 }
