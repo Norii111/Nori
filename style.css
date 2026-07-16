@@ -4165,19 +4165,31 @@ display: none;
   }
 }
 
-/* Keep the rough underline below the title text */
-/* Give the English subtitle more breathing room */
+/* ==================================================
+   FINAL TITLE STACK:
+   Japanese
+   English
+   Underline
+================================================== */
+
 .panel-header h3,
 .manga-panel .panel-header h3 {
-  padding-bottom: 23px;
+  /* Only enough space to hold the line */
+  padding-bottom: 8px;
 }
 
-/* Move the rough underline clearly below the subtitle */
-.panel-header h3::after {
-  left: 18px;
-  top: auto !important;
-  bottom: -3px !important;
+.panel-header h3 .bilingual-label {
+  position: relative;
+  z-index: 2;
+}
 
+/* Line sits about 3px below the English text */
+.panel-header h3::after {
+  top: auto !important;
+  bottom: 0 !important;
+
+  left: 18px;
+  right: auto;
 
   width: min(72%, 115px);
   height: 5px;
@@ -4185,24 +4197,6 @@ display: none;
   z-index: 1;
 }
 
-/* Keep all lettering above the stroke */
-.panel-header h3 .bilingual-label {
-  position: relative;
-  z-index: 2;
-}
-
-/* Move the horizontal stroke underneath the English subtitle */
-.panel-header h3::after {
-  left: 18px;
-  bottom: -3px;
-
-  width: min(72%, 115px);
-  height: 6px;
-
-  z-index: 1;
-}
-
-/* Keep the vertical stroke behind the text too */
 .panel-header h3::before {
   z-index: 1;
 }
