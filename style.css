@@ -1942,7 +1942,7 @@ textarea:focus {
 }
 
 #primaryGasArea {
-  caret-color: #b91c1c !important;
+  caret-color: #c1121f;
 }
 
 textarea::placeholder {
@@ -2758,21 +2758,51 @@ textarea::placeholder {
 ================================ */
 
 #primaryGasArea {
-  caret-color: #b91c1c;
+  caret-color: #c1121f;
+
+  /* Experimental; unsupported browsers ignore it */
+  caret-shape: block;
 }
 
 #primaryGasArea:focus {
-  animation: none;
   transform: none;
-  filter: none;
-  opacity: 1;
+  animation: none;
+
+  outline: 3px solid var(--ink-black);
+  outline-offset: 3px;
+
+  box-shadow:
+    3px 2px 0 var(--ink-black),
+    -2px 3px 0 rgba(193, 18, 31, 0.45),
+    inset 4px 4px 0 rgba(0, 0, 0, 0.06);
 }
 
-/* Guarantee the textarea returns to its normal state */
+#primaryGasArea:not([readonly]):focus {
+  caret-color: #c1121f;
 
-#primaryGasArea:not(.workspace-swap):not(.page-turn) {
+  background:
+    repeating-linear-gradient(
+      -1deg,
+      transparent 0,
+      transparent 27px,
+      rgba(17, 17, 17, 0.08) 28px,
+      transparent 29px
+    ),
+    #fff8dc;
+
+  border: 3px solid var(--ink-black);
+  border-radius: 2px 7px 3px 6px;
+}
+
+#primaryGasArea[readonly] {
+  caret-color: transparent;
+  cursor: not-allowed;
+  opacity: 0.82;
+  background-color: #dedbd2;
+}
+
+#primaryGasArea:not([readonly]):not(.workspace-swap):not(.page-turn) {
   opacity: 1;
-
   filter: none;
 }
 
@@ -2789,6 +2819,27 @@ textarea::placeholder {
     infinite;
 }
 
+#primaryGasArea:not([readonly]):focus {
+  background:
+    repeating-linear-gradient(
+      -1deg,
+      transparent 0,
+      transparent 27px,
+      rgba(17, 17, 17, 0.08) 28px,
+      transparent 29px
+    ),
+    #fff8dc;
+
+  border: 3px solid var(--ink-black);
+  border-radius: 2px 7px 3px 6px;
+}
+
+#primaryGasArea[readonly] {
+  caret-color: transparent;
+  cursor: not-allowed;
+  opacity: 0.82;
+  background-color: #dedbd2;
+}
 /* Different timing so everything does not glitch together */
 
 .glitch-delay-one {
