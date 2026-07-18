@@ -1933,15 +1933,16 @@ textarea,
 
 textarea:focus {
   background-color: #fff3cc;
-
-  transform:
-    translate(-2px, -2px)
-    rotate(0.35deg);
+  transform: none;
 
   box-shadow:
     inset 5px 5px 0 rgba(0, 0, 0, 0.07),
     inset -4px -4px 0 rgba(255, 255, 255, 0.55),
     8px 8px 0 var(--ink-black);
+}
+
+#primaryGasArea {
+  caret-color: #b91c1c !important;
 }
 
 textarea::placeholder {
@@ -2761,7 +2762,10 @@ textarea::placeholder {
 }
 
 #primaryGasArea:focus {
-  caret-color: #b91c1c;
+  animation: none;
+  transform: none;
+  filter: none;
+  opacity: 1;
 }
 
 /* Guarantee the textarea returns to its normal state */
