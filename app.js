@@ -4358,3 +4358,54 @@ function handleWallpaperToneChange(value) {
     );
   }
 }
+
+
+
+function installCurrentUserScript() {
+  const paper = document.getElementById("primaryGasArea");
+
+  if (!paper || !paper.value.trim()) {
+    showToast("There is no userscript to install.");
+    return;
+  }
+
+  window.postMessage(
+    {
+      source: "command-center",
+      type: "INSTALL_USER_SCRIPT",
+      code: paper.value
+    },
+    window.location.origin
+  );
+
+  showToast("Sending userscript to extension...");
+}
+
+window.addEventListener("message", (event) => {
+  if (event.source !== window) return;
+  if (event.origin !== window.location.origin) return;
+
+  const message = event.data;
+
+  if (
+    !message ||
+    message.source !== "command-extension" ||
+    message.type !== "INSTALL_RESULT"
+  ) {
+    return;
+  }
+
+  const result = message.result;
+
+  if (result?.success) {
+    const action =
+      result.action === "updated" ? "updated" : "installed";
+
+    showToast(`${result.name} was ${action} successfully.`);
+  } else {
+    showToast(
+      result?.error ||
+      "The extension could not install the userscript."
+    );
+  }
+});
