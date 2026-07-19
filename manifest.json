@@ -20,7 +20,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://YOUR-USERNAME.github.io/YOUR-REPOSITORY/*"
+        "https://norii111.github.io/Nori/*"
       ],
       "js": [
         "content-script.js"
