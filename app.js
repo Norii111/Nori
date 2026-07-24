@@ -4531,6 +4531,55 @@ function cancelWallpaperSelection() {
   );
 }
 
+let indonesiaClockTimer = null;
+
+function updateIndonesiaClock() {
+    const dateElement =
+        document.getElementById('indonesiaDate');
+
+    const timeElement =
+        document.getElementById('indonesiaTime');
+
+    if (!dateElement || !timeElement) {
+        return;
+    }
+
+    const now = new Date();
+
+    const dateFormatter =
+        new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Jakarta',
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+
+    const timeFormatter =
+        new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Jakarta',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+
+    dateElement.textContent =
+        dateFormatter.format(now);
+
+    timeElement.textContent =
+        `${timeFormatter.format(now)} WIB`;
+}
+
+function startIndonesiaClock() {
+    clearInterval(indonesiaClockTimer);
+
+    updateIndonesiaClock();
+
+    indonesiaClockTimer =
+        setInterval(updateIndonesiaClock, 1000);
+}
+
 
 window.onload = function() {
     loadPredictionTimeConfig();
