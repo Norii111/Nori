@@ -4540,35 +4540,29 @@ function updateIndonesiaClock() {
     const timeElement =
         document.getElementById('indonesiaTime');
 
-    if (!dateElement || !timeElement) {
-        return;
-    }
+    if (!dateElement || !timeElement) return;
 
     const now = new Date();
 
-    const dateFormatter =
-        new Intl.DateTimeFormat('en-GB', {
-            timeZone: 'Asia/Jakarta',
-            weekday: 'long',
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-        });
+    const dateFormatter = new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    });
 
-    const timeFormatter =
-        new Intl.DateTimeFormat('en-GB', {
-            timeZone: 'Asia/Jakarta',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
+    const timeFormatter = new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
 
-    dateElement.textContent =
-        dateFormatter.format(now);
-
+    dateElement.textContent = dateFormatter.format(now);
     timeElement.textContent =
-        `${timeFormatter.format(now)} WIB`;
+        `${timeFormatter.format(now).replace(/\./g, ':')} WIB`;
 }
 
 function startIndonesiaClock() {
