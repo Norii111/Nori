@@ -221,7 +221,11 @@
 
         <div id="devToolsAddForm" style="display:none; gap:10px; margin-bottom:15px; flex-direction:column; border:3px solid var(--ink-black); padding:12px; background:var(--bg-paper);">
             <input type="text" id="devAddKey" placeholder="Keyword (Column A)" style="border:2px solid var(--ink-black); padding:8px; font-family:inherit; font-weight:bold; box-sizing:border-box;">
-            <textarea id="devAddDesc" placeholder="Description (Column B)" style="min-height:80px; margin-top:0;"></textarea>
+<textarea
+    id="devAddDesc"
+    class="workshop-description-editor workshop-add-description"
+    placeholder="Description (Column B)"
+></textarea>
             <div style="display:flex; gap:6px; justify-content:flex-end;">
                 <button class="manga-btn" onclick="closeDevAddForm()">Cancel</button>
                 <button class="manga-btn primary-save" onclick="submitDevAdd()">Save New Row</button>
