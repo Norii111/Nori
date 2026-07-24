@@ -4119,3 +4119,85 @@ display: none;
 
   pointer-events: none;
 }
+
+
+
+/* ================================
+   WORKSHOP — EXPANDING DESCRIPTION
+================================ */
+
+/* Normal compact size inside the table */
+.workshop-description-editor {
+  width: 100%;
+  min-height: 110px;
+  max-height: 190px;
+  margin: 0;
+  padding: 10px;
+  box-sizing: border-box;
+
+  border: 2px solid var(--ink-black);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+
+  background: var(--bg-paper);
+  resize: vertical;
+
+  transition:
+    width 180ms ease,
+    height 180ms ease,
+    max-height 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* Large Grimoire-style editor after clicking inside */
+.workshop-description-editor:focus {
+  position: fixed;
+
+  top: 50%;
+  left: 50%;
+
+  width: min(960px, calc(100vw - 64px));
+  height: min(72vh, 720px);
+  min-height: 420px;
+  max-height: calc(100vh - 64px);
+
+  margin: 0;
+  padding: 18px;
+
+  z-index: 10050;
+  transform: translate(-50%, -50%);
+
+  border: 3px solid var(--ink-black);
+  outline: none;
+
+  font-size: 14px;
+  line-height: 1.65;
+
+  background: #fff3cc;
+  resize: both;
+
+  box-shadow:
+    0 0 0 9999px rgba(17, 17, 17, 0.72),
+    12px 12px 0 var(--ink-black);
+}
+
+/* Slightly taller normal size for the + Add Row field */
+.workshop-add-description {
+  min-height: 140px;
+  max-height: 260px;
+}
+
+/* Mobile fullscreen editing */
+@media (max-width: 720px) {
+  .workshop-description-editor:focus {
+    width: calc(100vw - 28px);
+    height: calc(100vh - 40px);
+
+    min-height: 0;
+    max-height: calc(100vh - 40px);
+
+    padding: 14px;
+    resize: none;
+  }
+}
