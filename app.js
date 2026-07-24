@@ -2860,11 +2860,21 @@ let workshopEditorBackdrop = null;
 let workshopEditorPlaceholder = null;
 let workshopOriginalStyle = null;
 
+let workshopOpenAnimation = null;
+let workshopBackdropOpenAnimation = null;
+let workshopIsClosing = false;
+
 function openWorkshopEditor(editor) {
-    if (!editor || activeWorkshopEditor === editor) return;
+    if (
+        !editor ||
+        activeWorkshopEditor === editor ||
+        workshopIsClosing
+    ) {
+        return;
+    }
 
     if (activeWorkshopEditor) {
-        closeWorkshopEditor();
+        return;
     }
 
     const startRect = editor.getBoundingClientRect();
@@ -2905,65 +2915,70 @@ function openWorkshopEditor(editor) {
     const scaleX = startRect.width / endRect.width;
     const scaleY = startRect.height / endRect.height;
 
-    const openAnimation = editor.animate(
+    workshopOpenAnimation = editor.animate(
+    [
+        {
+            transform:
+                `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scaleX}, ${scaleY})`,
+            opacity: 0.75
+        },
+        {
+            transform:
+                'translate(-50%, -50%) scale(1)',
+            opacity: 1
+        }
+    ],
+    {
+        duration: 260,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'forwards'
+    }
+);
+
+workshopOpenAnimation.addEventListener(
+    'finish',
+    () => {
+        if (!workshopOpenAnimation) return;
+
+        workshopOpenAnimation.cancel();
+        workshopOpenAnimation = null;
+
+        editor.style.removeProperty('transform');
+        editor.style.removeProperty('opacity');
+    },
+    { once: true }
+);
+
+workshopBackdropOpenAnimation =
+    workshopEditorBackdrop.animate(
         [
-            {
-                transform:
-                    `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scaleX}, ${scaleY})`,
-                opacity: 0.75
-            },
-            {
-                transform:
-                    'translate(-50%, -50%) scale(1)',
-                opacity: 1
-            }
+            { opacity: 0 },
+            { opacity: 1 }
         ],
         {
-            duration: 260,
-            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            duration: 220,
+            easing: 'ease',
             fill: 'forwards'
         }
     );
 
-    openAnimation.addEventListener(
-        'finish',
-        () => {
-            /*
-             * Remove the temporary animation transform.
-             * The .is-expanded CSS now controls the final position.
-             */
-            openAnimation.cancel();
+workshopBackdropOpenAnimation.addEventListener(
+    'finish',
+    () => {
+        if (!workshopBackdropOpenAnimation) return;
 
-            editor.style.removeProperty('transform');
-            editor.style.removeProperty('opacity');
-        },
-        { once: true }
-    );
+        workshopBackdropOpenAnimation.cancel();
+        workshopBackdropOpenAnimation = null;
 
-    const backdropAnimation =
-        workshopEditorBackdrop.animate(
-            [
-                { opacity: 0 },
-                { opacity: 1 }
-            ],
-            {
-                duration: 220,
-                easing: 'ease',
-                fill: 'forwards'
-            }
-        );
-
-    backdropAnimation.addEventListener(
-        'finish',
-        () => {
-            backdropAnimation.cancel();
-
-            if (workshopEditorBackdrop) {
-                workshopEditorBackdrop.style.opacity = '1';
-            }
-        },
-        { once: true }
-    );
+        if (
+            workshopEditorBackdrop &&
+            !workshopIsClosing
+        ) {
+            workshopEditorBackdrop.style.opacity = '1';
+        }
+    },
+    { once: true }
+);
 
     workshopEditorBackdrop.addEventListener(
         'click',
@@ -2977,7 +2992,15 @@ function openWorkshopEditor(editor) {
 }
 
 function closeWorkshopEditor() {
-    if (!activeWorkshopEditor) return;
+    if (!activeWorkshopEditor || workshopIsClosing) return;
+
+    workshopIsClosing = true;
+
+    workshopOpenAnimation?.cancel();
+    workshopBackdropOpenAnimation?.cancel();
+
+    workshopOpenAnimation = null;
+    workshopBackdropOpenAnimation = null;
 
     const editor = activeWorkshopEditor;
     const placeholder = workshopEditorPlaceholder;
@@ -3052,9 +3075,13 @@ function closeWorkshopEditor() {
         document.body.classList.remove('workshop-editor-open');
 
         activeWorkshopEditor = null;
-        workshopEditorBackdrop = null;
-        workshopEditorPlaceholder = null;
-        workshopOriginalStyle = null;
+workshopEditorBackdrop = null;
+workshopEditorPlaceholder = null;
+workshopOriginalStyle = null;
+
+workshopOpenAnimation = null;
+workshopBackdropOpenAnimation = null;
+workshopIsClosing = false;
     };
 }
 
