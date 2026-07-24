@@ -2889,8 +2889,14 @@ function openWorkshopEditor(editor) {
 
     document.body.classList.add('workshop-editor-open');
 
-    editor.classList.add('is-expanded');
+        editor.classList.add('is-expanded');
     document.body.appendChild(editor);
+
+    /*
+     * Force a complete layout calculation after moving the
+     * textarea from the table into the document body.
+     */
+    void editor.offsetWidth;
 
     const endRect = editor.getBoundingClientRect();
 
@@ -2934,16 +2940,29 @@ function openWorkshopEditor(editor) {
         { once: true }
     );
 
-    workshopEditorBackdrop.animate(
-        [
-            { opacity: 0 },
-            { opacity: 1 }
-        ],
-        {
-            duration: 220,
-            easing: 'ease',
-            fill: 'both'
-        }
+    const backdropAnimation =
+        workshopEditorBackdrop.animate(
+            [
+                { opacity: 0 },
+                { opacity: 1 }
+            ],
+            {
+                duration: 220,
+                easing: 'ease',
+                fill: 'forwards'
+            }
+        );
+
+    backdropAnimation.addEventListener(
+        'finish',
+        () => {
+            backdropAnimation.cancel();
+
+            if (workshopEditorBackdrop) {
+                workshopEditorBackdrop.style.opacity = '1';
+            }
+        },
+        { once: true }
     );
 
     workshopEditorBackdrop.addEventListener(
