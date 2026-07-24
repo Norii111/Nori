@@ -4161,14 +4161,20 @@ display: none;
 }
 
 .workshop-description-editor.is-expanded {
-    position: fixed;
-    top: 50%;
-    left: 50%;
+    display: block !important;
+    position: fixed !important;
 
-    width: min(960px, calc(100vw - 70px));
-    height: min(74vh, 720px);
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+
+    width: min(960px, calc(100vw - 70px)) !important;
+    height: min(74vh, 720px) !important;
     min-height: 420px;
     max-height: calc(100vh - 60px);
+
+    box-sizing: border-box !important;
 
     z-index: 10001;
 
@@ -4183,6 +4189,7 @@ display: none;
 
     resize: none;
     outline: none;
+    transition: none !important;
 
     transform: translate(-50%, -50%);
     transform-origin: center center;
