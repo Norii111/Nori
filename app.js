@@ -2070,30 +2070,6 @@ function copyTextAreaContent() {
 function animatePageTitle(tabElement) {
     if (!tabElement) return;
 
-    // Only animate the first/main header of the opened page.
-    const title = tabElement.querySelector(
-        '.panel-header h3 .bilingual-label'
-    );
-
-    if (!title) return;
-
-    title.classList.remove('page-title-enter');
-
-    // Force the browser to restart the animation.
-    void title.offsetWidth;
-
-    title.classList.add('page-title-enter');
-
-    clearTimeout(title._pageTitleAnimationTimer);
-
-    title._pageTitleAnimationTimer = setTimeout(() => {
-        title.classList.remove('page-title-enter');
-    }, 750);
-}
-
-function animatePageTitle(tabElement) {
-    if (!tabElement) return;
-
     const title = tabElement.querySelector(
         '.panel-header h3 .bilingual-label'
     );
