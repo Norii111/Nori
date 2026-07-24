@@ -2899,7 +2899,7 @@ function openWorkshopEditor(editor) {
     const scaleX = startRect.width / endRect.width;
     const scaleY = startRect.height / endRect.height;
 
-    editor.animate(
+    const openAnimation = editor.animate(
         [
             {
                 transform:
@@ -2915,8 +2915,23 @@ function openWorkshopEditor(editor) {
         {
             duration: 260,
             easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-            fill: 'both'
+            fill: 'forwards'
         }
+    );
+
+    openAnimation.addEventListener(
+        'finish',
+        () => {
+            /*
+             * Remove the temporary animation transform.
+             * The .is-expanded CSS now controls the final position.
+             */
+            openAnimation.cancel();
+
+            editor.style.removeProperty('transform');
+            editor.style.removeProperty('opacity');
+        },
+        { once: true }
     );
 
     workshopEditorBackdrop.animate(
