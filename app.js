@@ -2854,6 +2854,196 @@ function renderDevToolsTable() {
     table.innerHTML = html;
 }
 
+
+let activeWorkshopEditor = null;
+let workshopEditorBackdrop = null;
+let workshopEditorPlaceholder = null;
+let workshopOriginalStyle = null;
+
+function openWorkshopEditor(editor) {
+    if (!editor || activeWorkshopEditor === editor) return;
+
+    if (activeWorkshopEditor) {
+        closeWorkshopEditor();
+    }
+
+    const startRect = editor.getBoundingClientRect();
+
+    workshopEditorPlaceholder = document.createElement('div');
+    workshopEditorPlaceholder.className = 'workshop-editor-placeholder';
+    workshopEditorPlaceholder.style.width = `${startRect.width}px`;
+    workshopEditorPlaceholder.style.height = `${startRect.height}px`;
+
+    editor.parentNode.insertBefore(
+        workshopEditorPlaceholder,
+        editor
+    );
+
+    workshopOriginalStyle = editor.getAttribute('style');
+
+    activeWorkshopEditor = editor;
+
+    workshopEditorBackdrop = document.createElement('div');
+    workshopEditorBackdrop.className = 'workshop-editor-backdrop';
+    document.body.appendChild(workshopEditorBackdrop);
+
+    document.body.classList.add('workshop-editor-open');
+
+    editor.classList.add('is-expanded');
+    document.body.appendChild(editor);
+
+    const endRect = editor.getBoundingClientRect();
+
+    const deltaX = startRect.left - endRect.left;
+    const deltaY = startRect.top - endRect.top;
+    const scaleX = startRect.width / endRect.width;
+    const scaleY = startRect.height / endRect.height;
+
+    editor.animate(
+        [
+            {
+                transform:
+                    `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scaleX}, ${scaleY})`,
+                opacity: 0.75
+            },
+            {
+                transform:
+                    'translate(-50%, -50%) scale(1)',
+                opacity: 1
+            }
+        ],
+        {
+            duration: 260,
+            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            fill: 'both'
+        }
+    );
+
+    workshopEditorBackdrop.animate(
+        [
+            { opacity: 0 },
+            { opacity: 1 }
+        ],
+        {
+            duration: 220,
+            easing: 'ease',
+            fill: 'both'
+        }
+    );
+
+    workshopEditorBackdrop.addEventListener(
+        'click',
+        closeWorkshopEditor,
+        { once: true }
+    );
+
+    requestAnimationFrame(() => {
+        editor.focus();
+    });
+}
+
+function closeWorkshopEditor() {
+    if (!activeWorkshopEditor) return;
+
+    const editor = activeWorkshopEditor;
+    const placeholder = workshopEditorPlaceholder;
+
+    const startRect = editor.getBoundingClientRect();
+    const endRect = placeholder
+        ? placeholder.getBoundingClientRect()
+        : startRect;
+
+    const deltaX = endRect.left - startRect.left;
+    const deltaY = endRect.top - startRect.top;
+    const scaleX = endRect.width / startRect.width;
+    const scaleY = endRect.height / startRect.height;
+
+    const closingAnimation = editor.animate(
+        [
+            {
+                transform:
+                    'translate(-50%, -50%) scale(1)',
+                opacity: 1
+            },
+            {
+                transform:
+                    `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scaleX}, ${scaleY})`,
+                opacity: 0.65
+            }
+        ],
+        {
+            duration: 190,
+            easing: 'cubic-bezier(0.4, 0, 1, 1)',
+            fill: 'both'
+        }
+    );
+
+    if (workshopEditorBackdrop) {
+        workshopEditorBackdrop.animate(
+            [
+                { opacity: 1 },
+                { opacity: 0 }
+            ],
+            {
+                duration: 170,
+                easing: 'ease',
+                fill: 'both'
+            }
+        );
+    }
+
+    closingAnimation.onfinish = () => {
+        editor.classList.remove('is-expanded');
+        editor.getAnimations().forEach(animation => animation.cancel());
+
+        if (placeholder?.parentNode) {
+            placeholder.parentNode.insertBefore(
+                editor,
+                placeholder
+            );
+
+            placeholder.remove();
+        }
+
+        if (workshopOriginalStyle === null) {
+            editor.removeAttribute('style');
+        } else {
+            editor.setAttribute(
+                'style',
+                workshopOriginalStyle
+            );
+        }
+
+        workshopEditorBackdrop?.remove();
+        document.body.classList.remove('workshop-editor-open');
+
+        activeWorkshopEditor = null;
+        workshopEditorBackdrop = null;
+        workshopEditorPlaceholder = null;
+        workshopOriginalStyle = null;
+    };
+}
+
+document.addEventListener('click', event => {
+    const editor = event.target.closest(
+        '.workshop-description-editor'
+    );
+
+    if (!editor) return;
+    if (editor.classList.contains('is-expanded')) return;
+
+    openWorkshopEditor(editor);
+});
+
+document.addEventListener('keydown', event => {
+    if (
+        event.key === 'Escape' &&
+        activeWorkshopEditor
+    ) {
+        closeWorkshopEditor();
+    }
+});
+
 function escapeHtml(str) {
     if (str === undefined || str === null) return "";
     return String(str)
