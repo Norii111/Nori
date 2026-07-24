@@ -4582,6 +4582,7 @@ function startIndonesiaClock() {
 
 
 window.onload = function() {
+        startIndonesiaClock();
     loadPredictionTimeConfig();
     loadSavedWallpaper();
     loadOfflineDatabaseFromStorage();
