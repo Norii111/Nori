@@ -2742,12 +2742,38 @@ pillWrapper.style.setProperty('--pill-tilt', `${randomTilt}deg`);
             }
         };
 
-        const pinButton = document.createElement('span');
-        pinButton.textContent = item.pinned ? '♝' : '♖';
-        pinButton.title = item.pinned ? 'Unpin recent search' : 'Pin recent search';
-        pinButton.style.cursor = "pointer";
-        pinButton.style.fontSize = "13px";
-        pinButton.onclick = (event) => toggleSearchHistoryPin(key, event);
+        const pinButton = document.createElement('button');
+
+pinButton.type = 'button';
+pinButton.className = 'search-history-pin-button history-card-action';
+pinButton.textContent = item.pinned ? '♝' : '♖';
+
+pinButton.title = item.pinned
+    ? 'Unpin recent search'
+    : 'Pin recent search';
+
+pinButton.setAttribute(
+    'aria-label',
+    item.pinned
+        ? `Unpin ${key}`
+        : `Pin ${key}`
+);
+
+// Prevent the card's drag/click behavior from interfering.
+pinButton.addEventListener('pointerdown', event => {
+    event.stopPropagation();
+});
+
+pinButton.addEventListener('mousedown', event => {
+    event.stopPropagation();
+});
+
+pinButton.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    toggleSearchHistoryPin(key, event);
+});
 
         const label = document.createElement('span');
         label.textContent = key;
