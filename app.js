@@ -2671,7 +2671,7 @@ pillWrapper.style.setProperty('--pill-tilt', `${randomTilt}deg`);
         pillWrapper.style.transition = "";
 
 pillWrapper.ondragstart = event => {
-    if (event.target.closest('.search-history-pin-button')) {
+    if (event.target.closest('.search-history-action-button')) {
         event.preventDefault();
         return;
     }
@@ -2751,7 +2751,7 @@ const pinButton = document.createElement('button');
 
 pinButton.type = 'button';
 pinButton.draggable = false;
-pinButton.className = 'search-history-pin-button';
+pinButton.className =     'search-history-action-button search-history-pin-button';
 pinButton.textContent = item.pinned ? '♝' : '♖';
 
 pinButton.title = item.pinned
@@ -2764,7 +2764,6 @@ pinButton.setAttribute(
 );
 
 pinButton.addEventListener('pointerdown', event => {
-    event.preventDefault();
     event.stopPropagation();
 });
 
@@ -2777,23 +2776,36 @@ pinButton.addEventListener('click', event => {
         const label = document.createElement('span');
         label.textContent = key;
 
-        const deleteButton = document.createElement('span');
-        deleteButton.textContent = '×';
-        deleteButton.style.marginLeft = "4px";
-        deleteButton.style.padding = "0 2px";
-        deleteButton.style.color = "#888";
-        deleteButton.style.fontWeight = "900";
-        deleteButton.style.cursor = "pointer";
-        deleteButton.style.transition = "color 0.1s";
-        deleteButton.onmouseover = () => { deleteButton.style.color = "#111"; };
-        deleteButton.onmouseout = () => { deleteButton.style.color = "#888"; };
-        deleteButton.onclick = (event) => deleteSingleHistoryItem(key, event);
+const deleteButton = document.createElement('button');
 
-        pillWrapper.appendChild(pinButton);
-        pillWrapper.appendChild(label);
-        pillWrapper.appendChild(deleteButton);
+deleteButton.type = 'button';
+deleteButton.draggable = false;
+deleteButton.className =
+    'search-history-action-button search-history-delete-button';
 
-        container.appendChild(pillWrapper);
+deleteButton.textContent = '×';
+deleteButton.title = `Delete ${key}`;
+deleteButton.setAttribute(
+    'aria-label',
+    `Delete ${key} from recent searches`
+);
+
+deleteButton.addEventListener('pointerdown', event => {
+    event.stopPropagation();
+});
+
+deleteButton.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    deleteSingleHistoryItem(key, event);
+});
+
+pillWrapper.appendChild(pinButton);
+pillWrapper.appendChild(label);
+pillWrapper.appendChild(deleteButton);
+
+container.appendChild(pillWrapper);
     });
 }
 
