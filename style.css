@@ -4272,3 +4272,48 @@ body.workshop-editor-open {
 
     font-variant-numeric: tabular-nums;
 }
+
+
+
+.search-history-pin-button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: -8px -4px -8px -8px;
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+  color: var(--ink-black);
+
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+
+  cursor: pointer;
+  touch-action: manipulation;
+
+  position: relative;
+  z-index: 20;
+}
+
+.search-history-pin-button:hover {
+  background: rgba(255, 243, 176, 0.9);
+  outline: 2px solid var(--ink-black);
+  transform: scale(1.12);
+}
+
+.search-history-pin-button:active {
+  transform: scale(0.92);
+}
+
+.search-history-pin-button:focus-visible {
+  outline: 3px solid var(--ink-black);
+  outline-offset: 2px;
+}
