@@ -4274,8 +4274,7 @@ body.workshop-editor-open {
 }
 
 
-
-.search-history-pin-button {
+.search-history-action-button {
   width: 36px;
   height: 36px;
   min-width: 36px;
@@ -4284,15 +4283,11 @@ body.workshop-editor-open {
   align-items: center;
   justify-content: center;
 
-  margin: -8px -4px -8px -8px;
   padding: 0;
-
   border: 0;
   background: transparent;
-  color: var(--ink-black);
 
   font-family: inherit;
-  font-size: 20px;
   font-weight: 900;
   line-height: 1;
 
@@ -4301,19 +4296,45 @@ body.workshop-editor-open {
 
   position: relative;
   z-index: 20;
+
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
-.search-history-pin-button:hover {
-  background: rgba(255, 243, 176, 0.9);
+.search-history-pin-button {
+  margin: -8px -4px -8px -8px;
+  color: var(--ink-black);
+  font-size: 20px;
+}
+
+.search-history-delete-button {
+  margin: -8px -8px -8px -4px;
+  color: #777;
+  font-size: 24px;
+}
+
+.search-history-action-button:hover {
   outline: 2px solid var(--ink-black);
   transform: scale(1.12);
 }
 
-.search-history-pin-button:active {
-  transform: scale(0.92);
+.search-history-pin-button:hover {
+  background: rgba(255, 243, 176, 0.95);
+  color: var(--ink-black);
 }
 
-.search-history-pin-button:focus-visible {
+.search-history-delete-button:hover {
+  background: rgba(255, 190, 190, 0.95);
+  color: #b00000;
+}
+
+.search-history-action-button:active {
+  transform: scale(0.9);
+}
+
+.search-history-action-button:focus-visible {
   outline: 3px solid var(--ink-black);
   outline-offset: 2px;
 }
