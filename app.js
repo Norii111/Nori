@@ -2670,11 +2670,16 @@ pillWrapper.style.setProperty('--pill-tilt', `${randomTilt}deg`);
         pillWrapper.style.transform = "";
         pillWrapper.style.transition = "";
 
-        pillWrapper.ondragstart = (e) => {
-            draggedItemIndex = idx;
-            pillWrapper.style.opacity = "0.4";
-            e.dataTransfer.effectAllowed = "move";
-        };
+pillWrapper.ondragstart = event => {
+    if (event.target.closest('.search-history-pin-button')) {
+        event.preventDefault();
+        return;
+    }
+
+    draggedItemIndex = idx;
+    pillWrapper.style.opacity = '0.4';
+    event.dataTransfer.effectAllowed = 'move';
+};
 
         pillWrapper.ondragend = () => {
             pillWrapper.style.opacity = "1";
@@ -2742,10 +2747,11 @@ pillWrapper.style.setProperty('--pill-tilt', `${randomTilt}deg`);
             }
         };
 
-        const pinButton = document.createElement('button');
+const pinButton = document.createElement('button');
 
 pinButton.type = 'button';
-pinButton.className = 'search-history-pin-button history-card-action';
+pinButton.draggable = false;
+pinButton.className = 'search-history-pin-button';
 pinButton.textContent = item.pinned ? '♝' : '♖';
 
 pinButton.title = item.pinned
@@ -2754,24 +2760,17 @@ pinButton.title = item.pinned
 
 pinButton.setAttribute(
     'aria-label',
-    item.pinned
-        ? `Unpin ${key}`
-        : `Pin ${key}`
+    item.pinned ? `Unpin ${key}` : `Pin ${key}`
 );
 
-// Prevent the card's drag/click behavior from interfering.
 pinButton.addEventListener('pointerdown', event => {
-    event.stopPropagation();
-});
-
-pinButton.addEventListener('mousedown', event => {
+    event.preventDefault();
     event.stopPropagation();
 });
 
 pinButton.addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
-
     toggleSearchHistoryPin(key, event);
 });
 
