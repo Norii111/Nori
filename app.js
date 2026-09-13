@@ -855,7 +855,34 @@ function ensureGrimoireMultiResultStyles() {
         }
 
         .grimoire-description-card.is-active {
-            background: #fff3b0;
+            /* Warm manga-paper texture instead of the old flat yellow fill. */
+            background-color: #f0ebda;
+            background-image:
+                radial-gradient(
+                    circle,
+                    rgba(17, 17, 17, 0.13) 0 0.8px,
+                    transparent 0.95px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(113, 98, 67, 0.10) 0,
+                    rgba(113, 98, 67, 0.10) 1px,
+                    transparent 1px,
+                    transparent 7px
+                ),
+                linear-gradient(
+                    135deg,
+                    rgba(255, 255, 255, 0.24),
+                    rgba(213, 199, 166, 0.12)
+                );
+            background-size:
+                14px 14px,
+                100% 7px,
+                100% 100%;
+            background-position:
+                0 0,
+                0 0,
+                0 0;
             box-shadow:
                 5px 5px 0 #b91c1c,
                 8px 8px 0 var(--ink-black, #111);
