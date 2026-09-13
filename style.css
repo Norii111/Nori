@@ -4793,7 +4793,16 @@ body.workshop-editor-open {
   /* ---------- GRIMOIRE / SEARCH ---------- */
 
   #searchMenuTab {
-    overflow-x: hidden;
+    /* Desktop CSS sets this tab to overflow:hidden.
+       On mobile this element IS the main page scroller, so explicitly
+       restore vertical scrolling for very long Grimoire descriptions. */
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+
+    min-height: 0;
+
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   #searchMenuTab .manga-panel {
