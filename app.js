@@ -855,32 +855,41 @@ function ensureGrimoireMultiResultStyles() {
         }
 
         .grimoire-description-card.is-active {
-            /* Warm manga-paper texture instead of the old flat yellow fill. */
-            background-color: #f0ebda;
+            /* Reuse the dashboard's original manga paper texture.
+               Two overlapping dot fields + faint angled print lines make it
+               feel imperfect/hand-printed instead of sitting on a rigid grid. */
+            background-color: #f8f3df;
             background-image:
                 radial-gradient(
-                    circle,
-                    rgba(17, 17, 17, 0.13) 0 0.8px,
-                    transparent 0.95px
+                    circle at 18% 24%,
+                    rgba(0, 0, 0, 0.13) 1px,
+                    transparent 1.8px
+                ),
+                radial-gradient(
+                    circle at 78% 18%,
+                    rgba(0, 0, 0, 0.08) 1px,
+                    transparent 2px
                 ),
                 repeating-linear-gradient(
-                    0deg,
-                    rgba(113, 98, 67, 0.10) 0,
-                    rgba(113, 98, 67, 0.10) 1px,
-                    transparent 1px,
-                    transparent 7px
+                    -8deg,
+                    rgba(17, 17, 17, 0.035) 0,
+                    rgba(17, 17, 17, 0.035) 2px,
+                    transparent 2px,
+                    transparent 13px
                 ),
                 linear-gradient(
                     135deg,
-                    rgba(255, 255, 255, 0.24),
-                    rgba(213, 199, 166, 0.12)
+                    rgba(255, 255, 255, 0.55),
+                    rgba(222, 211, 184, 0.35)
                 );
             background-size:
-                14px 14px,
-                100% 7px,
+                11px 11px,
+                17px 17px,
+                100% 100%,
                 100% 100%;
             background-position:
                 0 0,
+                3px 5px,
                 0 0,
                 0 0;
             box-shadow:
