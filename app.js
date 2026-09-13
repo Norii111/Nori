@@ -970,6 +970,67 @@ function ensureGrimoireMultiResultStyles() {
                 box-shadow: 0 0 0 var(--ink-black, #111);
             }
         }
+
+        /* =========================================
+           GRIMOIRE MOBILE RESULT FLOW
+           On phones the page itself scrolls. Avoid a
+           nested scroll box inside the Grimoire panel.
+        ========================================= */
+        @media (max-width: 768px) {
+            #sheetPayloadCards {
+                flex: 0 0 auto;
+                max-height: none;
+                overflow: visible;
+                overscroll-behavior: auto;
+                scrollbar-gutter: auto;
+                padding: 5px 2px 22px;
+                margin-top: 4px;
+            }
+
+            #sheetPayloadCards.grimoire-results-open {
+                gap: 12px;
+            }
+
+            .grimoire-description-card {
+                padding: 14px 12px 15px;
+                border-width: 3px;
+                box-shadow: 4px 4px 0 var(--ink-black, #111);
+                scroll-margin-top: 12px;
+            }
+
+            .grimoire-description-card:hover {
+                transform: none;
+                box-shadow: 4px 4px 0 var(--ink-black, #111);
+            }
+
+            .grimoire-description-card.is-active {
+                box-shadow:
+                    4px 4px 0 #b91c1c,
+                    7px 7px 0 var(--ink-black, #111);
+            }
+
+            .grimoire-description-card.is-active::before {
+                top: -9px;
+                left: 10px;
+            }
+
+            .grimoire-description-topline {
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .grimoire-description-copy {
+                min-height: 38px;
+                padding: 7px 11px !important;
+                touch-action: manipulation;
+            }
+
+            .grimoire-description-text {
+                font-size: 14px;
+                line-height: 1.55;
+            }
+        }
     `;
 
     document.head.appendChild(style);
@@ -1513,15 +1574,20 @@ function renderArchiveContainer() {
     
     archiveBox.innerHTML = "";
     const totalItems = googleSheetData.length;
+    const isCompactArchiveLayout = window.matchMedia('(max-width: 768px)').matches;
 
     googleSheetData.forEach((row, idx) => {
         const rowDiv = document.createElement('div');
-        
-        // 1. Structural Sizing (Uniform but spacious cards)
+        rowDiv.className = 'grimoire-archive-card';
+
+        // 1. Structural sizing.
+        // Desktop keeps the original 5-card layout. On mobile every archive
+        // entry becomes a full-width touch card so nothing is squeezed.
         rowDiv.style.boxSizing = "border-box";
-        rowDiv.style.width = "calc(20% - 13px)"; // Exactly 5 cards per row (accounting for gaps)
-        rowDiv.style.minWidth = "180px";        // Prevents them from getting too skinny on small screens
-        rowDiv.style.height = "220px";          // Fixed matching height for all cards
+        rowDiv.style.width = isCompactArchiveLayout ? "100%" : "calc(20% - 13px)";
+        rowDiv.style.minWidth = isCompactArchiveLayout ? "0" : "180px";
+        rowDiv.style.height = isCompactArchiveLayout ? "auto" : "220px";
+        rowDiv.style.minHeight = isCompactArchiveLayout ? "170px" : "0";
         
         // 2. Manga Styling
         rowDiv.style.border = "4px solid var(--ink-black, #111)";
@@ -1538,7 +1604,8 @@ function renderArchiveContainer() {
 
         // 3. The "Beautifully Messy" Secret Sauce: Random micro-rotation!
         // This tilts each card randomly between -2.5 and +2.5 degrees so they look hand-placed
-        const randomTilt = (Math.random() * 5 - 2.5).toFixed(2);
+        const tiltRange = isCompactArchiveLayout ? 2.2 : 5;
+        const randomTilt = (Math.random() * tiltRange - tiltRange / 2).toFixed(2);
         rowDiv.style.transform = `rotate(${randomTilt}deg)`;
 
         // Highlight tags
@@ -1564,15 +1631,18 @@ function renderArchiveContainer() {
             <div style="font-size:12px; font-family:inherit; color:#111; line-height:1.4; flex-grow:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; white-space:pre-wrap; word-break:break-word;">${row.payload}</div>
         `;
 
-        // Interactive pop effect on hover
-        rowDiv.onmouseenter = () => {
-            rowDiv.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
-            rowDiv.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
-        };
-        rowDiv.onmouseleave = () => {
-            rowDiv.style.transform = `rotate(${randomTilt}deg)`;
-            rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
-        };
+        // Interactive pop effect on pointer devices.
+        // Touch screens do not need a sticky hover state.
+        if (!isCompactArchiveLayout && window.matchMedia('(hover: hover)').matches) {
+            rowDiv.onmouseenter = () => {
+                rowDiv.style.transform = `rotate(${randomTilt}deg) translate(-2px, -2px)`;
+                rowDiv.style.boxShadow = "8px 8px 0px var(--ink-black, #111)";
+            };
+            rowDiv.onmouseleave = () => {
+                rowDiv.style.transform = `rotate(${randomTilt}deg)`;
+                rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
+            };
+        }
 
 // 5. Open the grouped Grimoire title. If this title exists on multiple
         // rows, selectFinalMatch() renders every description for that exact title.
