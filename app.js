@@ -906,14 +906,33 @@ function ensureGrimoireMultiResultStyles() {
             line-height: 1.48;
         }
 
-        .grimoire-description-card.copy-flash {
-            animation: grimoire-copy-flash 320ms ease;
+        .grimoire-description-card.copy-disappear {
+            pointer-events: none;
+            contain: paint;
+            will-change: transform, opacity, clip-path;
+            animation: grimoire-copy-disappear 460ms cubic-bezier(0.55, 0, 0.3, 1) forwards;
         }
 
-        @keyframes grimoire-copy-flash {
-            0% { transform: translate(0, 0) scale(1); }
-            45% { transform: translate(-3px, -3px) scale(1.01); }
-            100% { transform: translate(0, 0) scale(1); }
+        @keyframes grimoire-copy-disappear {
+            0% {
+                opacity: 1;
+                transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+                clip-path: inset(0 0 0 0);
+            }
+
+            35% {
+                opacity: 1;
+                transform: translateX(-3px) translateY(-4px) rotate(-0.35deg) scale(1.005);
+                clip-path: inset(0 0 0 0);
+                box-shadow: 7px 7px 0 var(--ink-black, #111);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateX(18px) translateY(-16px) rotate(1.2deg) scale(0.97);
+                clip-path: inset(0 0 100% 0);
+                box-shadow: 0 0 0 var(--ink-black, #111);
+            }
         }
     `;
 
@@ -922,6 +941,11 @@ function ensureGrimoireMultiResultStyles() {
 
 function ensureGrimoireResultsContainer() {
     ensureGrimoireMultiResultStyles();
+
+    const legacyCopyButtonGroup = document.getElementById('searchButtonGroup');
+    if (legacyCopyButtonGroup) {
+        legacyCopyButtonGroup.style.display = 'none';
+    }
 
     let container = document.getElementById('sheetPayloadCards');
     if (container) return container;
@@ -980,17 +1004,97 @@ function setActiveGrimoireDescription(card, row) {
     }
 }
 
-function flashGrimoireCard(card) {
+function refreshGrimoireVisibleCardLabels(container) {
+    if (!container) return;
+
+    const cards = Array.from(
+        container.querySelectorAll('.grimoire-description-card:not(.copy-disappear)')
+    );
+
+    const total = cards.length;
+
+    cards.forEach((card, index) => {
+        const number = card.querySelector('.grimoire-description-number');
+        if (number) {
+            number.textContent = `DESCRIPTION ${index + 1} / ${total}`;
+        }
+    });
+
+    const panelTitle = document.getElementById('payloadPanelTitle');
+    const title = cards[0]?._grimoireRow?.key || activeGrimoireTitle || '';
+
+    if (panelTitle && title && total > 0) {
+        panelTitle.textContent = `${title} · ${total} DESCRIPTION${total === 1 ? '' : 'S'}`;
+    }
+}
+
+function playGrimoireCardCopyDisappear(card) {
     if (!card) return;
 
-    card.classList.remove('copy-flash');
-    void card.offsetWidth;
-    card.classList.add('copy-flash');
+    const container = card.parentElement;
+    const searchInput = document.getElementById('sheetKeySearch');
+    const wasActive = card === activeGrimoireCard || card.classList.contains('is-active');
+    const nextCandidate = card.nextElementSibling || card.previousElementSibling;
 
-    clearTimeout(card._copyFlashTimer);
-    card._copyFlashTimer = setTimeout(() => {
-        card.classList.remove('copy-flash');
-    }, 360);
+    card.classList.remove('copy-disappear');
+    clearTimeout(card._copyDisappearFallbackTimer);
+
+    // Restart the original diagonal copy-away animation reliably.
+    void card.offsetWidth;
+
+    let finished = false;
+
+    const finishAnimation = () => {
+        if (finished) return;
+        finished = true;
+
+        card.removeEventListener('animationend', finishAnimation);
+        clearTimeout(card._copyDisappearFallbackTimer);
+
+        if (card.parentElement) {
+            card.remove();
+        }
+
+        const remainingCards = container
+            ? Array.from(container.querySelectorAll('.grimoire-description-card'))
+            : [];
+
+        if (!remainingCards.length) {
+            if (searchInput) searchInput.value = '';
+            clearAndHideSearch();
+            return;
+        }
+
+        if (wasActive) {
+            const replacement =
+                (nextCandidate && nextCandidate.parentElement === container)
+                    ? nextCandidate
+                    : remainingCards[0];
+
+            if (replacement?._grimoireRow) {
+                setActiveGrimoireDescription(
+                    replacement,
+                    replacement._grimoireRow
+                );
+            }
+        }
+
+        refreshGrimoireVisibleCardLabels(container);
+    };
+
+    card.addEventListener(
+        'animationend',
+        finishAnimation,
+        { once: true }
+    );
+
+    card.classList.add('copy-disappear');
+
+    // Safety fallback in case animationend does not fire.
+    card._copyDisappearFallbackTimer = setTimeout(
+        finishAnimation,
+        600
+    );
 }
 
 function copyGrimoireDescription(payload, title, card = null) {
@@ -1003,7 +1107,7 @@ function copyGrimoireDescription(payload, title, card = null) {
 
     navigator.clipboard.writeText(textToCopy)
         .then(() => {
-            flashGrimoireCard(card || activeGrimoireCard);
+            playGrimoireCardCopyDisappear(card || activeGrimoireCard);
             showToast(`"${title || 'Grimoire entry'}" description copied.`);
         })
         .catch(() => {
@@ -1045,6 +1149,7 @@ function renderGrimoireDescriptionCards(title) {
         const card = document.createElement('div');
         card.className = 'grimoire-description-card';
         card.tabIndex = 0;
+        card._grimoireRow = row;
 
         const topLine = document.createElement('div');
         topLine.className = 'grimoire-description-topline';
@@ -1225,7 +1330,7 @@ function selectFinalMatch(match) {
     }
 
     if (actionsHeader) actionsHeader.style.display = 'flex';
-    if (buttonGroup) buttonGroup.style.display = 'flex';
+    if (buttonGroup) buttonGroup.style.display = 'none';
 
     if (archiveBox) archiveBox.style.display = 'none';
     isArchiveOpen = false;
