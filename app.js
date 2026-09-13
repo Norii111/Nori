@@ -224,6 +224,13 @@ const PREDICTION_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 let focusedSuggestionIndex = -1; 
 let isArchiveOpen = false;
 
+// =================================
+// GRIMOIRE — MULTI-DESCRIPTION STATE
+// =================================
+let activeGrimoirePayload = '';
+let activeGrimoireTitle = '';
+let activeGrimoireCard = null;
+
 function launchImgNoteGAS() {
     window.open(
         "https://script.google.com/macros/s/AKfycbzsPGwL-uDIwOQ84ytcHVOm2wMZjR5fj_51EVsjKNn7lvyM_Z0KNK4rKigPs58CAqmPkA/exec",
@@ -767,124 +774,506 @@ function updatePredictionTimeToolbar() {
 }
 
 
+function normalizeGrimoireKey(value) {
+    return String(value || '').trim().toUpperCase();
+}
+
+function getGrimoireRowsForTitle(title) {
+    const normalizedTitle = normalizeGrimoireKey(title);
+
+    if (!normalizedTitle) return [];
+
+    return googleSheetData.filter(row =>
+        normalizeGrimoireKey(row.key) === normalizedTitle
+    );
+}
+
+function getUniqueGrimoireMatches(searchKey) {
+    const normalizedSearch = normalizeGrimoireKey(searchKey);
+    const seenTitles = new Set();
+    const uniqueMatches = [];
+
+    googleSheetData.forEach(row => {
+        const normalizedTitle = normalizeGrimoireKey(row.key);
+
+        if (!normalizedTitle) return;
+        if (!normalizedTitle.includes(normalizedSearch)) return;
+        if (seenTitles.has(normalizedTitle)) return;
+
+        seenTitles.add(normalizedTitle);
+        uniqueMatches.push(row);
+    });
+
+    return uniqueMatches;
+}
+
+function ensureGrimoireMultiResultStyles() {
+    if (document.getElementById('grimoireMultiResultStyles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'grimoireMultiResultStyles';
+    style.textContent = `
+        #sheetPayloadCards {
+            display: none;
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: calc(100vh - 330px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
+            padding: 5px 12px 18px 4px;
+            margin-top: 2px;
+            box-sizing: border-box;
+        }
+
+        #sheetPayloadCards.grimoire-results-open {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .grimoire-description-card {
+            position: relative;
+            flex: 0 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+            border: 3px solid var(--ink-black, #111);
+            background: var(--bg-paper, #f4f3ef);
+            box-shadow: 4px 4px 0 var(--ink-black, #111);
+            padding: 13px 14px 14px;
+            cursor: pointer;
+            transition:
+                transform 120ms ease,
+                box-shadow 120ms ease,
+                background 120ms ease;
+        }
+
+        .grimoire-description-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--ink-black, #111);
+        }
+
+        .grimoire-description-card.is-active {
+            background: #fff3b0;
+            box-shadow:
+                5px 5px 0 #b91c1c,
+                8px 8px 0 var(--ink-black, #111);
+        }
+
+        .grimoire-description-card.is-active::before {
+            content: 'SELECTED';
+            position: absolute;
+            top: -10px;
+            left: 12px;
+            padding: 2px 7px;
+            border: 2px solid var(--ink-black, #111);
+            background: #b91c1c;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: .6px;
+        }
+
+        .grimoire-description-topline {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 9px;
+        }
+
+        .grimoire-description-number {
+            flex: 0 0 auto;
+            font-size: 10px;
+            font-weight: 900;
+            opacity: .62;
+            padding-top: 3px;
+        }
+
+        .grimoire-description-copy {
+            flex: 0 0 auto;
+            font-size: 11px !important;
+            padding: 4px 10px !important;
+        }
+
+        .grimoire-description-text {
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.48;
+        }
+
+        .grimoire-description-card.copy-flash {
+            animation: grimoire-copy-flash 320ms ease;
+        }
+
+        @keyframes grimoire-copy-flash {
+            0% { transform: translate(0, 0) scale(1); }
+            45% { transform: translate(-3px, -3px) scale(1.01); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+    `;
+
+    document.head.appendChild(style);
+}
+
+function ensureGrimoireResultsContainer() {
+    ensureGrimoireMultiResultStyles();
+
+    let container = document.getElementById('sheetPayloadCards');
+    if (container) return container;
+
+    const payloadOutput = document.getElementById('sheetPayloadArea');
+    if (!payloadOutput || !payloadOutput.parentNode) return null;
+
+    container = document.createElement('div');
+    container.id = 'sheetPayloadCards';
+    container.setAttribute('aria-live', 'polite');
+
+    payloadOutput.parentNode.insertBefore(container, payloadOutput);
+
+    return container;
+}
+
+function hideGrimoireDescriptionCards({ clear = false } = {}) {
+    const container = document.getElementById('sheetPayloadCards');
+
+    if (container) {
+        container.classList.remove('grimoire-results-open');
+        container.style.display = 'none';
+
+        if (clear) {
+            container.innerHTML = '';
+        }
+    }
+
+    activeGrimoirePayload = '';
+    activeGrimoireTitle = '';
+    activeGrimoireCard = null;
+}
+
+function setActiveGrimoireDescription(card, row) {
+    const container = document.getElementById('sheetPayloadCards');
+    const payloadOutput = document.getElementById('sheetPayloadArea');
+
+    if (container) {
+        container
+            .querySelectorAll('.grimoire-description-card')
+            .forEach(item => item.classList.remove('is-active'));
+    }
+
+    if (card) {
+        card.classList.add('is-active');
+    }
+
+    activeGrimoirePayload = String(row?.payload || '');
+    activeGrimoireTitle = String(row?.key || '');
+    activeGrimoireCard = card || null;
+
+    // Keep the old textarea synchronized invisibly so older helper functions
+    // such as injectPayloadToWorkspace() continue to work without HTML changes.
+    if (payloadOutput) {
+        payloadOutput.value = activeGrimoirePayload;
+    }
+}
+
+function flashGrimoireCard(card) {
+    if (!card) return;
+
+    card.classList.remove('copy-flash');
+    void card.offsetWidth;
+    card.classList.add('copy-flash');
+
+    clearTimeout(card._copyFlashTimer);
+    card._copyFlashTimer = setTimeout(() => {
+        card.classList.remove('copy-flash');
+    }, 360);
+}
+
+function copyGrimoireDescription(payload, title, card = null) {
+    const textToCopy = String(payload || '');
+
+    if (!textToCopy || textToCopy.startsWith('❌')) {
+        showToast('Error: No valid content loaded to copy.');
+        return;
+    }
+
+    navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+            flashGrimoireCard(card || activeGrimoireCard);
+            showToast(`"${title || 'Grimoire entry'}" description copied.`);
+        })
+        .catch(() => {
+            showToast('Copy failed.');
+        });
+}
+
+function renderGrimoireDescriptionCards(title) {
+    const rows = getGrimoireRowsForTitle(title);
+    const container = ensureGrimoireResultsContainer();
+    const payloadOutput = document.getElementById('sheetPayloadArea');
+    const panelTitle = document.getElementById('payloadPanelTitle');
+
+    if (!container || !payloadOutput) return;
+
+    container.innerHTML = '';
+    payloadOutput.style.display = 'none';
+
+    if (!rows.length) {
+        hideGrimoireDescriptionCards({ clear: true });
+        payloadOutput.value = '❌ No descriptions found for this title.';
+        payloadOutput.style.display = 'block';
+
+        if (panelTitle) {
+            panelTitle.textContent = 'NO DESCRIPTION FOUND';
+        }
+
+        return;
+    }
+
+    container.style.display = 'flex';
+    container.classList.add('grimoire-results-open');
+
+    if (panelTitle) {
+        panelTitle.textContent = `${rows[0].key} · ${rows.length} DESCRIPTION${rows.length === 1 ? '' : 'S'}`;
+    }
+
+    rows.forEach((row, index) => {
+        const card = document.createElement('div');
+        card.className = 'grimoire-description-card';
+        card.tabIndex = 0;
+
+        const topLine = document.createElement('div');
+        topLine.className = 'grimoire-description-topline';
+
+        const number = document.createElement('span');
+        number.className = 'grimoire-description-number';
+        number.textContent = `DESCRIPTION ${index + 1} / ${rows.length}`;
+
+        const copyButton = document.createElement('button');
+        copyButton.type = 'button';
+        copyButton.className = 'manga-btn grimoire-description-copy';
+        copyButton.textContent = '📋 Copy';
+
+        const content = document.createElement('div');
+        content.className = 'grimoire-description-text';
+        content.textContent = row.payload || '';
+
+        topLine.appendChild(number);
+        topLine.appendChild(copyButton);
+        card.appendChild(topLine);
+        card.appendChild(content);
+
+        const activate = () => {
+            setActiveGrimoireDescription(card, row);
+        };
+
+        card.addEventListener('click', event => {
+            if (event.target.closest('button')) return;
+            activate();
+        });
+
+        card.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                activate();
+            }
+        });
+
+        copyButton.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            activate();
+            copyGrimoireDescription(row.payload, row.key, card);
+        });
+
+        container.appendChild(card);
+
+        // The first description is the default Alt+C target.
+        if (index === 0) {
+            setActiveGrimoireDescription(card, row);
+        }
+    });
+
+    container.scrollTop = 0;
+}
+
 function querySheetMatrix() {
     const searchInput = document.getElementById('sheetKeySearch');
-    const searchKey = searchInput.value.trim().toUpperCase();
+    const searchKey = normalizeGrimoireKey(searchInput?.value);
     const payloadOutput = document.getElementById('sheetPayloadArea');
     const suggestionsBox = document.getElementById('searchSuggestions');
     const actionsHeader = document.getElementById('searchActionsHeader');
-    
+    const buttonGroup = document.getElementById('searchButtonGroup');
+    const panelTitle = document.getElementById('payloadPanelTitle');
+
+    if (!searchInput || !payloadOutput || !suggestionsBox || !actionsHeader) {
+        return;
+    }
+
     if (isArchiveOpen) {
-        document.getElementById('sheetArchiveArea').style.display = "none";
+        const archive = document.getElementById('sheetArchiveArea');
+        if (archive) archive.style.display = 'none';
         isArchiveOpen = false;
     }
 
-    focusedSuggestionIndex = -1; 
+    focusedSuggestionIndex = -1;
+
+    // Hide the previous selected title as soon as a new query is typed.
+    hideGrimoireDescriptionCards();
+    payloadOutput.style.display = 'none';
+    actionsHeader.style.display = 'none';
+
+    if (panelTitle) panelTitle.textContent = '';
 
     if (!searchKey) {
         clearAndHideSearch();
         return;
     }
-    
-    const filteredMatches = googleSheetData.filter(row => row.key.toUpperCase().includes(searchKey));
-    
+
+    const filteredMatches = getUniqueGrimoireMatches(searchKey);
+
     if (filteredMatches.length > 0) {
-        suggestionsBox.innerHTML = "";
-        suggestionsBox.style.display = "block";
-        
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.style.display = 'block';
+
         filteredMatches.slice(0, 10).forEach((match, idx) => {
             const rowOption = document.createElement('div');
-            rowOption.className = "suggestion-item";
-            rowOption.setAttribute("data-index", idx);
-            rowOption.style.padding = "8px 12px";
-            rowOption.style.cursor = "pointer";
-            rowOption.style.borderBottom = "1px solid var(--ink-black)";
-            rowOption.style.fontSize = "13px";
-            rowOption.style.fontWeight = "bold";
-            rowOption.style.background = "var(--bg-paper)";
+            rowOption.className = 'suggestion-item';
+            rowOption.setAttribute('data-index', idx);
+            rowOption.style.padding = '8px 12px';
+            rowOption.style.cursor = 'pointer';
+            rowOption.style.borderBottom = '1px solid var(--ink-black)';
+            rowOption.style.fontSize = '13px';
+            rowOption.style.fontWeight = 'bold';
+            rowOption.style.background = 'var(--bg-paper)';
             rowOption.innerText = match.key;
-            
-            rowOption.onmouseover = () => { highlightSuggestion(idx); };
-            rowOption.onclick = () => { selectFinalMatch(match); };
+
+            rowOption.onmouseover = () => {
+                highlightSuggestion(idx);
+            };
+
+            rowOption.onclick = () => {
+                selectFinalMatch(match);
+            };
+
             suggestionsBox.appendChild(rowOption);
         });
     } else {
-        suggestionsBox.style.display = "none";
-        payloadOutput.style.display = "block";
-        actionsHeader.style.display = "flex";
-        document.getElementById('searchButtonGroup').style.display = "none";
-        payloadOutput.value = "❌ No matching data profiles located inside live sheet arrays.";
+        suggestionsBox.style.display = 'none';
+        payloadOutput.value = '❌ No matching data profiles located inside live sheet arrays.';
+        payloadOutput.style.display = 'block';
+        actionsHeader.style.display = 'flex';
+
+        if (buttonGroup) buttonGroup.style.display = 'none';
+        if (panelTitle) panelTitle.textContent = 'NO MATCH';
     }
 }
 
 function highlightSuggestion(index) {
     const suggestionsBox = document.getElementById('searchSuggestions');
     const items = suggestionsBox.querySelectorAll('.suggestion-item');
-    
+
     items.forEach(item => {
-        item.style.background = "var(--bg-paper)";
-        item.style.color = "var(--ink-black)";
+        item.style.background = 'var(--bg-paper)';
+        item.style.color = 'var(--ink-black)';
     });
 
     focusedSuggestionIndex = index;
+
     if (index >= 0 && index < items.length) {
-        items[index].style.background = "var(--ink-black)";
-        items[index].style.color = "var(--bg-paper)";
+        items[index].style.background = 'var(--ink-black)';
+        items[index].style.color = 'var(--bg-paper)';
         items[index].scrollIntoView({ block: 'nearest' });
     }
 }
 
 function selectFinalMatch(match) {
+    const title = typeof match === 'string'
+        ? match
+        : match?.key;
+
+    if (!title) return;
+
+    const rows = getGrimoireRowsForTitle(title);
+
+    if (!rows.length) {
+        showToast('No descriptions found for this title.');
+        return;
+    }
+
     const searchInput = document.getElementById('sheetKeySearch');
     const payloadOutput = document.getElementById('sheetPayloadArea');
     const suggestionsBox = document.getElementById('searchSuggestions');
     const actionsHeader = document.getElementById('searchActionsHeader');
     const buttonGroup = document.getElementById('searchButtonGroup');
+    const archiveBox = document.getElementById('sheetArchiveArea');
 
-    searchInput.value = match.key;
-    payloadOutput.value = match.payload;
-    
-    suggestionsBox.style.display = "none";
-    payloadOutput.style.display = "block"; 
-    actionsHeader.style.display = "flex";    
-    buttonGroup.style.display = "flex";    
+    if (searchInput) searchInput.value = rows[0].key;
 
-    saveToSearchHistory(match.key); // 🌟 ADD THIS LINE HERE to save manual selections
+    if (suggestionsBox) {
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.style.setProperty('display', 'none', 'important');
+    }
+
+    if (payloadOutput) {
+        payloadOutput.style.display = 'none';
+    }
+
+    if (actionsHeader) actionsHeader.style.display = 'flex';
+    if (buttonGroup) buttonGroup.style.display = 'flex';
+
+    if (archiveBox) archiveBox.style.display = 'none';
+    isArchiveOpen = false;
+
+    renderGrimoireDescriptionCards(rows[0].key);
+    saveToSearchHistory(rows[0].key);
 }
 
 function clearAndHideSearch() {
-    document.getElementById('sheetPayloadArea').value = "";
-    document.getElementById('sheetPayloadArea').style.display = "none";
-    document.getElementById('searchActionsHeader').style.display = "none";
-    document.getElementById('searchSuggestions').style.display = "none";
-    document.getElementById('searchSuggestions').innerHTML = "";
+    const payloadOutput = document.getElementById('sheetPayloadArea');
+    const actionsHeader = document.getElementById('searchActionsHeader');
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    const panelTitle = document.getElementById('payloadPanelTitle');
+
+    if (payloadOutput) {
+        payloadOutput.value = '';
+        payloadOutput.style.display = 'none';
+    }
+
+    if (actionsHeader) actionsHeader.style.display = 'none';
+
+    if (suggestionsBox) {
+        suggestionsBox.style.display = 'none';
+        suggestionsBox.innerHTML = '';
+    }
+
+    if (panelTitle) panelTitle.textContent = '';
+
+    hideGrimoireDescriptionCards({ clear: true });
 }
 
 function copySearchPayload() {
     const payloadOutput = document.getElementById('sheetPayloadArea');
     const searchInput = document.getElementById('sheetKeySearch');
 
-    if (
-        !payloadOutput ||
-        !payloadOutput.value ||
-        payloadOutput.value.startsWith('❌')
-    ) {
+    const textToCopy = activeGrimoirePayload || payloadOutput?.value || '';
+    const title = activeGrimoireTitle || searchInput?.value?.trim() || 'Grimoire entry';
+
+    if (!textToCopy || textToCopy.startsWith('❌')) {
         showToast('Error: No valid content loaded to copy.');
         return;
     }
 
-    const textToCopy = payloadOutput.value;
-
-    navigator.clipboard.writeText(textToCopy)
-        .then(() => {
-            const title = searchInput?.value?.trim() || 'Grimoire entry';
-
-            showToast(`"${title}" copied.`);
-            playSearchCopyDisappear(payloadOutput, searchInput);
-        })
-        .catch(() => {
-            showToast('Copy failed.');
-        });
+    copyGrimoireDescription(
+        textToCopy,
+        title,
+        activeGrimoireCard
+    );
 }
 
 function playSearchCopyDisappear(payloadOutput, searchInput) {
@@ -1044,39 +1433,11 @@ function renderArchiveContainer() {
             rowDiv.style.boxShadow = "6px 6px 0px var(--ink-black, #111)";
         };
 
-// 5. Clean Action Interface (Brute-forces data display and completely kills suggestion items)
+// 5. Open the grouped Grimoire title. If this title exists on multiple
+        // rows, selectFinalMatch() renders every description for that exact title.
         rowDiv.onclick = (e) => {
             e.stopPropagation();
-            
-            // 1. Force the input value matching Cell A
-            const searchInput = document.getElementById('sheetKeySearch');
-            if (searchInput) {
-                searchInput.value = row.key;
-            }
-            
-            // 2. Direct DOM override: Force fill the text field and open the container panels instantly
-            const payloadOutput = document.getElementById('sheetPayloadArea');
-            const actionsHeader = document.getElementById('searchActionsHeader');
-            const buttonGroup = document.getElementById('searchButtonGroup');
-
-            if (payloadOutput && actionsHeader && buttonGroup) {
-                payloadOutput.value = row.payload;       // Dumps cell B description text directly here
-                payloadOutput.style.display = "block";    // Reveals the content panel
-                actionsHeader.style.display = "flex";     // Reveals copy buttons container header
-                buttonGroup.style.display = "flex";       // Reveals action items
-            }
-            
-            // 3. Absolute execution kill on the dropdown box AND all its suggestion-items
-            const suggestionsBox = document.getElementById('searchSuggestions');
-            if (suggestionsBox) {
-                suggestionsBox.innerHTML = "";            // Deletes all .suggestion-item nodes instantly
-                suggestionsBox.style.setProperty('display', 'none', 'important'); // Blasts container out of sight
-            }
-
-            // 4. Wipe archive UI out of frame cleanly
-            archiveBox.style.display = "none";
-            isArchiveOpen = false;
-            saveToSearchHistory(row.key);
+            selectFinalMatch(row);
         };
 
         archiveBox.appendChild(rowDiv);
@@ -2720,30 +3081,13 @@ pillWrapper.ondragstart = event => {
                 renderSearchHistory();
             }
         };
-
         pillWrapper.onclick = () => {
-            const match = googleSheetData.find(row => row.key.toUpperCase() === key.toUpperCase());
+            const match = googleSheetData.find(
+                row => normalizeGrimoireKey(row.key) === normalizeGrimoireKey(key)
+            );
 
             if (match) {
-                const searchInput = document.getElementById('sheetKeySearch');
-                if (searchInput) searchInput.value = match.key;
-
-                const payloadOutput = document.getElementById('sheetPayloadArea');
-                const actionsHeader = document.getElementById('searchActionsHeader');
-                const buttonGroup = document.getElementById('searchButtonGroup');
-                const suggestionsBox = document.getElementById('searchSuggestions');
-
-                if (payloadOutput && actionsHeader && buttonGroup) {
-                    payloadOutput.value = match.payload;
-                    payloadOutput.style.display = "block";
-                    actionsHeader.style.display = "flex";
-                    buttonGroup.style.display = "flex";
-                }
-
-                if (suggestionsBox) {
-                    suggestionsBox.innerHTML = "";
-                    suggestionsBox.style.setProperty('display', 'none', 'important');
-                }
+                selectFinalMatch(match);
             }
         };
 
